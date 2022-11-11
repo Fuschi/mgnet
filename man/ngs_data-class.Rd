@@ -9,6 +9,6 @@ The information is saved in a  \code{\link{matrix}} where the rows express the s
 the columns the taxa.
 
 \describe{
-\item{.Data}{Slot containing \code{\link{matrix}} with ngs data.}
+\item{value}{Slot containing \code{\link{matrix}} with ngs data.}
 }
 }

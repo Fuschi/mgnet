@@ -4,7 +4,7 @@
 \alias{sample_metadata}
 \title{User constructor for sample_metadata s4 class.}
 \usage{
-sample_metadata(meta)
+sample_metadata(meta = NULL)
 }
 \arguments{
 \item{meta}{data.frame with experimental variables.}

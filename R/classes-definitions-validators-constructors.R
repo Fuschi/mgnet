@@ -1,3 +1,9 @@
+#' @import methods
+#' @noRd
+setClassUnion("matrixOrNULL", c("matrix", "NULL"))
+#' @import methods
+#' @noRd
+setClassUnion("dataframeOrNULL", c("data.frame", "NULL"))
 ################################################################################
 ################################################################################
 # CLASSES
@@ -10,7 +16,7 @@
 #' the columns the taxa.
 #'
 #' \describe{
-#'    \item{.Data}{Slot containing \code{\link{matrix}} with ngs data.}
+#'    \item{value}{Slot containing \code{\link{matrix}} with ngs data.}
 #'  }
 #'
 #' @import methods
@@ -18,16 +24,18 @@
 #' @rdname ngs_data-class
 #' @exportClass ngs_data
 setClass(Class="ngs_data",
-         contains="matrix", prototype=matrix(nrow=0,ncol=0),
+         slots=c(value="matrixOrNULL"), prototype=c(value=NULL),
          validity=function(object){
            
-           if(any(dim(object)==0)) return("\n matrix must have non-zero dimensions.")
-           if(!is.numeric(object)) return("\n matrix must be numeric")
-           if(!all(object>=0))return("\n all matrix elements must be greater or equal to zero")
-           if(is.null(rownames(object))) return("\n matrix must have the rows names where the samples IDs were saved.")
-           if(is.null(colnames(object))) return("\n matrix must have the cols names where the taxa IDs were saved")
-           if(any(duplicated(rownames(object)))) return("\n find in matrix at least a duplicated row name / sample ID.")
-           if(any(duplicated(colnames(object)))) return("\n find in matrix at least a duplicated col name / taxa ID.")
+           if(!is.null(object@value)){
+            if(any(dim(object@value)==0)) return("\n matrix must have non-zero dimensions.")
+            if(!is.numeric(object@value)) return("\n matrix must be numeric")
+            if(!all(object@value>=0))return("\n all matrix elements must be greater or equal to zero")
+            if(is.null(rownames(object@value))) return("\n matrix must have the rows names where the samples IDs were saved.")
+            if(is.null(colnames(object@value))) return("\n matrix must have the cols names where the taxa IDs were saved")
+            if(any(duplicated(rownames(object@value)))) return("\n find in matrix at least a duplicated row name / sample ID.")
+            if(any(duplicated(colnames(object@value)))) return("\n find in matrix at least a duplicated col name / taxa ID.")
+           }
            
            TRUE
          })
@@ -40,7 +48,7 @@ setClass(Class="ngs_data",
 #' that describe the samples.
 #'
 #' \describe{
-#'    \item{.Data}{Slot containing \code{\link{data.frame}} with sample metadata.}
+#'    \item{value}{Slot containing \code{\link{data.frame}} with sample metadata.}
 #'  }
 #' 
 #' @import methods
@@ -48,14 +56,16 @@ setClass(Class="ngs_data",
 #' @rdname sample_metadata-class
 #' @exportClass sample_metadata
 setClass("sample_metadata",
-         contains="data.frame", prototype=data.frame(),
+         slots=c(value="dataframeOrNULL"), prototype=c(value=NULL),
          validity=function(object){
            
-           if(any(dim(object)==0)) return("\n data.frame must have non-zero dimensions.")
-           if(is.null(rownames(object))) return("\n matrix must have the rows names where the samples IDs were saved.")
-           if(is.null(colnames(object))) return("\n matrix must have the cols names where the experimental variables were saved")
-           if(any(duplicated(rownames(object)))) return("\n find in matrix at least a duplicated row name / sample ID.")
-           if(any(duplicated(colnames(object)))) return("\n find in matrix at least a duplicated col name / experimental variable.")
+           if(!is.null(object@value)){
+             if(any(dim(object@value)==0)) return("\n data.frame must have non-zero dimensions.")
+             if(is.null(rownames(object@value))) return("\n matrix must have the rows names where the samples IDs were saved.")
+             if(is.null(colnames(object@value))) return("\n matrix must have the cols names where the experimental variables were saved")
+             if(any(duplicated(rownames(object@value)))) return("\n find in matrix at least a duplicated row name / sample ID.")
+             if(any(duplicated(colnames(object@value)))) return("\n find in matrix at least a duplicated col name / experimental variable.")
+           }
            
            TRUE
          })
@@ -67,7 +77,7 @@ setClass("sample_metadata",
 #' Row indices represent taxa, columns represent taxonomic ranks.
 #' 
 #' \describe{
-#'    \item{.Data}{Slot containing \code{\link{matrix}} class.}
+#'    \item{value}{Slot containing \code{\link{matrix}} class.}
 #' }
 #'
 #' @import methods
@@ -75,45 +85,48 @@ setClass("sample_metadata",
 #' @rdname taxonomy_table-class
 #' @exportClass taxonomy_table
 setClass("taxonomy_table",
-         contains="matrix", prototype=matrix(nrow=0,ncol=0),
+         slots=c(value="matrixOrNULL"), prototype=c(value=NULL),
          validity=function(object){
            
-           if(any(dim(object)==0)) return("\n matrix must have non-zero dimensions.")
-           if(ncol(object)<2) return("\n matrix must have more than a single column/rank. Where are the taxonomic info?")
-           if(!is.character(object)) return("\n matrix must be character")
-           if(!all(validUTF8(object))) return("\n all matrix elements must be encoded with UTF-8")
-           if(is.null(rownames(object))) return("\n matrix must have the rows names where the taxa IDs were saved.")
-           if(is.null(colnames(object))) return("\n matrix must have the cols names where the taxonomic ranks were saved")
-           if(any(duplicated(rownames(object)))) return("\n find in matrix at least a duplicated row name / taxa ID.")
-           if(any(duplicated(colnames(object)))) return("\n find in matrix at least a duplicated col name / rank.")
-           if(any(duplicated(rownames(object[,ncol(object)])))) return("\n find in last column matrix at least a duplicated taxa ID.")
-           
-           # check if the taxonomic hierarchy is well structured. 
-           # Basically I don't want two identical taxa that differ from a higher rank.
-           # Example:
-           # species   genera  family  ...
-           #   sp1       g1      f1
-           #   sp2       g1      f2
-           taxa.rank <- object[,-ncol(object)]
-           unique.rank <- unique(taxa.rank[,ncol(taxa.rank)])
-           unique.path.rank <- unique(apply(taxa.rank,1,function(x)paste(x,collapse="/")))
-           
-           if(length(unique.rank)!=length(unique.path.rank))return(paste(
-             "\n find error in hierarchy of taxa classification.\n",
-             " Two identical taxa can't have different higher taxonomy classification, as example:\n",
-             " species   genera  family  ...\n",
-             "   sp1       g1      f1    ...\n",
-             "   sp2       g1      f2    ...\n",
-             " If species sp1 and sp2 belong to genera g1 both can't be classified at family rank with families f1 and f2 differently."
-             ,sep=""))
-           
-           TRUE
+           if(!is.null(object@value)){
+             if(any(dim(object@value)==0)) return("\n matrix must have non-zero dimensions.")
+             if(!is.character(object@value)) return("\n matrix must be character")
+             if(!all(validUTF8(object@value))) return("\n all matrix elements must be encoded with UTF-8")
+             if(is.null(rownames(object@value))) return("\n matrix must have the rows names where the taxa IDs were saved.")
+             if(is.null(colnames(object@value))) return("\n matrix must have the cols names where the taxonomic ranks were saved")
+             if(any(duplicated(rownames(object@value)))) return("\n find in matrix at least a duplicated row name / taxa ID.")
+             if(any(duplicated(colnames(object@value)))) return("\n find in matrix at least a duplicated col name / rank.")
+             if(any(duplicated(rownames(object@value[,ncol(object@value)])))) return("\n find in last column matrix at least a duplicated taxa ID.")
+             
+             # check if the taxonomic hierarchy is well structured. 
+             # Basically I don't want two identical taxa that differ from a higher rank.
+             # Example:
+             # species   genera  family  ...
+             #   sp1       g1      f1
+             #   sp2       g1      f2
+             if(ncol(object@value)>=2){
+               taxa.rank <- object@value[,-ncol(object@value),drop=FALSE]
+               unique.rank <- unique(taxa.rank[,ncol(taxa.rank),drop=FALSE])
+               unique.path.rank <- unique(apply(taxa.rank,1,function(x)paste(x,collapse="/")))
+               
+               if(length(unique.rank)!=length(unique.path.rank))return(paste(
+                 "\n find error in hierarchy of taxa classification.\n",
+                 " Two identical taxa can't have different higher taxonomy classification, as example:\n",
+                 " species   genera  family  ...\n",
+                 "   sp1       g1      f1    ...\n",
+                 "   sp2       g1      f2    ...\n",
+                 " If species sp1 and sp2 belong to genera g1 both can't be classified at family rank with families f1 and f2 differently."
+                 ,sep=""))
+             }
+             
+             TRUE
+           }
          })
 ################################################################################
 ################################################################################
 #' @import methods
 #' @noRd
-setClassUnion("ngs_dataOrNULL", c("ngs_data", "NULL"))
+setClassUnion("ngs_dataOrNULL", c("ngs_data","NULL"))
 #' @import methods
 #' @noRd
 setClassUnion("sample_metadataOrNULL", c("sample_metadata", "NULL"))
@@ -175,7 +188,7 @@ setClass(
 #' 
 #' @param data numeric matrix with all elements >=0.  
 #'@export
-ngs_data <- function(data){new("ngs_data", data)}
+ngs_data <- function(data=NULL){new("ngs_data", value=data)}
 ################################################################################
 #' User constructor for sample_metadata s4 class.
 #' 
@@ -184,7 +197,7 @@ ngs_data <- function(data){new("ngs_data", data)}
 #' 
 #' @param meta data.frame with experimental variables.  
 #' @export
-sample_metadata <- function(meta){new("sample_metadata", meta)}
+sample_metadata <- function(meta=NULL){new("sample_metadata", value=meta)}
 ################################################################################
 #' User constructor for taxonomy_table s4 class.
 #' 
@@ -193,7 +206,7 @@ sample_metadata <- function(meta){new("sample_metadata", meta)}
 #' 
 #' @param taxa character matrix with taxonomic classification.  
 #' @export
-taxonomy_table <- function(taxa){new("taxonomy_table", taxa)}
+taxonomy_table <- function(taxa=NULL){new("taxonomy_table", value=taxa)}
 ################################################################################
 #' User constructor for mg s4 class.
 #' 

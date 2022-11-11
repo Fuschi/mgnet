@@ -4,7 +4,7 @@
 \alias{taxonomy_table}
 \title{User constructor for taxonomy_table s4 class.}
 \usage{
-taxonomy_table(taxa)
+taxonomy_table(taxa = NULL)
 }
 \arguments{
 \item{taxa}{character matrix with taxonomic classification.}

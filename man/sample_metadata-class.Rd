@@ -9,6 +9,6 @@ Rows represent samples, while column indices represent experimental variables
 that describe the samples.
 
 \describe{
-\item{.Data}{Slot containing \code{\link{data.frame}} with sample metadata.}
+\item{value}{Slot containing \code{\link{data.frame}} with sample metadata.}
 }
 }

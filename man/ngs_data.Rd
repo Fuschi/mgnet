@@ -4,7 +4,7 @@
 \alias{ngs_data}
 \title{User constructor for ngs_data s4 class.}
 \usage{
-ngs_data(data)
+ngs_data(data = NULL)
 }
 \arguments{
 \item{data}{numeric matrix with all elements >=0.}

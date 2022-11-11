@@ -10,6 +10,6 @@ Row indices represent taxa, columns represent taxonomic ranks.
 }
 \details{
 \describe{
-\item{.Data}{Slot containing \code{\link{matrix}} class.}
+\item{value}{Slot containing \code{\link{matrix}} class.}
 }
 }
