@@ -245,3 +245,91 @@ setMethod(f="[",
 # END EXTRACTORS
 ################################################################################
 ################################################################################
+
+
+
+################################################################################
+################################################################################
+# SHOW METHODS
+################################################################################
+################################################################################
+setMethod("show","ngs_data",
+          function(object){
+            
+            if(is.null(object@value)){
+              cat("*** Class ngs_data , method Show (limited to a matrix 5x5) ***\n")
+              cat("NULL")
+              cat("******* End Show (ngs_data) ******* \n")
+            } else {
+              cat("*** Class ngs_data , method Show (limited to a matrix 5x5) ***\n")
+              nrowShow <- min(5,nrow(object@value))
+              ncolShow <- min(5,ncol(object@value))
+              print(formatC(object@value[1:nrowShow,1:ncolShow]),quote=FALSE)
+              cat("******* End Show (ngs_data) ******* \n")
+            }
+
+          })
+################################################################################
+setMethod("show","sample_metadata",
+          function(object){
+            
+            if(is.null(object@value)){
+              cat("*** Class sample_metadata , method Show (limited to a data.frame of 5 rows/samples) ***\n")
+              cat("NULL")
+              cat("******* End Show (sample_metadata) ******* \n")
+            } else {
+              cat("*** Class sample_metadata , method Show (limited to a data.frame of 5 rows/samples) ***\n")
+              nrowShow <- min(5,nrow(object@value))
+              print(object@value[1:nrowShow,],quote=FALSE)
+              cat("******* End Show (sample_metadata) ******* \n")              
+            }
+
+          })
+################################################################################
+setMethod("show","taxonomy_table",
+          function(object){
+            
+            if(is.null(object@value)){
+              cat("*** Class taxonomy_table , method Show (limited to 5 taxa) *** \n")
+              cat("NULL")
+              cat("******* End Show (taxonomy_table) ******* \n")
+            } else {
+              cat("*** Class taxonomy_table , method Show (limited to 5 taxa) *** \n")
+              nrowShow <- min(5,nrow(object@value))
+              print(object@value[1:nrowShow,],quote=FALSE)
+              cat("******* End Show (taxonomy_table) ******* \n")
+            }
+
+          })
+################################################################################
+setMethod("show","mg",
+          function(object){
+            cat("*** Class mg , method Show *** \n")
+            cat(paste("Sample Number:",max(nrow(object@data@value),nrow(object@meta@value)),"\n"))
+            cat(paste("Taxa Number:",max(ncol(object@data@value),nrow(object@taxa@value)),"\n"))
+            
+            if(is.null(object@meta)){
+              cat("Sample Meta Data: NA \n")
+            } else {
+              cat(paste("Sample Meta Data:",paste(colnames(object@meta@value),collapse="," )),"\n")
+            }
+            
+            if(is.null(object@taxa)){
+              cat("Taxonomic Ranks: NA")
+            } else {
+              cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa@value),collapse=",")),"\n")
+            }
+            cat("\n")
+            print(object@data)
+            cat("\n")
+            print(object@meta)
+            cat("\n")
+            print(object@taxa)
+            cat("\n")
+            cat("******* End Show (mg) ******* \n")
+          })
+################################################################################
+################################################################################
+# END SHOW METHODS
+################################################################################
+################################################################################
