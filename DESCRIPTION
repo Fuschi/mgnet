@@ -11,4 +11,5 @@ RoxygenNote: 7.2.1
 LazyData: true
 Depends: 
     R (>= 4.0),
-    methods (>= 4.0)
+    methods (>= 4.0),
+    reshape2 (>= 1.4)
