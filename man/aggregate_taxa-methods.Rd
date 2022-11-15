@@ -3,26 +3,17 @@
 \docType{methods}
 \name{aggregate_taxa}
 \alias{aggregate_taxa}
-\alias{aggregate_taxa,mg,character-method}
-\alias{aggregate_taxa,mg-method}
 \title{Organize data in higher taxonomic level.}
 \usage{
 aggregate_taxa(object, rank)
-
-aggregate_taxa(object,rank)
-
-\S4method{aggregate_taxa}{mg,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}
 
-\item{rank}{(Required) character indicates the taxonomic level choosen.}
+\item{rank}{taxonomic level choosen.}
 }
 \description{
 Reorganize an \code{\link{mg-class}} object in an higher taxonomy rank.
 The function sums the taxa with the same classification and return a new mg
 object with appropriate data and taxa slots.
-
-This provides a convenient way to aggregate mg object taxa. Calculates the
-sum of abundances over all taxa that map to the same higher-level group.
 }

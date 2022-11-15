@@ -115,6 +115,17 @@ mg <- function(data=matrix(nrow=0,ncol=0),
                meta=data.frame(),
                taxa=matrix(nrow=0,ncol=0)){
   
+  if(!(".Depth" %in% colnames(meta)) && length(data)!=0){
+    cat("******* class mg constructor message *******\n")
+    cat("Add the samples depth as additional column named .Depth to meta\n")
+    cat("(Depths are calculated summing counts on each row/sample of data slot)\n")
+    cat("It can be accessed with the depth method\n")
+    ifelse(length(meta)!=0,
+           meta$.Depth <- rowSums(data),
+           meta <- data.frame(".Depth"=rowSums(data)))
+    cat("********************************************\n")
+  }
+  
   return(new("mg",data=data,meta=meta,taxa=taxa))
 }
 ################################################################################
@@ -541,6 +552,48 @@ setMethod("taxa_name", c("mg","character"),
                                                     toString(ranks(object)),"}"))
             return(object@taxa[,rank])
           })
+#####################################
+# DEPTH 
+#####################################
+#' Get samples depth.
+#' 
+#' @description 
+#' Retrieves the depth of each sample using the .Depth variable in in meta slot.
+#' .Depth is automatically generated if not present during the construction of 
+#' the mg object.
+#' 
+#' @usage depth(object)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' 
+#' @rdname depth-methods
+#' @docType methods
+#' @export
+#' @aliases depth depth
+setGeneric("depth", function(object) standardGeneric("depth"))
+#' @rdname depth-methods
+#' @aliases depth,mg-method
+setMethod("depth", "mg",function(object)return(object@meta$.Depth))
+#####################################
+# RELVATIVE 
+#####################################
+#' Get relative abundances.
+#' 
+#' @description 
+#' Retrieves the relative abundances of data, normalized by their depths.
+#' 
+#' @usage relative(object)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' 
+#' @rdname relative-methods
+#' @docType methods
+#' @export
+#' @aliases relative relative
+setGeneric("relative", function(object) standardGeneric("relative"))
+#' @rdname relative-methods
+#' @aliases relative,mg-method
+setMethod("relative", "mg",function(object)return(object@data/depth(object)))
 ################################################################################
 ################################################################################
 # END BASE METHODS
@@ -639,66 +692,13 @@ setMethod("mgmelt", "mg",
             mdf <- melt(data=object@data)
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
+            mdf$Relative <- cbind(mdf,relative(object)[mdf$SampleID,mdf$TaxaID])
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
             if(length(object@meta!=0)) mdf <- cbind(mdf,object@meta[mdf$SampleID,])
             mdf <- mdf[,-which(duplicated(t(mdf)))]
             
             return(mdf)
-          })
-################################################################################
-################################################################################
-# END MGMELT
-################################################################################
-################################################################################
-
-
-
-
-################################################################################
-################################################################################
-# AGGREGATE TAXA
-################################################################################
-################################################################################
-#' Organize data in higher taxonomic level.
-#' 
-#' @description 
-#' This provides a convenient way to aggregate mg object taxa. Calculates the
-#' sum of abundances over all taxa that map to the same higher-level group.
-#' 
-#' @usage aggregate_taxa(object,rank)
-#' 
-#' @param object (Required) \code{\link{mg-class}}.
-#' @param rank (Required) character indicates the taxonomic level choosen.
-#' 
-#' @rdname aggregate_taxa-methods
-#' @docType methods
-#' @export
-#' @aliases aggregate_taxa aggregate_taxa
-#' @export
-setGeneric("aggregate_taxa", function(object, rank) standardGeneric("aggregate_taxa"))
-#' @rdname aggregate_taxa-methods
-#' @aliases aggregate_taxa,mg-method
-setMethod("aggregate_taxa", c("mg","character"),
-          function(object, rank){
-            
-            if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
-            
-            different.taxa <- unique(object@taxa[,rank])
-            data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
-                                                dimnames=list(sample_name(object),different.taxa))
-            
-            for(taxa.i in different.taxa){
-              idx <- which(taxa.i == object@taxa[,rank])
-              data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
-            }
-            
-            taxa.aggregate <- object@taxa[,1:which(ranks(object)==rank)]
-            taxa.aggregate <- taxa.aggregate[!duplicated(taxa.aggregate), ]
-            rownames(taxa.aggregate) <- taxa.aggregate[,rank]
-            taxa.aggregate <- taxa.aggregate[colnames(data.aggregate),]
-            
-            return(new("mg",data=data.aggregate, meta=object@meta, taxa=taxa.aggregate))
           })
 ################################################################################
 ################################################################################
