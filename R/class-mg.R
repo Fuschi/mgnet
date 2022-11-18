@@ -115,14 +115,14 @@ mg <- function(data=matrix(nrow=0,ncol=0),
                meta=data.frame(),
                taxa=matrix(nrow=0,ncol=0)){
   
-  if(!(".Depth" %in% colnames(meta)) && length(data)!=0){
+  if(!("Depth" %in% colnames(meta)) && length(data)!=0){
     cat("******* class mg constructor message *******\n")
-    cat("Add the samples depth as additional column named .Depth to meta\n")
+    cat("Add the samples depth as additional column named Depth to meta\n")
     cat("(Depths are calculated summing counts on each row/sample of data slot)\n")
     cat("It can be accessed with the depth method\n")
     ifelse(length(meta)!=0,
-           meta$.Depth <- rowSums(data),
-           meta <- data.frame(".Depth"=rowSums(data)))
+           meta$Depth <- rowSums(data),
+           meta <- data.frame("Depth"=rowSums(data)))
     cat("********************************************\n")
   }
   
@@ -558,8 +558,8 @@ setMethod("taxa_name", c("mg","character"),
 #' Get samples depth.
 #' 
 #' @description 
-#' Retrieves the depth of each sample using the .Depth variable in in meta slot.
-#' .Depth is automatically generated if not present during the construction of 
+#' Retrieves the depth of each sample using the Depth variable in in meta slot.
+#' Depth is automatically generated if not present during the construction of 
 #' the mg object.
 #' 
 #' @usage depth(object)
@@ -573,7 +573,47 @@ setMethod("taxa_name", c("mg","character"),
 setGeneric("depth", function(object) standardGeneric("depth"))
 #' @rdname depth-methods
 #' @aliases depth,mg-method
-setMethod("depth", "mg",function(object)return(object@meta$.Depth))
+setMethod("depth", "mg",function(object)return(object@meta$Depth))
+#####################################
+# ABUNDANCE 
+#####################################
+#' Get abundances at choosen rank.
+#' 
+#' @description 
+#' Retrieves the abundances of data at choosen taxonomy rank. Abundance at 
+#' higher rank are returned as sums of abundance of elements with the same
+#' classification.
+#' 
+#' @usage abundance(object)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' 
+#' @rdname abundance-methods
+#' @docType methods
+#' @export
+#' @aliases abundance abundance
+setGeneric("abundance", function(object,rank) standardGeneric("abundance"))
+#' @rdname abundance-methods
+#' @aliases abundance,mg-method,missing
+setMethod("abundance", c("mg","missing"),function(object)return(object@data))
+#' @rdname abundance-methods
+#' @aliases abundance,mg-method,character
+setMethod("abundance", c("mg","character"),function(object,rank){
+  
+  if(length(object@data)==0 || length(object@data)==0) stop("data and taxa slots must be present")
+  if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
+  
+  different.taxa <- unique(object@taxa[,rank])
+  data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
+                           dimnames=list(sample_name(object),different.taxa))
+  
+  for(taxa.i in different.taxa){
+    idx <- which(taxa.i == object@taxa[,rank])
+    data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
+  }
+  
+  return(data.aggregate)
+})
 #####################################
 # RELVATIVE 
 #####################################
@@ -635,8 +675,8 @@ setMethod("aggregate_taxa", c("mg","character"),
             if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
             
             different.taxa <- unique(object@taxa[,rank])
-            data.aggregate <- data.frame(matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
-                                                dimnames=list(sample_name(object),different.taxa)))
+            data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
+                                     dimnames=list(sample_name(object),different.taxa))   
             
             for(taxa.i in different.taxa){
               idx <- which(taxa.i == object@taxa[,rank])
@@ -692,13 +732,60 @@ setMethod("mgmelt", "mg",
             mdf <- melt(data=object@data)
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
-            mdf$Relative <- cbind(mdf,relative(object)[mdf$SampleID,mdf$TaxaID])
+            mdf$Relative <- melt(relative(object))$value
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
             if(length(object@meta!=0)) mdf <- cbind(mdf,object@meta[mdf$SampleID,])
             mdf <- mdf[,-which(duplicated(t(mdf)))]
             
             return(mdf)
+          })
+################################################################################
+################################################################################
+# END MGMELT
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# FILTER TAXA
+################################################################################
+################################################################################
+#' Filter taxa based on across-sample abundance criteria.
+#' 
+#' @description 
+#' It applies an arbitrary set of functions list as across-sample criteria,
+#' one taxa at a time. The function takes as input a mg object,
+#' and returns its trimmed mg version or a logical vector
+#' indicating whether or not each taxa passed the criteria.
+#' Alternatively, if the \code{"trim"} option is set to \code{FALSE},
+#' it return a logical vector indicating whether or not each taxa passed 
+#' the criteria.
+#' 
+#' @usage filter_taxa(object, flist, trim)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' @param flist (Required) \code{\link{list}}. Each element of flist it must be
+#' a function.
+#' @param trim (Optional) Default \code{TRUE}.
+#' 
+#' @rdname filter_taxa-methods
+#' @docType methods
+#' @export
+#' @aliases filter_taxa filter_taxa
+#' @export
+setGeneric("filter_taxa", function(object,flist,trim) standardGeneric("filter_taxa"))
+#' @rdname filter_taxa-methods
+#' @aliases filter_taxa,mg-method
+setMethod("filter_taxa", c("mg","list","logical"),
+          function(object,flist,trim){
+            
+            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function")}
+            
+            return(object)
           })
 ################################################################################
 ################################################################################

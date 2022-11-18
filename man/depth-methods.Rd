@@ -14,7 +14,7 @@ depth(object)
 \item{object}{(Required) \code{\link{mg-class}}.}
 }
 \description{
-Retrieves the depth of each sample using the .Depth variable in in meta slot.
-.Depth is automatically generated if not present during the construction of
+Retrieves the depth of each sample using the Depth variable in in meta slot.
+Depth is automatically generated if not present during the construction of
 the mg object.
 }
