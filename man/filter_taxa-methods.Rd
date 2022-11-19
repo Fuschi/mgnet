@@ -7,9 +7,9 @@
 \alias{filter_taxa,mg-method}
 \title{Filter taxa based on across-sample abundance criteria.}
 \usage{
-filter_taxa(object, flist, trim)
+filter_taxa(object, flist, join.trim)
 
-\S4method{filter_taxa}{mg,list,logical}(object, flist, trim)
+\S4method{filter_taxa}{mg,list,logical}(object, flist, join.trim)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}
@@ -17,7 +17,7 @@ filter_taxa(object, flist, trim)
 \item{flist}{(Required) \code{\link{list}}. Each element of flist it must be
 a function.}
 
-\item{trim}{(Optional) Default \code{TRUE}.}
+\item{trim}{(Optional) Default \code{FALSE}.}
 }
 \description{
 It applies an arbitrary set of functions list as across-sample criteria,

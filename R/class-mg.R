@@ -765,30 +765,44 @@ setMethod("mgmelt", "mg",
 #' it return a logical vector indicating whether or not each taxa passed 
 #' the criteria.
 #' 
-#' @usage filter_taxa(object, flist, trim)
+#' @usage filter_taxa(object, flist, join.trim)
 #' 
 #' @param object (Required) \code{\link{mg-class}}.
 #' @param flist (Required) \code{\link{list}}. Each element of flist it must be
 #' a function.
-#' @param trim (Optional) Default \code{TRUE}.
+#' @param trim (Optional) Default \code{FALSE}.
 #' 
 #' @rdname filter_taxa-methods
 #' @docType methods
 #' @export
 #' @aliases filter_taxa filter_taxa
 #' @export
-setGeneric("filter_taxa", function(object,flist,trim) standardGeneric("filter_taxa"))
+setGeneric("filter_taxa", function(object,flist,join.trim) standardGeneric("filter_taxa"))
 #' @rdname filter_taxa-methods
 #' @aliases filter_taxa,mg-method
 setMethod("filter_taxa", c("mg","list","logical"),
-          function(object,flist,trim){
+          function(object,flist,join.trim){
             
-            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function")}
+            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
             
-            return(object)
+            test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
+            if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance values and return a logical.")
+            
+            criteria <- sapply(flist,function(x) apply(data(object),2,x))
+            criteria <- as.logical(apply(criteria,1,prod))
+            
+            new.data <- data(object)[,which(criteria),drop=F]
+            new.taxa <- taxa(object)[which(criteria),,drop=F]
+            
+            if(join.trim){
+              new.data <- cbind(new.data,"trim"=rowSums(data(object)[,which(!criteria)]))
+              new.taxa <- rbind(new.taxa,"trim"=rep("motley",nrank(object)))
+            }
+            
+            return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
           })
 ################################################################################
 ################################################################################
-# END MGMELT
+# END FILTER TAXA
 ################################################################################
 ################################################################################
