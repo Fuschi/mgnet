@@ -3,9 +3,13 @@
 \docType{methods}
 \name{aggregate_taxa}
 \alias{aggregate_taxa}
+\alias{aggregate_taxa,mg,character-method}
+\alias{aggregate_taxa,mg,character}
 \title{Organize data in higher taxonomic level.}
 \usage{
 aggregate_taxa(object, rank)
+
+\S4method{aggregate_taxa}{mg,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

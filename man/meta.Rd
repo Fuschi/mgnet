@@ -4,6 +4,7 @@
 \name{meta}
 \alias{meta}
 \alias{meta,mg-method}
+\alias{meta,mg}
 \title{Retrieves sample metadata.}
 \usage{
 meta(object)

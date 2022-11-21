@@ -153,13 +153,12 @@ mg <- function(data=matrix(nrow=0,ncol=0),
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname data-methods
+#' @rdname data
 #' @docType methods
 #' @export
-#' @aliases data data
 setGeneric("data", function(object) standardGeneric("data"))
-#' @rdname data-methods
-#' @aliases data,mg-method
+#' @rdname data
+#' @aliases data,mg
 setMethod("data", "mg", function(object){return(object@data)})
 #####################################
 # META
@@ -174,13 +173,12 @@ setMethod("data", "mg", function(object){return(object@data)})
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname meta-methods
+#' @rdname meta
 #' @docType methods
 #' @export
-#' @aliases meta meta
 setGeneric("meta", function(object) standardGeneric("meta"))
-#' @rdname meta-methods
-#' @aliases meta,mg-method
+#' @rdname meta
+#' @aliases meta,mg
 setMethod("meta", "mg", function(object){return(object@meta)})
 #####################################
 # TAXA
@@ -194,13 +192,12 @@ setMethod("meta", "mg", function(object){return(object@meta)})
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname taxa-methods
+#' @rdname taxa
 #' @docType methods
 #' @export
-#' @aliases taxa taxa
 setGeneric("taxa", function(object) standardGeneric("taxa"))
-#' @rdname taxa-methods
-#' @aliases taxa,mg-method
+#' @rdname taxa
+#' @aliases taxa,mg
 setMethod("taxa", "mg", function(object){return(object@taxa)})
 ################################################################################
 ################################################################################
@@ -228,10 +225,9 @@ setMethod("taxa", "mg", function(object){return(object@taxa)})
 #' @export
 #' @docType methods
 #' @rdname assign-data
-#' @aliases assign-data
 setGeneric("data<-", function(object, value) standardGeneric("data<-"))
 #' @rdname assign-data
-#' @aliases data<-,mg,data-method
+#' @aliases data<-,mg,matrix
 setMethod("data<-", c("mg", "matrix"), function(object, value){
   new("mg",data=value, meta=object@meta, taxa=object@taxa)
 })
@@ -251,7 +247,7 @@ setMethod("data<-", c("mg", "matrix"), function(object, value){
 #' @aliases assign-meta
 setGeneric("meta<-", function(object, value) standardGeneric("meta<-"))
 #' @rdname assign-meta
-#' @aliases meta<-,mg,meta-method
+#' @aliases meta<-,mg,data.frame
 setMethod("meta<-", c("mg", "data.frame"), function(object, value){
   new("mg",data=object@data, meta=value, taxa=object@taxa)
 })
@@ -271,7 +267,7 @@ setMethod("meta<-", c("mg", "data.frame"), function(object, value){
 #' @aliases assign-taxa
 setGeneric("taxa<-", function(object, value) standardGeneric("taxa<-"))
 #' @rdname assign-taxa
-#' @aliases taxa<-,mg,taxa-method
+#' @aliases taxa<-,mg,matrix
 setMethod("taxa<-", c("mg", "matrix"), function(object, value){
   new("mg",data=object@data, meta=object@meta, taxa=value)
 })
@@ -379,13 +375,12 @@ setMethod("show","mg",
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname nsample-methods
+#' @rdname nsample
 #' @docType methods
 #' @export
-#' @aliases nsample nsample
 setGeneric("nsample", function(object) standardGeneric("nsample"))
-#' @rdname nsample-methods
-#' @aliases nsample,mg-method
+#' @rdname nsample
+#' @aliases nsample,mg
 setMethod("nsample", "mg", function(object){
   if(length(object@data!=0)) return(nrow(object@data))
   else if(length(object@meta!=0)) return(nrow(object@meta))
@@ -403,13 +398,12 @@ setMethod("nsample", "mg", function(object){
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname ntaxa-methods
+#' @rdname ntaxa
 #' @docType methods
 #' @export
-#' @aliases ntaxa ntaxa
 setGeneric("ntaxa", function(object) standardGeneric("ntaxa"))
-#' @rdname ntaxa-methods
-#' @aliases ntaxa,mg-method
+#' @rdname ntaxa
+#' @aliases ntaxa,mg
 setMethod("ntaxa", "mg", function(object){
   if(length(object@data!=0)) return(ncol(object@data))
   else if(length(object@taxa!=0)) return(nrow(object@taxa))
@@ -427,13 +421,12 @@ setMethod("ntaxa", "mg", function(object){
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname sample_name-methods
+#' @rdname sample_name
 #' @docType methods
 #' @export
-#' @aliases sample_name sample_name
 setGeneric("sample_name", function(object) standardGeneric("sample_name"))
-#' @rdname sample_name-methods
-#' @aliases sample_name,mg-method
+#' @rdname sample_name
+#' @aliases sample_name,mg
 setMethod("sample_name", "mg", function(object){
   if(length(object@data!=0)) return(rownames(object@data))
   else if(length(object@taxa!=0)) return(rownames(object@meta))
@@ -451,13 +444,12 @@ setMethod("sample_name", "mg", function(object){
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname taxaID-methods
+#' @rdname taxaID
 #' @docType methods
 #' @export
-#' @aliases taxaID taxaID
 setGeneric("taxaID", function(object) standardGeneric("taxaID"))
-#' @rdname taxaID-methods
-#' @aliases taxaID,mg-method
+#' @rdname taxaID
+#' @aliases taxaID,mg
 setMethod("taxaID", "mg", function(object){
   if(length(object@data!=0)) return(colnames(object@data))
   else if(length(object@taxa!=0)) return(rownames(object@taxa))
@@ -475,13 +467,12 @@ setMethod("taxaID", "mg", function(object){
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname ranks-methods
+#' @rdname ranks
 #' @docType methods
 #' @export
-#' @aliases ranks ranks
 setGeneric("ranks", function(object) standardGeneric("ranks"))
-#' @rdname ranks-methods
-#' @aliases ranks,mg-method
+#' @rdname ranks
+#' @aliases ranks,mg
 setMethod("ranks", "mg", function(object){return(colnames(object@taxa))})
 #####################################
 # NRANKS 
@@ -495,13 +486,12 @@ setMethod("ranks", "mg", function(object){return(colnames(object@taxa))})
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname nrank-methods
+#' @rdname nrank
 #' @docType methods
 #' @export
-#' @aliases nrank nrank
 setGeneric("nrank", function(object) standardGeneric("nrank"))
-#' @rdname nrank-methods
-#' @aliases nrank,mg-method
+#' @rdname nrank
+#' @aliases nrank,mg
 setMethod("nrank", "mg", function(object){return(ncol(object@taxa))})
 #####################################
 # SAMPLE_INFO 
@@ -515,13 +505,12 @@ setMethod("nrank", "mg", function(object){return(ncol(object@taxa))})
 #'
 #' @param object (Required) \code{\link{mg-class}}.
 #'
-#' @rdname sample_info-methods
+#' @rdname sample_info
 #' @docType methods
 #' @export
-#' @aliases sample_info sample_info
 setGeneric("sample_info", function(object) standardGeneric("sample_info"))
-#' @rdname sample_info-methods
-#' @aliases sample_info,mg-method
+#' @rdname sample_info
+#' @aliases sample_info,mg
 setMethod("sample_info", "mg", function(object){return(colnames(object@meta))})
 #####################################
 # TAXA NAME 
@@ -536,16 +525,15 @@ setMethod("sample_info", "mg", function(object){return(colnames(object@meta))})
 #' @param object (Required) \code{\link{mg-class}}.
 #' @param rank taxonomic level choosen (if it is not set, the finest taxonomic rank is assumed)
 #' 
-#' @rdname taxa_name-methods
+#' @rdname taxa_name
 #' @docType methods
 #' @export
-#' @aliases taxa_name taxa_name
 setGeneric("taxa_name", function(object, rank) standardGeneric("taxa_name"))
-#' @rdname taxa_name-methods
-#' @aliases taxa_name,mg-method,missing
+#' @rdname taxa_name
+#' @aliases taxa_name,mg,missing
 setMethod("taxa_name", c("mg","missing"), function(object) object@taxa[,nrank(object)])
-#' @rdname taxa_name-methods
-#' @aliases taxa_name,mg-method,character
+#' @rdname taxa_name
+#' @aliases taxa_name,mg,character
 setMethod("taxa_name", c("mg","character"),
           function(object, rank){
             if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",
@@ -566,13 +554,12 @@ setMethod("taxa_name", c("mg","character"),
 #' 
 #' @param object (Required) \code{\link{mg-class}}.
 #' 
-#' @rdname depth-methods
+#' @rdname depth
 #' @docType methods
 #' @export
-#' @aliases depth depth
 setGeneric("depth", function(object) standardGeneric("depth"))
-#' @rdname depth-methods
-#' @aliases depth,mg-method
+#' @rdname depth
+#' @aliases depth,mg
 setMethod("depth", "mg",function(object)return(object@meta$Depth))
 #####################################
 # ABUNDANCE 
@@ -584,23 +571,23 @@ setMethod("depth", "mg",function(object)return(object@meta$Depth))
 #' higher rank are returned as sums of abundance of elements with the same
 #' classification.
 #' 
-#' @usage abundance(object)
+#' @usage abundance(object,rank)
 #' 
 #' @param object (Required) \code{\link{mg-class}}.
+#' @param rank (Optional) character with the taxonomic rank choosen.
 #' 
-#' @rdname abundance-methods
-#' @docType methods
 #' @export
-#' @aliases abundance abundance
+#' @docType methods
+#' @rdname abundance
 setGeneric("abundance", function(object,rank) standardGeneric("abundance"))
-#' @rdname abundance-methods
-#' @aliases abundance,mg-method,missing
+#' @rdname abundance
+#' @aliases abundance,missing
 setMethod("abundance", c("mg","missing"),function(object)return(object@data))
-#' @rdname abundance-methods
-#' @aliases abundance,mg-method,character
+#' @rdname abundance
+#' @aliases abundance,character
 setMethod("abundance", c("mg","character"),function(object,rank){
   
-  if(length(object@data)==0 || length(object@data)==0) stop("data and taxa slots must be present")
+  if(length(object@data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
   if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
   
   different.taxa <- unique(object@taxa[,rank])
@@ -620,20 +607,38 @@ setMethod("abundance", c("mg","character"),function(object,rank){
 #' Get relative abundances.
 #' 
 #' @description 
-#' Retrieves the relative abundances of data, normalized by their depths.
+#' Retrieves the relative abundances of data, normalized by their depths at
+#' the taxonomic rank choosen.
 #' 
-#' @usage relative(object)
+#' @usage relative(object,rank)
 #' 
 #' @param object (Required) \code{\link{mg-class}}.
+#' @param rank (Optional)
 #' 
-#' @rdname relative-methods
+#' @rdname relative
 #' @docType methods
 #' @export
-#' @aliases relative relative
-setGeneric("relative", function(object) standardGeneric("relative"))
-#' @rdname relative-methods
-#' @aliases relative,mg-method
-setMethod("relative", "mg",function(object)return(object@data/depth(object)))
+setGeneric("relative", function(object,rank) standardGeneric("relative"))
+#' @rdname relative
+#' @aliases relative,mg,missing
+setMethod("relative", c("mg","missing"),function(object)return(object@data/depth(object)))
+#' @rdname relative
+#' @aliases relative,mg,character
+setMethod("relative", c("mg","character"),function(object,rank){
+  if(length(object@data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
+  if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
+  
+  different.taxa <- unique(object@taxa[,rank])
+  data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
+                           dimnames=list(sample_name(object),different.taxa))
+  
+  for(taxa.i in different.taxa){
+    idx <- which(taxa.i == object@taxa[,rank])
+    data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
+  }
+  
+  return(data.aggregate/depth(object))
+})
 ################################################################################
 ################################################################################
 # END BASE METHODS
@@ -660,14 +665,13 @@ setMethod("relative", "mg",function(object)return(object@data/depth(object)))
 #' @param object (Required) \code{\link{mg-class}}.
 #' @param rank taxonomic level choosen.
 #' 
-#' @rdname aggregate_taxa-methods
+#' @rdname aggregate_taxa
 #' @docType methods
 #' @export
-#' @aliases aggregate_taxa aggregate_taxa
 #' @export
 setGeneric("aggregate_taxa", function(object, rank) standardGeneric("aggregate_taxa"))
-#' @rdname taxa_name-methods
-#' @aliases aggregate_taxa,mg-method,character
+#' @rdname aggregate_taxa
+#' @aliases aggregate_taxa,mg,character
 setMethod("aggregate_taxa", c("mg","character"),
           function(object, rank){
             
@@ -770,16 +774,14 @@ setMethod("mgmelt", "mg",
 #' @param object (Required) \code{\link{mg-class}}.
 #' @param flist (Required) \code{\link{list}}. Each element of flist it must be
 #' a function.
-#' @param trim (Optional) Default \code{FALSE}.
+#' @param join.trim (Optional) Default \code{FALSE}.
 #' 
 #' @rdname filter_taxa-methods
 #' @docType methods
 #' @export
-#' @aliases filter_taxa filter_taxa
-#' @export
 setGeneric("filter_taxa", function(object,flist,join.trim) standardGeneric("filter_taxa"))
 #' @rdname filter_taxa-methods
-#' @aliases filter_taxa,mg-method
+#' @aliases filter_taxa,mg,logical
 setMethod("filter_taxa", c("mg","list","logical"),
           function(object,flist,join.trim){
             
@@ -788,14 +790,14 @@ setMethod("filter_taxa", c("mg","list","logical"),
             test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
             if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance values and return a logical.")
             
-            criteria <- sapply(flist,function(x) apply(data(object),2,x))
+            criteria <- sapply(flist,function(x) apply(object@data,2,x))
             criteria <- as.logical(apply(criteria,1,prod))
             
-            new.data <- data(object)[,which(criteria),drop=F]
+            new.data <- object@data[,which(criteria),drop=F]
             new.taxa <- taxa(object)[which(criteria),,drop=F]
             
             if(join.trim){
-              new.data <- cbind(new.data,"trim"=rowSums(data(object)[,which(!criteria)]))
+              new.data <- cbind(new.data,"trim"=rowSums(object@data[,which(!criteria)]))
               new.taxa <- rbind(new.taxa,"trim"=rep("motley",nrank(object)))
             }
             

@@ -4,6 +4,7 @@
 \name{ranks}
 \alias{ranks}
 \alias{ranks,mg-method}
+\alias{ranks,mg}
 \title{Get taxonomic ranks.}
 \usage{
 ranks(object)

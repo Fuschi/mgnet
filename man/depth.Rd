@@ -4,6 +4,7 @@
 \name{depth}
 \alias{depth}
 \alias{depth,mg-method}
+\alias{depth,mg}
 \title{Get samples depth.}
 \usage{
 depth(object)

@@ -4,6 +4,7 @@
 \name{nsample}
 \alias{nsample}
 \alias{nsample,mg-method}
+\alias{nsample,mg}
 \title{Get number of samples.}
 \usage{
 nsample(object)

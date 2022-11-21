@@ -4,12 +4,12 @@
 \name{abundance}
 \alias{abundance}
 \alias{abundance,mg,missing-method}
-\alias{abundance,mg-method,missing}
+\alias{abundance,missing}
 \alias{abundance,mg,character-method}
-\alias{abundance,mg-method,character}
+\alias{abundance,character}
 \title{Get abundances at choosen rank.}
 \usage{
-abundance(object)
+abundance(object,rank)
 
 \S4method{abundance}{mg,missing}(object)
 
@@ -17,6 +17,8 @@ abundance(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}
+
+\item{rank}{(Optional) character with the taxonomic rank choosen.}
 }
 \description{
 Retrieves the abundances of data at choosen taxonomy rank. Abundance at

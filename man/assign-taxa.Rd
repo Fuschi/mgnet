@@ -5,7 +5,7 @@
 \alias{taxa<-}
 \alias{assign-taxa}
 \alias{taxa<-,mg,matrix-method}
-\alias{taxa<-,mg,taxa-method}
+\alias{taxa<-,mg,matrix}
 \title{Assign new taxonomy table to \code{object}}
 \usage{
 taxa(object) <- value

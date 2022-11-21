@@ -4,6 +4,7 @@
 \name{sample_info}
 \alias{sample_info}
 \alias{sample_info,mg-method}
+\alias{sample_info,mg}
 \title{Get sample metadata variables.}
 \usage{
 sample_info(object)

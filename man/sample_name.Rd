@@ -4,6 +4,7 @@
 \name{sample_name}
 \alias{sample_name}
 \alias{sample_name,mg-method}
+\alias{sample_name,mg}
 \title{Get samples names.}
 \usage{
 sample_name(object)

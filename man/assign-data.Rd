@@ -3,9 +3,8 @@
 \docType{methods}
 \name{data<-}
 \alias{data<-}
-\alias{assign-data}
 \alias{data<-,mg,matrix-method}
-\alias{data<-,mg,data-method}
+\alias{data<-,mg,matrix}
 \title{Assign a new ngs matrix to \code{object}}
 \usage{
 data(object) <- value

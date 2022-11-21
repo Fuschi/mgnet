@@ -5,7 +5,7 @@
 \alias{meta<-}
 \alias{assign-meta}
 \alias{meta<-,mg,data.frame-method}
-\alias{meta<-,mg,meta-method}
+\alias{meta<-,mg,data.frame}
 \title{Assign new samples metadata to \code{object}}
 \usage{
 meta(object) <- value
