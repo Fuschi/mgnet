@@ -4,11 +4,7 @@
 \alias{mg}
 \title{User constructor for mg s4 class.}
 \usage{
-mg(
-  data = matrix(nrow = 0, ncol = 0),
-  meta = data.frame(),
-  taxa = matrix(nrow = 0, ncol = 0)
-)
+mg(data, meta, taxa)
 }
 \arguments{
 \item{data}{numeric matrix with all elements >=0.}

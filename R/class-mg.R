@@ -111,9 +111,13 @@ setClass(
 #' @param meta data.frame with experimental variables.
 #' @param taxa character matrix with taxonomic classification.  
 #' @export
-mg <- function(data=matrix(nrow=0,ncol=0),
-               meta=data.frame(),
-               taxa=matrix(nrow=0,ncol=0)){
+mg <- function(data,
+               meta,
+               taxa){
+  
+  if(missing(data)) data <- matrix(nrow=0,ncol=0)
+  if(missing(meta)) meta <- data.frame()
+  if(missing(taxa)) taxa <- matrix(nrow=0,ncol=0)
   
   if(!("Depth" %in% colnames(meta)) && length(data)!=0){
     cat("******* class mg constructor message *******\n")
@@ -798,7 +802,7 @@ setMethod("filter_taxa", c("mg","list","logical"),
             
             if(join.trim){
               new.data <- cbind(new.data,"trim"=rowSums(object@data[,which(!criteria)]))
-              new.taxa <- rbind(new.taxa,"trim"=rep("motley",nrank(object)))
+              new.taxa <- rbind(new.taxa,"trim"=rep("medley",nrank(object)))
             }
             
             return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
