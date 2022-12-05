@@ -55,8 +55,8 @@ clr <- function(X, mar=1){
 #' @param keep.psych (Optional) logical paramater which indicates if return the
 #' results of psych results (default FALSE).
 #' 
-#' 
 #' @importFrom psych corr.test corr.p
+#' 
 #' @export
 adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
                            method="pearson",adjust="holm",alpha=.05,
@@ -126,8 +126,8 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
 #' Get adjacency making an edge density threshold
 #' 
 #' @description Retrieves the adjacency matrix starting from the abundance 
-#' or the correlation matrix. The function uses the \code{\link{cor}} 
-#' function from stats.
+#' or the correlation matrix using as criteria the edge density of the resulting
+#' network. The function uses the \code{\link{cor}} from stats package.
 #' 
 #' @param x matrix of data.
 #' @param r correlation matrix.

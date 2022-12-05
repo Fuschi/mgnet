@@ -18,6 +18,6 @@ adjacency_edge_density(x = NULL, r = NULL, method = "pearson", th = 0.05)
 }
 \description{
 Retrieves the adjacency matrix starting from the abundance
-or the correlation matrix. The function uses the \code{\link{cor}}
-function from stats.
+or the correlation matrix using as criteria the edge density of the resulting
+network. The function uses the \code{\link{cor}} from stats package.
 }
