@@ -324,30 +324,6 @@ setMethod("show","mg",
             cat(paste("Taxa Number:",max(ncol(object@data),nrow(object@taxa)),"\n"))
             cat(paste("Sample Meta Data:",paste(colnames(object@meta),collapse="," )),"\n")
             cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa),collapse=",")),"\n")
-            cat("@data (limited to a 3x3 matrix) \n")
-            if(length(object@data!=0)){
-              nrowShow <- min(3,nrow(object@data))
-              ncolShow <- min(3,ncol(object@data))
-              print(object@data[1:nrowShow,1:ncolShow],quote=FALSE)
-            } else {
-              print(object@data)
-            }
-            cat("@meta (limited to a 3x3 data.frame) \n")
-            if(length(object@meta!=0)){
-              nrowShow <- min(3,nrow(object@meta))
-              ncolShow <- min(3,ncol(object@meta))
-              print(object@meta[1:nrowShow,1:ncolShow],quote=FALSE)
-            } else {
-              print(object@meta)
-            }
-            cat("@taxa (limited to a 3x3 matrix) \n")
-            if(length(object@taxa)!=0){
-              nrowShow <- min(3,nrow(object@taxa))
-              ncolShow <- min(3,ncol(object@taxa))
-              print(object@taxa[1:nrowShow,1:ncolShow],quote=FALSE)
-            } else {
-              print(object@taxa)
-            }
             cat("********** End Show (mg) ********** \n")
           })
 ################################################################################
@@ -639,6 +615,27 @@ setMethod("relative", c("mg","character"),function(object,rank){
   
   return(data.aggregate/depth(object))
 })
+#####################################
+# EMPTY 
+#####################################
+#' Check if the object is empty.
+#' 
+#' @description 
+#' Control if all slots have lengths equal to 0 (therefore empty).
+#' 
+#' @usage empty(object)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' 
+#' @rdname empty
+#' @docType methods
+#' @export
+setGeneric("empty", function(object) standardGeneric("empty"))
+#' @rdname empty
+#' @aliases relative,mg
+setMethod("empty", c("mg"),function(object){
+  length(object@data)==0 & length(object@meta)==0 & length(object@taxa)==0
+  })
 ################################################################################
 ################################################################################
 # END BASE METHODS
