@@ -7,20 +7,18 @@ setOldClass("communities")
 ################################################################################
 #' S4 class to manage metagenomic networks
 #'
-#'
-#'
 #' @slot data table of data
 #' @slot meta sample features
 #' @slot taxa taxonomic information
 #' @slot netw undirected, weighted and signed igraph network
 #' @slot comm graph communities of netw
 #'
-#' @import methods
 #' @importFrom igraph make_empty_graph cluster_fast_greedy V vcount
+#' @import methods
 #' @name mgnet-class
 #' @rdname mgnet-class
 #' @exportClass mgnet
-mgnet <- setClass(
+setClass(
   Class="mgnet",
   
   contains="mg",
@@ -68,7 +66,11 @@ mgnet <- setClass(
     TRUE
   }
 )
-
+################################################################################
+################################################################################
+# END CLASS MGNET
+################################################################################
+################################################################################
 
 
 
@@ -78,9 +80,6 @@ mgnet <- setClass(
 ################################################################################
 ################################################################################
 #' User constructor for mgnet s4 class.
-#' 
-#' @rdname mgnet-constructor
-#' @aliases mgnet,constructor
 #' 
 #' @description User constructor to create an object belonging to formal s4 
 #' class mgnet avoiding the new function.
@@ -266,7 +265,7 @@ setMethod("comm<-", c("mg", "communities"), function(object, value){
 #' 
 #' @rdname extract-methods
 setMethod(f="[",
-          signature="mg",
+          signature="mgnet",
           definition=function(x,i,j){
             warning("operator '[' is not well defined in mgnet class.
                     It return a simply mg without netw and comm info")
@@ -290,7 +289,7 @@ setMethod(f="[",
 ################################################################################
 ################################################################################
 #'@importFrom igraph ecount edge_density membership sizes
-setMethod("show","mg",
+setMethod("show","mgnet",
           function(object){
             cat("******* Class mgnet , method Show ******* \n")
             cat(paste("Sample Number:",max(nrow(object@data),nrow(object@meta)),"\n"))
