@@ -360,7 +360,7 @@ setGeneric("nsample", function(object) standardGeneric("nsample"))
 setMethod("nsample", "mg", function(object){
   if(length(object@data!=0)) return(nrow(object@data))
   else if(length(object@meta!=0)) return(nrow(object@meta))
-  else return(0)
+  else return(NULL)
 })
 #####################################
 # NTAXA
@@ -383,7 +383,7 @@ setGeneric("ntaxa", function(object) standardGeneric("ntaxa"))
 setMethod("ntaxa", "mg", function(object){
   if(length(object@data!=0)) return(ncol(object@data))
   else if(length(object@taxa!=0)) return(nrow(object@taxa))
-  else return(0)
+  else return(NULL)
 })
 #####################################
 # SAMPLE NAME
@@ -632,7 +632,7 @@ setMethod("relative", c("mg","character"),function(object,rank){
 #' @export
 setGeneric("empty", function(object) standardGeneric("empty"))
 #' @rdname empty
-#' @aliases relative,mg
+#' @aliases empty,mg
 setMethod("empty", c("mg"),function(object){
   length(object@data)==0 & length(object@meta)==0 & length(object@taxa)==0
   })
