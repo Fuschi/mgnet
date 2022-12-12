@@ -10,6 +10,7 @@ mgnet(
   taxa = matrix(nrow = 0, ncol = 0),
   netw = make_empty_graph(n = 0, directed = FALSE),
   comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE)),
+  adj = matrix(nrow = 0, ncol = 0),
   mg = new("mg")
 )
 }
@@ -23,6 +24,8 @@ mgnet(
 \item{netw}{un-directed weighted igraph network.}
 
 \item{comm}{communities object associated to netw.}
+
+\item{adj}{adjacency matrix of netw.}
 
 \item{mg}{object belong to mg class.}
 }

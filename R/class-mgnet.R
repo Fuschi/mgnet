@@ -89,17 +89,37 @@ setClass(
 #' @param taxa character matrix with taxonomic classification.  
 #' @param netw un-directed weighted igraph network.
 #' @param comm communities object associated to netw.
+#' @param adj adjacency matrix of netw.
 #' @param mg object belong to mg class.
+#'
+#' @importFrom igraph graph_from_adjacency_matrix
 #' @export
 mgnet <- function(data=matrix(nrow=0,ncol=0),
                   meta=data.frame(),
                   taxa=matrix(nrow=0,ncol=0),
                   netw=make_empty_graph(n=0, directed=FALSE),
                   comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE)),
+                  adj=matrix(nrow=0,ncol=0),
                   mg=new("mg")){
   
   if((length(data)!=0 | length(meta)!=0 | length(taxa)!=0) & !empty(mg)){
     stop("if using an object of class mg then data, meta and taxa must be left empty")
+  }
+  
+  if(length(netw)!=0 & length(adj)!=0){
+    stop("the 'adj' and 'netw' arguments cannot be specified together")
+  }
+  
+  if(length(adj)!=0){
+    if(!is.numeric(adj) | !is.matrix(adj) | !isSymmetric(adj)) stop("adj must be simmetric matrix")
+  }
+  
+  if(length(netw)==0 & length(adj)!=0){
+    netw <- graph_from_adjacency_matrix(adj,'undirected',weighted=TRUE)
+  }
+  
+  if(length(netw)!=0 && length(comm)==0){
+    comm <- cluster_signed(netw)
   }
   
   if(empty(mg)){
@@ -300,14 +320,14 @@ setMethod("show","mgnet",
                       round(edge_density(object@netw)*100,2),"%)","\n",sep=""))
             
             if(length(object@comm)!=0){
-              cat(paste("Signed Communities Number:",max(membership(object@comm))))
+              cat(paste("Signed Communities Number:",max(membership(object@comm)),"\n"))
               
               if("0" %in% names(sizes(object@comm))){
-                cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=",")))
-                cat(paste("Isolated Nodes:", sizes(object@comm)[[1]]))
+                cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
+                cat(paste("Isolated Nodes:", sizes(object@comm)[[1]],"\n"))
               } else {
-                cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=",")))
-                cat("There aren't isolated nodes")
+                cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
+                cat("There aren't isolated nodes \n")
               }
             } else {
               cat("There aren't communities information \n")
