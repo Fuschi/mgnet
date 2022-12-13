@@ -58,21 +58,22 @@ setClass(
       if(any(duplicated(colnames(object@taxa)))) return("\n find in taxa matrix at least a duplicated col name / rank.")
       if(any(duplicated(rownames(object@taxa[,ncol(object@taxa)])))) return("\n find in last column taxa matrix at least a duplicated taxa ID.")
       
-      # check if the taxonomic hierarchy is well structured. 
-      if(ncol(object@taxa)>=2){
-        taxa.rank <- object@taxa[,-ncol(object@taxa),drop=FALSE]
-        unique.rank <- unique(taxa.rank[,ncol(taxa.rank),drop=FALSE])
-        unique.path.rank <- unique(apply(taxa.rank,1,function(x)paste(x,collapse="/")))
-        
-        if(length(unique.rank)!=length(unique.path.rank))return(paste(
-          "\n find error in hierarchy of taxa classification.\n",
-          " Two identical taxa can't have different higher taxonomy classification, as example:\n",
-          " species   genera  family  ...\n",
-          "   sp1       g1      f1    ...\n",
-          "   sp2       g1      f2    ...\n",
-          " If species sp1 and sp2 belong to genera g1 both can't be classified at family rank with families f1 and f2 differently."
-          ,sep=""))
-      }}
+      # # check if the taxonomic hierarchy is well structured. 
+      # if(ncol(object@taxa)>=2){
+      #   taxa.rank <- object@taxa[,-ncol(object@taxa),drop=FALSE]
+      #   unique.rank <- unique(taxa.rank[,ncol(taxa.rank),drop=FALSE])
+      #   unique.path.rank <- unique(apply(taxa.rank,1,function(x)paste(x,collapse="/")))
+      #   
+      #   if(length(unique.rank)!=length(unique.path.rank))return(paste(
+      #     "\n find error in hierarchy of taxa classification.\n",
+      #     " Two identical taxa can't have different higher taxonomy classification, as example:\n",
+      #     " species   genera  family  ...\n",
+      #     "   sp1       g1      f1    ...\n",
+      #     "   sp2       g1      f2    ...\n",
+      #     " If species sp1 and sp2 belong to genera g1 both can't be classified at family rank with families f1 and f2 differently."
+      #     ,sep=""))
+      # }
+      }
     
     #CHECK SAMPLE/TAXA ORDER IN SOLTS
     #-------------------------------------#
