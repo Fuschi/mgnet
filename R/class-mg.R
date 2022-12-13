@@ -752,6 +752,92 @@ setMethod("mgmelt", "mg",
 
 ################################################################################
 ################################################################################
+# SAMPLE SELECTION
+################################################################################
+################################################################################
+#' Selection a subset of samples from mg object.
+#' 
+#' @description The function takes as input a vector of logical or position 
+#' indices to evaluate which samples to keep.
+#' 
+#' @usage selection_sample(object, idx)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' @param idx (Required) Vector of integer position indices or logical (like to
+#' \code{[} extractor function).
+#' 
+#' @rdname selection_sample-methods
+#' @docType methods
+#' @export
+setGeneric("selection_sample", function(object,idx) standardGeneric("selection_sample"))
+#' @rdname selection_sample-methods
+#' @aliases selection_sample,mg,vector
+setMethod("selection_sample", c("mg","vector"),
+          function(object,idx){
+            
+            if(length(idx)>nsample(object)) stop("there are more indices than sample")
+            
+            ifelse(length(data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
+            ifelse(length(meta)!=0, meta.new<-object@meta[idx,,drop=F], meta.new<-object@meta)
+            
+            return(mg(data=data.new,
+                      meta=meta.new,
+                      taxa=object@taxa))
+          })
+################################################################################
+################################################################################
+# END SAMPLE SELECTION
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# TAXA SELECTION
+################################################################################
+################################################################################
+#' Selection a subset of taxa from mg object.
+#' 
+#' @description The function takes as input a vector of logical or position 
+#' indices to evaluate which taxa to keep.
+#' 
+#' @usage selection_taxa(object, idx)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' @param idx (Required) Vector of integer position indices or logical (like to
+#' \code{[} extractor function).
+#' 
+#' @rdname selection_taxa-methods
+#' @docType methods
+#' @export
+setGeneric("selection_taxa", function(object,idx) standardGeneric("selection_taxa"))
+#' @rdname selection_taxa-methods
+#' @aliases selection_taxa,mg,vector
+setMethod("selection_taxa", c("mg","vector"),
+          function(object,idx){
+            
+            if(length(idx)>ntaxa(object)) stop("there are more indices than sample")
+            
+            ifelse(length(data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
+            ifelse(length(taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
+            
+            return(mg(data=data.new,
+                      meta=object@meta,
+                      taxa=taxa.new))
+          })
+################################################################################
+################################################################################
+# END TAXA SELECTION
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
 # FILTER TAXA
 ################################################################################
 ################################################################################
@@ -760,11 +846,9 @@ setMethod("mgmelt", "mg",
 #' @description 
 #' It applies an arbitrary set of functions list as across-sample criteria,
 #' one taxa at a time. The function takes as input a mg object,
-#' and returns its trimmed mg version or a logical vector
-#' indicating whether or not each taxa passed the criteria.
-#' Alternatively, if the \code{"trim"} option is set to \code{FALSE},
-#' it return a logical vector indicating whether or not each taxa passed 
-#' the criteria.
+#' and returns its trimmed mg version. Alternatively, if the \code{"trim"} 
+#' option is set to \code{FALSE}, it return a logical vector indicating whether 
+#' or not each taxa passed the criteria.
 #' 
 #' @usage filter_taxa(object, flist, join.trim)
 #' 

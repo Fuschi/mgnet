@@ -22,9 +22,7 @@ a function.}
 \description{
 It applies an arbitrary set of functions list as across-sample criteria,
 one taxa at a time. The function takes as input a mg object,
-and returns its trimmed mg version or a logical vector
-indicating whether or not each taxa passed the criteria.
-Alternatively, if the \code{"trim"} option is set to \code{FALSE},
-it return a logical vector indicating whether or not each taxa passed
-the criteria.
+and returns its trimmed mg version. Alternatively, if the \code{"trim"}
+option is set to \code{FALSE}, it return a logical vector indicating whether
+or not each taxa passed the criteria.
 }
