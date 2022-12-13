@@ -15,7 +15,7 @@
 #' @export
 layout_signed <- function(graph, seed=123){
   
-  if(is.igraph(graph)) stop("graph must belong to igraph class")
+  if(!is.igraph(graph)) stop("graph must belong to igraph class")
   if(!is.numeric(seed)) stop("seed must be numeric")
   
   graph.sub <- subgraph.edges(graph=graph,

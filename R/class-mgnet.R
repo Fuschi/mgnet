@@ -574,3 +574,66 @@ setMethod("default_decoration", "mgnet", function(obj){
   
   return(obj)
 })
+################################################################################
+################################################################################
+# GRAPHICAL DECORATIONS
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# SAMPLE SELECTION
+################################################################################
+################################################################################
+setMethod("selection_sample", c("mgnet","vector"),
+          function(object,idx){
+            
+            warning("selection_sample is not well defined in mgnet class.
+                    It return a simply mg without netw and comm info")
+            
+            if(length(idx)>nsample(object)) stop("there are more indices than sample")
+            
+            ifelse(length(data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
+            ifelse(length(meta)!=0, meta.new<-object@meta[idx,,drop=F], meta.new<-object@meta)
+            
+            return(mg(data=data.new,
+                      meta=meta.new,
+                      taxa=object@taxa))
+          })
+################################################################################
+################################################################################
+# END SAMPLE SELECTION
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# SELECTION TAXA
+################################################################################
+################################################################################
+setMethod("selection_taxa", c("mgnet","vector"),
+          function(object,idx){
+            
+            warning("selection_taxa is not well defined in mgnet class.
+                    It return a simply mg without netw and comm info")
+            
+            if(length(idx)>ntaxa(object)) stop("there are more indices than sample")
+            
+            ifelse(length(data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
+            ifelse(length(taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
+            
+            return(mg(data=data.new,
+                      meta=object@meta,
+                      taxa=taxa.new))
+          })
+################################################################################
+################################################################################
+# SELECTION TAXA
+################################################################################
+################################################################################
