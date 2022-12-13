@@ -457,7 +457,7 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
             adj.new <- matrix(0,nrow=ntaxa,ncol=ntaxa,
                               dimnames=list(taxa_name,taxa_name))
             adj.new[taxaID(obj),taxaID(obj)] <- adj
-
+            
             return(mgnet(data=data,taxa=new_taxa,adj=adj.new))
           })
 
@@ -533,3 +533,44 @@ setMethod("remove_smaller_comm", c("mgnet","numeric","logical"), function(obj, s
 # END REMOVE SMALLER COMMUNITIES
 ################################################################################
 ################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# GRAPHICAL DECORATIONS
+################################################################################
+################################################################################
+#' Add graphical decorations
+#' 
+#'@description Add graphical descriptions to network:
+#'\itemize{
+#'  \item Vertex size proportional to mean clr abundances over samples.
+#'  \item Link color could be red (+) or blue (-) respect the weights sign.
+#'}
+#' 
+#' @param obj \code{\link{mgnet-class}}
+#'  
+#' @rdname default_decoration-methods
+#' @docType methods
+#' @export
+setGeneric("default_decoration", function(obj) standardGeneric("default_decoration"))
+#' @importFrom igraph V<- E<-
+#' @importFrom grDevices rgb
+#' @rdname default_decoration-methods
+#' @aliases default_decoration,mgnet
+setMethod("default_decoration", "mgnet", function(obj){
+  
+  if(length(obj@data)==0 | length(obj@netw)==0) stop("slot data and netw must be present")
+  
+  # Vertex size
+  V(obj@netw)$size  <- 4 + colMeans(clr(obj@data+1)) + abs(min(colMeans(clr(obj@data+1))))
+  
+  # Edges color and width
+  w <- E(obj@netw)$weight
+  E(obj@netw)$color <- ifelse(w>0, grDevices::rgb(0,0,1,.5), grDevices::rgb(1,0,0,.5))
+  E(obj@netw)$width <- abs(w) / max(abs(w))
+  
+  return(obj)
+})
