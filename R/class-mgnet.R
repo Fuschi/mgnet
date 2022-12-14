@@ -118,9 +118,9 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
     netw <- graph_from_adjacency_matrix(adj,'undirected',weighted=TRUE)
   }
   
-  if(length(netw)!=0 && length(comm)==0){
-    comm <- cluster_signed(netw)
-  }
+  # if(length(netw)!=0 && length(comm)==0){
+  #   comm <- cluster_signed(netw)
+  # }
   
   if(empty(mg)){
     return(new("mgnet",data=data,meta=meta,taxa=taxa,netw=netw,comm=comm))

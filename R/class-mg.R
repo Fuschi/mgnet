@@ -885,6 +885,24 @@ setMethod("filter_taxa", c("mg","list","logical"),
             
             return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
           })
+#' @rdname filter_taxa-methods
+#' @aliases filter_taxa,mg,missing
+setMethod("filter_taxa", c("mg","list","missing"),
+          function(object,flist,join.trim){
+            
+            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
+            
+            test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
+            if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance values and return a logical.")
+            
+            criteria <- sapply(flist,function(x) apply(object@data,2,x))
+            criteria <- as.logical(apply(criteria,1,prod))
+            
+            new.data <- object@data[,which(criteria),drop=F]
+            new.taxa <- taxa(object)[which(criteria),,drop=F]
+            
+            return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
+          })
 ################################################################################
 ################################################################################
 # END FILTER TAXA

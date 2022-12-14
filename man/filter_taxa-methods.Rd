@@ -5,11 +5,15 @@
 \alias{filter_taxa}
 \alias{filter_taxa,mg,list,logical-method}
 \alias{filter_taxa,mg,logical}
+\alias{filter_taxa,mg,list,missing-method}
+\alias{filter_taxa,mg,missing}
 \title{Filter taxa based on across-sample abundance criteria.}
 \usage{
 filter_taxa(object, flist, join.trim)
 
 \S4method{filter_taxa}{mg,list,logical}(object, flist, join.trim)
+
+\S4method{filter_taxa}{mg,list,missing}(object, flist, join.trim)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}
