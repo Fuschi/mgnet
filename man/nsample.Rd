@@ -5,11 +5,15 @@
 \alias{nsample}
 \alias{nsample,mg-method}
 \alias{nsample,mg}
+\alias{nsample,list-method}
+\alias{nsample,list}
 \title{Get number of samples.}
 \usage{
 nsample(object)
 
 \S4method{nsample}{mg}(object)
+
+\S4method{nsample}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

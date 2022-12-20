@@ -5,11 +5,15 @@
 \alias{depth}
 \alias{depth,mg-method}
 \alias{depth,mg}
+\alias{depth,list-method}
+\alias{depth,list}
 \title{Get samples depth.}
 \usage{
 depth(object)
 
 \S4method{depth}{mg}(object)
+
+\S4method{depth}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

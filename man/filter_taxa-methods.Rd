@@ -4,24 +4,24 @@
 \name{filter_taxa}
 \alias{filter_taxa}
 \alias{filter_taxa,mg,list,logical-method}
-\alias{filter_taxa,mg,logical}
-\alias{filter_taxa,mg,list,missing-method}
-\alias{filter_taxa,mg,missing}
+\alias{filter_taxa,mg,list,logical}
+\alias{filter_taxa,list,list,logical-method}
+\alias{filter_taxa,list,list,logical}
 \title{Filter taxa based on across-sample abundance criteria.}
 \usage{
 filter_taxa(object, flist, join.trim)
 
 \S4method{filter_taxa}{mg,list,logical}(object, flist, join.trim)
 
-\S4method{filter_taxa}{mg,list,missing}(object, flist, join.trim)
+\S4method{filter_taxa}{list,list,logical}(object, flist, join.trim)
 }
 \arguments{
-\item{object}{(Required) \code{\link{mg-class}}.}
+\item{object}{\code{\link{mg-class}}.}
 
-\item{flist}{(Required) \code{\link{list}}. Each element of flist it must be
+\item{flist}{\code{\link{list}}. Each element of flist it must be
 a function.}
 
-\item{join.trim}{(Optional) Default \code{FALSE}.}
+\item{join.trim}{logical indicates when merge the filtered taxa.}
 }
 \description{
 It applies an arbitrary set of functions list as across-sample criteria,

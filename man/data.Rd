@@ -5,11 +5,15 @@
 \alias{data}
 \alias{data,mg-method}
 \alias{data,mg}
+\alias{data,list-method}
+\alias{data,list}
 \title{Retrieves ngs data.}
 \usage{
 data(object)
 
 \S4method{data}{mg}(object)
+
+\S4method{data}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

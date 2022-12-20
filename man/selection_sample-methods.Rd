@@ -5,11 +5,15 @@
 \alias{selection_sample}
 \alias{selection_sample,mg,vector-method}
 \alias{selection_sample,mg,vector}
+\alias{selection_sample,list,vector-method}
+\alias{selection_sample,list,vector}
 \title{Selection a subset of samples from mg object.}
 \usage{
 selection_sample(object, idx)
 
 \S4method{selection_sample}{mg,vector}(object, idx)
+
+\S4method{selection_sample}{list,vector}(object, idx)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

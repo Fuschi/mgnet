@@ -7,6 +7,10 @@
 \alias{relative,mg,missing}
 \alias{relative,mg,character-method}
 \alias{relative,mg,character}
+\alias{relative,list,missing-method}
+\alias{relative,list,missing}
+\alias{relative,list,character-method}
+\alias{relative,list,character}
 \title{Get relative abundances.}
 \usage{
 relative(object,rank)
@@ -14,6 +18,10 @@ relative(object,rank)
 \S4method{relative}{mg,missing}(object)
 
 \S4method{relative}{mg,character}(object, rank)
+
+\S4method{relative}{list,missing}(object)
+
+\S4method{relative}{list,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

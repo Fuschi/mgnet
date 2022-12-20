@@ -5,6 +5,8 @@
 \alias{ntaxa}
 \alias{ntaxa,mg-method}
 \alias{ntaxa,mg}
+\alias{ntaxa,list-method}
+\alias{ntaxa,list}
 \alias{ntaxa,mgnet-method}
 \alias{ntaxa,mgnet}
 \title{Get number of taxa}
@@ -12,6 +14,8 @@
 ntaxa(object)
 
 \S4method{ntaxa}{mg}(object)
+
+\S4method{ntaxa}{list}(object)
 
 \S4method{ntaxa}{mgnet}(object)
 }

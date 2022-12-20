@@ -7,6 +7,10 @@
 \alias{abundance,missing}
 \alias{abundance,mg,character-method}
 \alias{abundance,character}
+\alias{abundance,list,missing-method}
+\alias{abundance,list,missing}
+\alias{abundance,list,character-method}
+\alias{abundance,list,character}
 \title{Get abundances at choosen rank.}
 \usage{
 abundance(object,rank)
@@ -14,6 +18,10 @@ abundance(object,rank)
 \S4method{abundance}{mg,missing}(object)
 
 \S4method{abundance}{mg,character}(object, rank)
+
+\S4method{abundance}{list,missing}(object)
+
+\S4method{abundance}{list,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

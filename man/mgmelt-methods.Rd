@@ -4,11 +4,15 @@
 \name{mgmelt}
 \alias{mgmelt}
 \alias{mgmelt,mg-method}
+\alias{mgmelt,list-method}
+\alias{mgmelt,list}
 \title{Melt mg object into form suitable for easy casting.}
 \usage{
 mgmelt(object)
 
 \S4method{mgmelt}{mg}(object)
+
+\S4method{mgmelt}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

@@ -5,11 +5,15 @@
 \alias{sample_name}
 \alias{sample_name,mg-method}
 \alias{sample_name,mg}
+\alias{sample_name,list-method}
+\alias{sample_name,list}
 \title{Get samples names.}
 \usage{
 sample_name(object)
 
 \S4method{sample_name}{mg}(object)
+
+\S4method{sample_name}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

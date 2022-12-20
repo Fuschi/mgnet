@@ -7,6 +7,10 @@
 \alias{taxa_name,mg,missing}
 \alias{taxa_name,mg,character-method}
 \alias{taxa_name,mg,character}
+\alias{taxa_name,list,missing-method}
+\alias{taxa_name,list,missing}
+\alias{taxa_name,list,character-method}
+\alias{taxa_name,list,character}
 \title{Get taxa name.}
 \usage{
 taxa_name(object, rank)
@@ -14,6 +18,10 @@ taxa_name(object, rank)
 \S4method{taxa_name}{mg,missing}(object)
 
 \S4method{taxa_name}{mg,character}(object, rank)
+
+\S4method{taxa_name}{list,missing}(object)
+
+\S4method{taxa_name}{list,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

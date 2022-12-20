@@ -5,6 +5,8 @@
 \alias{taxaID}
 \alias{taxaID,mg-method}
 \alias{taxaID,mg}
+\alias{taxaID,list-method}
+\alias{taxaID,list}
 \alias{taxaID,mgnet-method}
 \alias{taxaID,mgnet}
 \title{Get taxa ID.}
@@ -12,6 +14,8 @@
 taxaID(object)
 
 \S4method{taxaID}{mg}(object)
+
+\S4method{taxaID}{list}(object)
 
 \S4method{taxaID}{mgnet}(object)
 }

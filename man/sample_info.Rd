@@ -5,11 +5,15 @@
 \alias{sample_info}
 \alias{sample_info,mg-method}
 \alias{sample_info,mg}
+\alias{sample_info,list-method}
+\alias{sample_info,list}
 \title{Get sample metadata variables.}
 \usage{
 sample_info(object)
 
 \S4method{sample_info}{mg}(object)
+
+\S4method{sample_info}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

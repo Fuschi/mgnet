@@ -5,11 +5,15 @@
 \alias{aggregate_taxa}
 \alias{aggregate_taxa,mg,character-method}
 \alias{aggregate_taxa,mg,character}
+\alias{aggregate_taxa,list,character-method}
+\alias{aggregate_taxa,list,character}
 \title{Organize data in higher taxonomic level.}
 \usage{
 aggregate_taxa(object, rank)
 
 \S4method{aggregate_taxa}{mg,character}(object, rank)
+
+\S4method{aggregate_taxa}{list,character}(object, rank)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

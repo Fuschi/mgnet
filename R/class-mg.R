@@ -161,6 +161,11 @@ setGeneric("data", function(object) standardGeneric("data"))
 #' @rdname data
 #' @aliases data,mg
 setMethod("data", "mg", function(object){return(object@data)})
+#' @rdname data
+#' @aliases data,list
+setMethod("data","list",
+          function(object){
+            lapply(object, selectMethod(f="data",signature="mg"))})
 #####################################
 # META
 #####################################
@@ -181,6 +186,11 @@ setGeneric("meta", function(object) standardGeneric("meta"))
 #' @rdname meta
 #' @aliases meta,mg
 setMethod("meta", "mg", function(object){return(object@meta)})
+#' @rdname meta
+#' @aliases meta,list
+setMethod("meta","list",
+          function(object){
+            lapply(object, selectMethod(f="meta",signature="mg"))})
 #####################################
 # TAXA
 #####################################
@@ -200,6 +210,11 @@ setGeneric("taxa", function(object) standardGeneric("taxa"))
 #' @rdname taxa
 #' @aliases taxa,mg
 setMethod("taxa", "mg", function(object){return(object@taxa)})
+#' @rdname taxa
+#' @aliases taxa,list
+setMethod("taxa","list",
+          function(object){
+            lapply(object, selectMethod(f="taxa",signature="mg"))})
 ################################################################################
 ################################################################################
 # END GETTERS MG
@@ -363,6 +378,11 @@ setMethod("nsample", "mg", function(object){
   else if(length(object@meta!=0)) return(nrow(object@meta))
   else return(NULL)
 })
+#' @rdname nsample
+#' @aliases nsample,list
+setMethod("nsample","list",
+          function(object){
+            sapply(object, selectMethod(f="nsample",signature="mg"))})
 #####################################
 # NTAXA
 #####################################
@@ -386,6 +406,11 @@ setMethod("ntaxa", "mg", function(object){
   else if(length(object@taxa!=0)) return(nrow(object@taxa))
   else return(NULL)
 })
+#' @rdname ntaxa
+#' @aliases ntaxa,list
+setMethod("ntaxa","list",
+          function(object){
+            sapply(object, selectMethod(f="ntaxa",signature="mg"))})
 #####################################
 # SAMPLE NAME
 #####################################
@@ -409,6 +434,11 @@ setMethod("sample_name", "mg", function(object){
   else if(length(object@taxa!=0)) return(rownames(object@meta))
   else return(0)
 })
+#' @rdname sample_name
+#' @aliases sample_name,list
+setMethod("sample_name","list",
+          function(object){
+            lapply(object, selectMethod(f="sample_name",signature="mg"))})
 #####################################
 # TAXA ID
 #####################################
@@ -432,6 +462,11 @@ setMethod("taxaID", "mg", function(object){
   else if(length(object@taxa!=0)) return(rownames(object@taxa))
   else return(0)
 })
+#' @rdname taxaID
+#' @aliases taxaID,list
+setMethod("taxaID","list",
+          function(object){
+            lapply(object, selectMethod(f="taxaID",signature="mg"))})
 #####################################
 # RANKS 
 #####################################
@@ -451,6 +486,11 @@ setGeneric("ranks", function(object) standardGeneric("ranks"))
 #' @rdname ranks
 #' @aliases ranks,mg
 setMethod("ranks", "mg", function(object){return(colnames(object@taxa))})
+#' @rdname ranks
+#' @aliases ranks,list
+setMethod("ranks","list",
+          function(object){
+            lapply(object, selectMethod(f="ranks",signature="mg"))})
 #####################################
 # NRANKS 
 #####################################
@@ -470,6 +510,11 @@ setGeneric("nrank", function(object) standardGeneric("nrank"))
 #' @rdname nrank
 #' @aliases nrank,mg
 setMethod("nrank", "mg", function(object){return(ncol(object@taxa))})
+#' @rdname nrank
+#' @aliases nrank,list
+setMethod("nrank","list",
+          function(object){
+            lapply(object, selectMethod(f="nrank",signature="mg"))})
 #####################################
 # SAMPLE_INFO 
 #####################################
@@ -489,6 +534,11 @@ setGeneric("sample_info", function(object) standardGeneric("sample_info"))
 #' @rdname sample_info
 #' @aliases sample_info,mg
 setMethod("sample_info", "mg", function(object){return(colnames(object@meta))})
+#' @rdname sample_info
+#' @aliases sample_info,list
+setMethod("sample_info","list",
+          function(object){
+            lapply(object, selectMethod(f="sample_info",signature="mg"))})
 #####################################
 # TAXA NAME 
 #####################################
@@ -517,6 +567,18 @@ setMethod("taxa_name", c("mg","character"),
                                                     toString(ranks(object)),"}"))
             return(object@taxa[,rank])
           })
+#' @rdname taxa_name
+#' @aliases taxa_name,list,missing
+setMethod("taxa_name",c("list","missing"),
+          function(object){
+            lapply(object, selectMethod(f="taxa_name",signature=c("mg","missing")))})
+#' @rdname taxa_name
+#' @aliases taxa_name,list,character
+setMethod("taxa_name",c("list","character"),
+          function(object,rank){
+            lapply(object, selectMethod(f="taxa_name",signature=c("mg","character")),
+                   rank=rank)}
+          )
 #####################################
 # DEPTH 
 #####################################
@@ -538,6 +600,11 @@ setGeneric("depth", function(object) standardGeneric("depth"))
 #' @rdname depth
 #' @aliases depth,mg
 setMethod("depth", "mg",function(object)return(object@meta$Depth))
+#' @rdname depth
+#' @aliases depth,list
+setMethod("depth","list",
+          function(object){
+            lapply(object, selectMethod(f="depth",signature="mg"))})
 #####################################
 # ABUNDANCE 
 #####################################
@@ -578,6 +645,18 @@ setMethod("abundance", c("mg","character"),function(object,rank){
   
   return(data.aggregate)
 })
+#' @rdname abundance
+#' @aliases abundance,list,missing
+setMethod("abundance",c("list","missing"),
+          function(object){
+            lapply(object, selectMethod(f="abundance",signature=c("mg","missing")))})
+#' @rdname abundance
+#' @aliases abundance,list,character
+setMethod("abundance",c("list","character"),
+          function(object,rank){
+            lapply(object, selectMethod(f="abundance",signature=c("mg","character")),
+                   rank=rank)}
+)
 #####################################
 # RELVATIVE 
 #####################################
@@ -616,6 +695,18 @@ setMethod("relative", c("mg","character"),function(object,rank){
   
   return(data.aggregate/depth(object))
 })
+#' @rdname relative
+#' @aliases relative,list,missing
+setMethod("relative",c("list","missing"),
+          function(object){
+            lapply(object, selectMethod(f="relative",signature=c("mg","missing")))})
+#' @rdname relative
+#' @aliases relative,list,character
+setMethod("relative",c("list","character"),
+          function(object,rank){
+            lapply(object, selectMethod(f="relative",signature=c("mg","character")),
+                   rank=rank)}
+)
 #####################################
 # EMPTY 
 #####################################
@@ -692,6 +783,13 @@ setMethod("aggregate_taxa", c("mg","character"),
             
             return(new("mg",data=data.aggregate, meta=object@meta, taxa=taxa.aggregate))
           })
+#' @rdname aggregate_taxa
+#' @aliases aggregate_taxa,list,character
+setMethod("aggregate_taxa",c("list","character"),
+          function(object,rank){
+            lapply(object, selectMethod(f="aggregate_taxa",signature=c("mg","character")),
+                   rank=rank)}
+)
 ################################################################################
 ################################################################################
 # END AGGREGATE TAXA
@@ -742,6 +840,12 @@ setMethod("mgmelt", "mg",
             
             return(mdf)
           })
+#' @rdname mgmelt-methods
+#' @aliases mgmelt,list
+setMethod("mgmelt","list",
+          function(object){
+            lapply(object, selectMethod(f="mgmelt",signature="mg"))}
+)
 ################################################################################
 ################################################################################
 # END MGMELT
@@ -785,6 +889,13 @@ setMethod("selection_sample", c("mg","vector"),
                       meta=meta.new,
                       taxa=object@taxa))
           })
+#' @rdname selection_sample-methods
+#' @aliases selection_sample,list,vector
+setMethod("selection_sample",c("list","vector"),
+          function(object,idx){
+            lapply(object, selectMethod(f="selection_sample",signature=c("mg","vector")),
+                   idx=idx)}
+)
 ################################################################################
 ################################################################################
 # END SAMPLE SELECTION
@@ -807,8 +918,8 @@ setMethod("selection_sample", c("mg","vector"),
 #' @usage selection_taxa(object, idx)
 #' 
 #' @param object (Required) \code{\link{mg-class}}.
-#' @param idx (Required) Vector of integer position indices or logical (like to
-#' \code{[} extractor function).
+#' @param idx (Required) Vector of integer position indices or logical or names 
+#' of taxa (like to \code{[} extractor function).
 #' 
 #' @rdname selection_taxa-methods
 #' @docType methods
@@ -828,6 +939,13 @@ setMethod("selection_taxa", c("mg","vector"),
                       meta=object@meta,
                       taxa=taxa.new))
           })
+#' @rdname selection_taxa-methods
+#' @aliases selection_taxa,list,vector
+setMethod("selection_taxa",c("list","vector"),
+          function(object,idx){
+            lapply(object, selectMethod(f="selection_taxa",signature=c("mg","vector")),
+                   idx=idx)}
+)
 ################################################################################
 ################################################################################
 # END TAXA SELECTION
@@ -853,17 +971,17 @@ setMethod("selection_taxa", c("mg","vector"),
 #' 
 #' @usage filter_taxa(object, flist, join.trim)
 #' 
-#' @param object (Required) \code{\link{mg-class}}.
-#' @param flist (Required) \code{\link{list}}. Each element of flist it must be
+#' @param object \code{\link{mg-class}}.
+#' @param flist \code{\link{list}}. Each element of flist it must be
 #' a function.
-#' @param join.trim (Optional) Default \code{FALSE}.
+#' @param join.trim logical indicates when merge the filtered taxa.
 #' 
 #' @rdname filter_taxa-methods
 #' @docType methods
 #' @export
 setGeneric("filter_taxa", function(object,flist,join.trim) standardGeneric("filter_taxa"))
 #' @rdname filter_taxa-methods
-#' @aliases filter_taxa,mg,logical
+#' @aliases filter_taxa,mg,list,logical
 setMethod("filter_taxa", c("mg","list","logical"),
           function(object,flist,join.trim){
             
@@ -886,22 +1004,12 @@ setMethod("filter_taxa", c("mg","list","logical"),
             return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
           })
 #' @rdname filter_taxa-methods
-#' @aliases filter_taxa,mg,missing
-setMethod("filter_taxa", c("mg","list","missing"),
+#' @aliases filter_taxa,list,list,logical
+setMethod("filter_taxa", c("list","list","logical"),
           function(object,flist,join.trim){
-            
-            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
-            
-            test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
-            if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance values and return a logical.")
-            
-            criteria <- sapply(flist,function(x) apply(object@data,2,x))
-            criteria <- as.logical(apply(criteria,1,prod))
-            
-            new.data <- object@data[,which(criteria),drop=F]
-            new.taxa <- taxa(object)[which(criteria),,drop=F]
-            
-            return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
+            lapply(object, 
+                   selectMethod(f="filter_taxa",signature=c("mg","list","logical")),
+                   flist=flist, join.trim=join.trim)
           })
 ################################################################################
 ################################################################################

@@ -5,11 +5,15 @@
 \alias{nrank}
 \alias{nrank,mg-method}
 \alias{nrank,mg}
+\alias{nrank,list-method}
+\alias{nrank,list}
 \title{Get taxonomic ranks number.}
 \usage{
 nrank(object)
 
 \S4method{nrank}{mg}(object)
+
+\S4method{nrank}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

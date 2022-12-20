@@ -5,11 +5,15 @@
 \alias{meta}
 \alias{meta,mg-method}
 \alias{meta,mg}
+\alias{meta,list-method}
+\alias{meta,list}
 \title{Retrieves sample metadata.}
 \usage{
 meta(object)
 
 \S4method{meta}{mg}(object)
+
+\S4method{meta}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

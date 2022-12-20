@@ -5,11 +5,15 @@
 \alias{taxa}
 \alias{taxa,mg-method}
 \alias{taxa,mg}
+\alias{taxa,list-method}
+\alias{taxa,list}
 \title{Retrieves taxonomy table.}
 \usage{
 taxa(object)
 
 \S4method{taxa}{mg}(object)
+
+\S4method{taxa}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}
