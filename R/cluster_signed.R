@@ -116,10 +116,11 @@ setMethod("cluster_signed", c("igraph","character"), function(obj,OS){
 setMethod("cluster_signed",c("mgnet","character"),
           function(obj,OS){
             comm(obj) <- cluster_signed(netw(obj),OS=OS)
+            return(obj)
           })
 #' @rdname cluster_signed-methods
 #' @aliases cluster_signed-methods,list,character
 setMethod("cluster_signed",c("list","character"),
           function(obj,OS){
-            lapply(obj, selectMethod(f="cluster_signed",signature=c("list","character")),
+            lapply(obj, selectMethod(f="cluster_signed",signature=c("mgnet","character")),
                    OS=OS)})
