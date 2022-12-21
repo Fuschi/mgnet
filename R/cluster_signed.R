@@ -7,9 +7,10 @@
 #' The algorithm tries to find dense subgraph, also called communities via
 #' optimization of a signed definition of modularity score.
 #' 
-#'@param graph weighted undirected network belong to \code{\link{igraph}} class.
+#'@param obj weighted undirected network belong to \code{\link{igraph}} class 
+#'or an \code{\link{mg-class}}.
 #'@param OS string with the operating system running. Possible choices are 
-#'"Linux","Windows","Mac" (default "Linux").
+#'"Linux","Windows","Mac".
 #'
 #'@return \code{\link{communities}} igraph object able to manage to communities
 #'graph info. The unique difference from igraph routine is the treatment with 
@@ -19,9 +20,15 @@
 #'@importFrom igraph graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes
 #'@importFrom stringr str_split
 #'
-#'@export
-cluster_signed <- function(graph, OS="Linux"){
+#' @rdname cluster_signed-methods
+#' @docType methods
+#' @export
+setGeneric("cluster_signed", function(obj,OS) standardGeneric("cluster_signed"))
+#' @rdname cluster_signed-methods
+#' @aliases cluster_signed,igraph,character
+setMethod("cluster_signed", c("igraph","character"), function(obj,OS){
   
+  graph <- obj
   #Check Graph
   OS <- match.arg(OS,c("Linux","Windows","Mac"))
   if(!is.weighted(graph)) stop("graph must be weighted graph")
@@ -103,4 +110,16 @@ cluster_signed <- function(graph, OS="Linux"){
   
   #return the results as communities structure of igraph package
   return(res)
-}
+})
+#' @rdname cluster_signed-methods
+#' @aliases cluster_signed-methods,mgnet,character
+setMethod("cluster_signed",c("mgnet","character"),
+          function(obj,OS){
+            comm(obj) <- cluster_signed(netw(obj),OS=OS)
+          })
+#' @rdname cluster_signed-methods
+#' @aliases cluster_signed-methods,list,character
+setMethod("cluster_signed",c("list","character"),
+          function(obj,OS){
+            lapply(obj, selectMethod(f="cluster_signed",signature=c("list","character")),
+                   OS=OS)})

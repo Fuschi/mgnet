@@ -5,11 +5,15 @@
 \alias{remove_smaller_comm}
 \alias{remove_smaller_comm,mgnet,numeric,logical-method}
 \alias{remove_smaller_comm,mgnet,logical}
+\alias{remove_smaller_comm,list,numeric,logical-method}
+\alias{remove_smaller_comm-methods,list,numeric,logical}
 \title{Remove smaller communities}
 \usage{
 remove_smaller_comm(obj, size, trim)
 
 \S4method{remove_smaller_comm}{mgnet,numeric,logical}(obj, size, trim)
+
+\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim)
 }
 \arguments{
 \item{obj}{\code{\link{mgnet-class}}}

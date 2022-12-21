@@ -18,6 +18,8 @@ taxaID(object)
 \S4method{taxaID}{list}(object)
 
 \S4method{taxaID}{mgnet}(object)
+
+\S4method{taxaID}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

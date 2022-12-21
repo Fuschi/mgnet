@@ -5,11 +5,15 @@
 \alias{arrange_vertices}
 \alias{arrange_vertices,mgnet,matrix-method}
 \alias{arrange_vertices,mgnet,matrix}
+\alias{arrange_vertices,list,matrix-method}
+\alias{arrange_vertices,list,matrix}
 \title{Arrange the vertex number}
 \usage{
 arrange_vertices(obj, new_taxa)
 
 \S4method{arrange_vertices}{mgnet,matrix}(obj, new_taxa)
+
+\S4method{arrange_vertices}{list,matrix}(obj, new_taxa)
 }
 \arguments{
 \item{obj}{\code{\link{mgnet}} object}

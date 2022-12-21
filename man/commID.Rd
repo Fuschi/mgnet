@@ -5,11 +5,15 @@
 \alias{commID}
 \alias{commID,mgnet-method}
 \alias{commID,mgnet}
+\alias{commID,list-method}
+\alias{commID,list}
 \title{Get communities ID.}
 \usage{
 commID(object)
 
 \S4method{commID}{mgnet}(object)
+
+\S4method{commID}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mgnet-class}}.}

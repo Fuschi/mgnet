@@ -5,11 +5,15 @@
 \alias{netw}
 \alias{netw,mgnet-method}
 \alias{netw,mgnet}
+\alias{netw,list-method}
+\alias{netw,list}
 \title{Retrieves netw.}
 \usage{
 netw(object)
 
 \S4method{netw}{mgnet}(object)
+
+\S4method{netw}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mgnet-class}}.}

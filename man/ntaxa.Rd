@@ -18,6 +18,8 @@ ntaxa(object)
 \S4method{ntaxa}{list}(object)
 
 \S4method{ntaxa}{mgnet}(object)
+
+\S4method{ntaxa}{list}(object)
 }
 \arguments{
 \item{object}{(Required) \code{\link{mg-class}}.}

@@ -5,11 +5,15 @@
 \alias{default_decoration}
 \alias{default_decoration,mgnet-method}
 \alias{default_decoration,mgnet}
+\alias{default_decoration,list-method}
+\alias{default_decoration-methods,list,numeric,logical}
 \title{Add graphical decorations}
 \usage{
 default_decoration(obj)
 
 \S4method{default_decoration}{mgnet}(obj)
+
+\S4method{default_decoration}{list}(obj)
 }
 \arguments{
 \item{obj}{\code{\link{mgnet-class}}}

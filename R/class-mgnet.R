@@ -161,6 +161,11 @@ setGeneric("netw", function(object) standardGeneric("netw"))
 #' @rdname netw
 #' @aliases netw,mgnet
 setMethod("netw", "mgnet", function(object){return(object@netw)})
+#' @rdname netw
+#' @aliases netw,list
+setMethod("netw","list",
+          function(object){
+            lapply(object, selectMethod(f="netw",signature="mgnet"))})
 #####################################
 # COMM
 #####################################
@@ -180,6 +185,11 @@ setGeneric("comm", function(object) standardGeneric("comm"))
 #' @rdname comm
 #' @aliases comm,mgnet
 setMethod("comm", "mgnet", function(object){return(object@comm)})
+#' @rdname comm
+#' @aliases comm,list
+setMethod("comm","list",
+          function(object){
+            lapply(object, selectMethod(f="comm",signature="mgnet"))})
 ################################################################################
 ################################################################################
 # END GETTERS MGNET
@@ -360,6 +370,11 @@ setMethod("ntaxa", "mgnet", function(object){
   else if(length(object@netw!=0)) return(vcount(object@netw))
   else return(NULL)
 })
+#' @rdname ntaxa
+#' @aliases ntaxa,list
+setMethod("ntaxa","list",
+          function(object){
+            lapply(object, selectMethod(f="ntaxa",signature="mgnet"))})
 #####################################
 # TAXAID
 #####################################
@@ -372,6 +387,11 @@ setMethod("taxaID", "mgnet", function(object){
   else if(length(object@netw!=0)) return(V(object@netw)$name)
   else return(0)
 })
+#' @rdname taxaID
+#' @aliases taxaID,list
+setMethod("taxaID","list",
+          function(object){
+            lapply(object, selectMethod(f="taxaID",signature="mgnet"))})
 #####################################
 # COMMID
 #####################################
@@ -398,6 +418,11 @@ setMethod("commID", "mgnet", function(object){
     stop("the comm slot is not present")
   }
 })
+#' @rdname commID
+#' @aliases commID,list
+setMethod("commID","list",
+          function(object){
+            lapply(object, selectMethod(f="commID",signature="mgnet"))})
 #####################################
 # EMPTY 
 #####################################
@@ -460,7 +485,13 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
             
             return(mgnet(data=data,taxa=new_taxa,adj=adj.new))
           })
-
+#' @rdname arrange_vertices-methods
+#' @aliases arrange_vertices,list,matrix
+setMethod("arrange_vertices",c("list","matrix"),
+          function(obj,new_taxa){
+            lapply(obj, selectMethod(f="arrange_vertices",
+                                        signature=c("mgnet","matrix")),
+                   new_taxa=new_taxa)})
 ################################################################################
 ################################################################################
 # END ARRANGE VERTICES
@@ -528,6 +559,13 @@ setMethod("remove_smaller_comm", c("mgnet","numeric","logical"), function(obj, s
              data=data, meta=obj@meta, taxa=taxa,
              netw=graph.sub,comm=comm.sub))
 })
+#' @rdname remove_smaller_comm-methods
+#' @aliases remove_smaller_comm-methods,list,numeric,logical
+setMethod("remove_smaller_comm",c("list","numeric","logical"),
+          function(obj,size,trim){
+            lapply(obj, selectMethod(f="remove_smaller_comm",
+                                     signature=c("mgnet","numeric","logical")),
+                   size=size,trim=trim)})
 ################################################################################
 ################################################################################
 # END REMOVE SMALLER COMMUNITIES
@@ -574,66 +612,14 @@ setMethod("default_decoration", "mgnet", function(obj){
   
   return(obj)
 })
+#' @rdname default_decoration-methods
+#' @aliases default_decoration-methods,list,numeric,logical
+setMethod("default_decoration","list",
+          function(obj){
+            lapply(obj, selectMethod(f="default_decoration",
+                                     signature="mgnet"))})
 ################################################################################
 ################################################################################
 # GRAPHICAL DECORATIONS
-################################################################################
-################################################################################
-
-
-
-
-################################################################################
-################################################################################
-# SAMPLE SELECTION
-################################################################################
-################################################################################
-setMethod("selection_sample", c("mgnet","vector"),
-          function(object,idx){
-            
-            warning("selection_sample is not well defined in mgnet class.
-                    It return a simply mg without netw and comm info")
-            
-            if(length(idx)>nsample(object)) stop("there are more indices than sample")
-            
-            ifelse(length(data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
-            ifelse(length(meta)!=0, meta.new<-object@meta[idx,,drop=F], meta.new<-object@meta)
-            
-            return(mg(data=data.new,
-                      meta=meta.new,
-                      taxa=object@taxa))
-          })
-################################################################################
-################################################################################
-# END SAMPLE SELECTION
-################################################################################
-################################################################################
-
-
-
-
-################################################################################
-################################################################################
-# SELECTION TAXA
-################################################################################
-################################################################################
-setMethod("selection_taxa", c("mgnet","vector"),
-          function(object,idx){
-            
-            warning("selection_taxa is not well defined in mgnet class.
-                    It return a simply mg without netw and comm info")
-            
-            if(length(idx)>ntaxa(object)) stop("there are more indices than sample")
-            
-            ifelse(length(data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
-            ifelse(length(taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
-            
-            return(mg(data=data.new,
-                      meta=object@meta,
-                      taxa=taxa.new))
-          })
-################################################################################
-################################################################################
-# SELECTION TAXA
 ################################################################################
 ################################################################################
