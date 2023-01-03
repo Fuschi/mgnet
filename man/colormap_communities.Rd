@@ -4,12 +4,10 @@
 \alias{colormap_communities}
 \title{Create color palette for communities}
 \usage{
-colormap_communities(n = 20, seed = 123)
+colormap_communities(n = 20)
 }
 \arguments{
 \item{n}{positive integer indicated the number of distinct color.}
-
-\item{seed}{random seed for reproducibility.}
 }
 \description{
 User wrapper for distinctColorPalette function of randomcoloR

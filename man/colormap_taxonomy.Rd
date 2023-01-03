@@ -4,12 +4,10 @@
 \alias{colormap_taxonomy}
 \title{Create color palette for taxonomy}
 \usage{
-colormap_taxonomy(taxaID, seed = 123)
+colormap_taxonomy(taxaID)
 }
 \arguments{
 \item{taxaID}{character vector with all taxonomic classification.}
-
-\item{seed}{random seed for reproducibility.}
 }
 \description{
 User wrapper for distinctColorPalette function of randomcoloR

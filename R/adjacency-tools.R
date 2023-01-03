@@ -86,9 +86,14 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
   if(!is.null(x)){
     res.psych <- psych::corr.test(x=x,use="pairwise",method=method,adjust=adjust,
                                   alpha=alpha,ci=FALSE)
-    padj <- res.psych$p;
-    padj[upper.tri(padj)] <- res.psych$p.adj
-    padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    
+    if(adjust!="none"){
+      padj <- res.psych$p
+      padj[upper.tri(padj)] <- res.psych$p.adj
+      padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    } else {
+      padj <- res.psych$p
+    }
     diag(padj) <- 1
     adj <- res.psych$r*(padj<=alpha)
     
@@ -96,11 +101,16 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
     
     res.psych <- psych::corr.p(r=r,n=n,adjust=adjust,
                                   alpha=alpha,ci=FALSE)
-    padj <- res.psych$p;
-    padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    
+    if(adjust!="none"){
+      padj <- res.psych$p
+      padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    } else {
+      padj <- res.psych$p
+    }
+    
     diag(padj) <- 1
     adj <- res.psych$r*(padj<=alpha)
-
   }
   
   # return

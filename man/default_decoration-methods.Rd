@@ -7,6 +7,9 @@
 \alias{default_decoration,mgnet}
 \alias{default_decoration,list-method}
 \alias{default_decoration-methods,list,numeric,logical}
+\alias{layout_signed,igraph-method}
+\alias{default_decoration,igraph}
+\alias{layout_signed,mgnet-method}
 \title{Add graphical decorations}
 \usage{
 default_decoration(obj)
@@ -14,6 +17,10 @@ default_decoration(obj)
 \S4method{default_decoration}{mgnet}(obj)
 
 \S4method{default_decoration}{list}(obj)
+
+\S4method{layout_signed}{igraph}(obj)
+
+\S4method{layout_signed}{mgnet}(obj)
 }
 \arguments{
 \item{obj}{\code{\link{mgnet-class}}}

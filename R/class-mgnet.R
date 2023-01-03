@@ -626,3 +626,50 @@ setMethod("default_decoration","list",
 # GRAPHICAL DECORATIONS
 ################################################################################
 ################################################################################
+
+
+
+################################################################################
+################################################################################
+# SIGNED LAYOUT
+################################################################################
+################################################################################
+#' Signed-Weighted Graph Layout
+#'
+#' @description It elaborates the coordinates for the representation of
+#' the vertices of the graph considering only the links with a positive sign.
+#' 
+#' @param obj network belong to igraph or mgnet class.
+#'
+#' @importFrom igraph layout.fruchterman.reingold subgraph.edges E is.igraph
+#' @rdname layout_signed-methods
+#' @docType methods
+#' @export
+setGeneric("layout_signed", function(obj) standardGeneric("layout_signed"))
+#' @rdname default_decoration-methods
+#' @aliases default_decoration,igraph
+setMethod("layout_signed","igraph",function(obj){
+  
+  graph.sub <- subgraph.edges(graph=obj,
+                              eids=which(E(obj)$weight>0),
+                              delete.vertices=FALSE)
+  
+  layout <- layout.fruchterman.reingold(graph.sub)
+  return(layout)
+})
+#' @rdname default_decoration-methods
+#' @aliases default_decoration,mgnet
+setMethod("layout_signed","mgnet",function(obj){
+  
+  graph.sub <- subgraph.edges(graph=netw(obj),
+                              eids=which(E(netw(obj))$weight>0),
+                              delete.vertices=FALSE)
+  
+  layout <- layout.fruchterman.reingold(graph.sub)
+  return(layout)
+})
+################################################################################
+################################################################################
+# END SIGNED LAYOUT
+################################################################################
+################################################################################
