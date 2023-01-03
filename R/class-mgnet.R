@@ -324,6 +324,9 @@ setMethod("show","mgnet",
             cat("******* Class mgnet , method Show ******* \n")
             cat(paste("Sample Number:",max(nrow(object@data),nrow(object@meta)),"\n"))
             cat(paste("Taxa Number:",max(ncol(object@data),nrow(object@taxa)),"\n"))
+            cat(paste("Zeros Percentage: ~",
+                      100*round(sum(object@data==0)/(nrow(object@data)*ncol(object@data)),4),
+                      "%\n",sep=""))
             cat(paste("Sample Meta Data:",paste(colnames(object@meta),collapse="," )),"\n")
             cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa),collapse=",")),"\n")
             cat(paste("Edge Number (Density): ",ecount(object@netw)," (",
