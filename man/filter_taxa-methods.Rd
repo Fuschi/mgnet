@@ -3,30 +3,26 @@
 \docType{methods}
 \name{filter_taxa}
 \alias{filter_taxa}
-\alias{filter_taxa,mg,list,logical-method}
-\alias{filter_taxa,mg,list,logical}
-\alias{filter_taxa,list,list,logical-method}
-\alias{filter_taxa,list,list,logical}
+\alias{filter_taxa,mg,list-method}
+\alias{filter_taxa,mg,list}
+\alias{filter_taxa,list,list-method}
+\alias{filter_taxa,list,list}
 \title{Filter taxa based on across-sample abundance criteria.}
 \usage{
-filter_taxa(object, flist, join.trim)
+filter_taxa(object, flist)
 
-\S4method{filter_taxa}{mg,list,logical}(object, flist, join.trim)
+\S4method{filter_taxa}{mg,list}(object, flist)
 
-\S4method{filter_taxa}{list,list,logical}(object, flist, join.trim)
+\S4method{filter_taxa}{list,list}(object, flist)
 }
 \arguments{
 \item{object}{\code{\link{mg-class}}.}
 
 \item{flist}{\code{\link{list}}. Each element of flist it must be
 a function.}
-
-\item{join.trim}{logical indicates when merge the filtered taxa.}
 }
 \description{
 It applies an arbitrary set of functions list as across-sample criteria,
-one taxa at a time. The function takes as input a mg object,
-and returns its trimmed mg version. Alternatively, if the \code{"trim"}
-option is set to \code{FALSE}, it return a logical vector indicating whether
-or not each taxa passed the criteria.
+one taxa at a time. The function takes as input a mg object, and returns its
+trimmed mg version.
 }

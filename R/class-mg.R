@@ -967,26 +967,23 @@ setMethod("selection_taxa",c("list","vector"),
 #' 
 #' @description 
 #' It applies an arbitrary set of functions list as across-sample criteria,
-#' one taxa at a time. The function takes as input a mg object,
-#' and returns its trimmed mg version. Alternatively, if the \code{"trim"} 
-#' option is set to \code{FALSE}, it return a logical vector indicating whether 
-#' or not each taxa passed the criteria.
+#' one taxa at a time. The function takes as input a mg object, and returns its 
+#' trimmed mg version.
 #' 
-#' @usage filter_taxa(object, flist, join.trim)
+#' @usage filter_taxa(object, flist)
 #' 
 #' @param object \code{\link{mg-class}}.
 #' @param flist \code{\link{list}}. Each element of flist it must be
 #' a function.
-#' @param join.trim logical indicates when merge the filtered taxa.
 #' 
 #' @rdname filter_taxa-methods
 #' @docType methods
 #' @export
-setGeneric("filter_taxa", function(object,flist,join.trim) standardGeneric("filter_taxa"))
+setGeneric("filter_taxa", function(object,flist) standardGeneric("filter_taxa"))
 #' @rdname filter_taxa-methods
-#' @aliases filter_taxa,mg,list,logical
-setMethod("filter_taxa", c("mg","list","logical"),
-          function(object,flist,join.trim){
+#' @aliases filter_taxa,mg,list
+setMethod("filter_taxa", c("mg","list"),
+          function(object,flist){
             
             if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
             
@@ -999,20 +996,15 @@ setMethod("filter_taxa", c("mg","list","logical"),
             new.data <- object@data[,which(criteria),drop=F]
             new.taxa <- taxa(object)[which(criteria),,drop=F]
             
-            if(join.trim){
-              new.data <- cbind(new.data,"trim"=rowSums(object@data[,which(!criteria)]))
-              new.taxa <- rbind(new.taxa,"trim"=rep("motley",nrank(object)))
-            }
-            
             return(mg(data=new.data,meta=meta(object),taxa=new.taxa))
           })
 #' @rdname filter_taxa-methods
-#' @aliases filter_taxa,list,list,logical
-setMethod("filter_taxa", c("list","list","logical"),
-          function(object,flist,join.trim){
+#' @aliases filter_taxa,list,list
+setMethod("filter_taxa", c("list","list"),
+          function(object,flist){
             lapply(object, 
-                   selectMethod(f="filter_taxa",signature=c("mg","list","logical")),
-                   flist=flist, join.trim=join.trim)
+                   selectMethod(f="filter_taxa",signature=c("mg","list")),
+                   flist=flist)
           })
 ################################################################################
 ################################################################################
