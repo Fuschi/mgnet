@@ -329,8 +329,11 @@ setMethod("show","mgnet",
                       "%\n",sep=""))
             cat(paste("Sample Meta Data:",paste(colnames(object@meta),collapse="," )),"\n")
             cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa),collapse=",")),"\n")
-            cat(paste("Edge Number (Density): ",ecount(object@netw)," (",
+            cat(paste("Edge Number (Density): ",ecount(object@netw)," (~",
                       round(edge_density(object@netw)*100,2),"%)","\n",sep=""))
+            cat(paste("Positive Edge: ",sum(E(netw(object))$weight>0)," (~",
+                      100*round(sum(E(netw(object))$weight>0)/ecount(netw(object)),2),
+                      "%)\n",sep=""))
             
             if(length(object@comm)!=0){
               cat(paste("Signed Communities Number:",max(membership(object@comm)),"\n"))
