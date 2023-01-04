@@ -696,3 +696,186 @@ plot.mgnet <- function(x,layout,...) {
 # END PLOT MGNET
 ################################################################################
 ################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# DEGREE MGNET
+################################################################################
+################################################################################
+#' Signed Vertices Degrees with Communities Info
+#'
+#' @description Calculates the vertices degree using the information on the 
+#' sign of the edges and the communities. The function make possible to distinguish
+#' between positive, negative or both sign of the edges and discern intra or extra
+#' (also both cases) communities edges.
+#' 
+#' @param obj mgnet class.
+#' @param sign character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type character with possible values "intra","extra","all".
+#'
+#' @importFrom stats setNames
+#' @importFrom igraph degree subgraph.edges intersection crossing
+#' @rdname degree_mgnet-methods
+#' @docType methods
+#' @export
+setGeneric("degree_mgnet", function(obj,sign,type) standardGeneric("degree_mgnet"))
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet,mgnet,character,character
+setMethod("degree_mgnet",c("mgnet","character","character"),function(obj,sign,type){
+ 
+  if(length(comm(obj))==0) stop("communities slots is empty")
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  type <- match.arg(type,c("intra","extra","all"))
+  
+  
+  n <- netw(obj)
+  c <- comm(obj)
+  
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  if(type=="intra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[!crossing(c,n)],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[crossing(c,n)],delete.vertices=FALSE)
+  } else {
+    sub.type <- n
+  }
+  
+  g.int <- intersection(sub.sign,sub.type)
+  return(degree(g.int))
+})
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet,mgnet,character,missing
+setMethod("degree_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+
+  n <- netw(obj)
+  c <- comm(obj)
+
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  return(degree(sub.sign))
+})
+################################################################################
+################################################################################
+# END DEGREE MGNET
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# STRENGTH MGNET
+################################################################################
+################################################################################
+#' Signed Vertices Strengths with Communities Info
+#'
+#' @description Calculates the vertices strengths using the information on the 
+#' sign of the edges and the communities. The function make possible to distinguish
+#' between positive, negative or both sign of the edges and discern intra or extra
+#' (also both cases) communities edges.
+#' 
+#' @param obj mgnet class.
+#' @param sign character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type character with possible values "intra","extra","all".
+#'
+#' @importFrom igraph degree subgraph.edges intersection
+#' @rdname strength_mgnet-methods
+#' @docType methods
+#' @export
+setGeneric("strength_mgnet", function(obj,sign,type) standardGeneric("strength_mgnet"))
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet,mgnet,character,character
+setMethod("strength_mgnet",c("mgnet","character","character"),function(obj,sign,type){
+  
+  if(length(comm(obj))==0) stop("communities slots is empty")
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  type <- match.arg(type,c("intra","extra","all"))
+  
+  n <- netw(obj)
+  c <- comm(obj)
+  
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  if(type=="intra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[!crossing(c,n)],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[crossing(c,n)],delete.vertices=FALSE)
+  } else {
+    sub.type <- n
+  }
+  
+  g.int <- intersection(sub.sign,sub.type)
+  adj.int <- as_adjacency_matrix(g.int,attr="weight_1",sparse=FALSE)
+  strength <- setNames(rowSums(adj.int),taxaID(obj))
+  return(strength)
+})
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet,mgnet,character,missing
+setMethod("strength_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  n <- netw(obj)
+  c <- comm(obj)
+
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  adj.sub <- as_adjacency_matrix(sub.sign,attr="weight",sparse=FALSE)
+  strength <- setNames(rowSums(adj.sub),taxaID(obj))
+  return(strength)
+})
+################################################################################
+################################################################################
+# END STRENGTH MGNET
+################################################################################
+################################################################################
