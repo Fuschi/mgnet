@@ -5,15 +5,23 @@
 \alias{degree_mgnet}
 \alias{degree_mgnet,mgnet,character,character-method}
 \alias{degree_mgnet,mgnet,character,character}
+\alias{degree_mgnet,list,character,character-method}
+\alias{degree_mgnet-methods,list,character,character}
 \alias{degree_mgnet,mgnet,character,missing-method}
 \alias{degree_mgnet,mgnet,character,missing}
+\alias{degree_mgnet,list,character,missing-method}
+\alias{degree_mgnet-methods,list,character,missing}
 \title{Signed Vertices Degrees with Communities Info}
 \usage{
 degree_mgnet(obj, sign, type)
 
 \S4method{degree_mgnet}{mgnet,character,character}(obj, sign, type)
 
+\S4method{degree_mgnet}{list,character,character}(obj, sign, type)
+
 \S4method{degree_mgnet}{mgnet,character,missing}(obj, sign, type)
+
+\S4method{degree_mgnet}{list,character,missing}(obj, sign, type)
 }
 \arguments{
 \item{obj}{mgnet class.}

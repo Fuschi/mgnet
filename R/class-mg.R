@@ -832,14 +832,17 @@ setMethod("mgmelt", "mg",
             
             if(length(object@data)==0){stop("\n data slot must be present")}
             
-            mdf <- melt(data=object@data)
+            mdf <- reshape2::melt(data=object@data)
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
-            mdf$Relative <- melt(relative(object))$value
+            mdf$Relative <- reshape2::melt(relative(object))$value
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
             if(length(object@meta!=0)) mdf <- cbind(mdf,object@meta[mdf$SampleID,])
-            mdf <- mdf[,-which(duplicated(t(mdf)))]
+            
+            if(any(duplicated(t(mdf)))){
+              mdf <- mdf[,-which(duplicated(t(mdf)))]
+            }
             
             return(mdf)
           })

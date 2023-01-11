@@ -488,6 +488,7 @@ setMethod("selection_vertices", c("mgnet","vector"),
               
             if(length(object@comm)!=0){
               comm.new <- object@comm
+              if(is.character(idx)) idx <- which(taxaID(object)%in%idx)
               comm.new$membership <- object@comm$membership[idx]
               comm.new$vcount <- length(comm.new$membership)
               comm.new$modularity <- NA
@@ -830,6 +831,13 @@ setMethod("degree_mgnet",c("mgnet","character","character"),function(obj,sign,ty
   return(degree(g.int))
 })
 #' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet-methods,list,character,character
+setMethod("degree_mgnet",c("list","character","character"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="degree_mgnet",
+                                     signature=c("mgnet","character","character")),
+                   sign=sign,type=type)})
+#' @rdname degree_mgnet-methods
 #' @aliases degree_mgnet,mgnet,character,missing
 setMethod("degree_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
   
@@ -852,6 +860,13 @@ setMethod("degree_mgnet",c("mgnet","character","missing"),function(obj,sign,type
   
   return(degree(sub.sign))
 })
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet-methods,list,character,missing
+setMethod("degree_mgnet",c("list","character","missing"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="degree_mgnet",
+                                     signature=c("mgnet","character","missing")),
+                   sign=sign)})
 ################################################################################
 ################################################################################
 # END DEGREE MGNET
@@ -921,6 +936,13 @@ setMethod("strength_mgnet",c("mgnet","character","character"),function(obj,sign,
   return(strength)
 })
 #' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet-methods,list,character,character
+setMethod("strength_mgnet",c("list","character","character"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="strength_mgnet",
+                                     signature=c("mgnet","character","character")),
+                   sign=sign,type=type)})
+#' @rdname strength_mgnet-methods
 #' @aliases strength_mgnet,mgnet,character,missing
 setMethod("strength_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
   
@@ -944,6 +966,13 @@ setMethod("strength_mgnet",c("mgnet","character","missing"),function(obj,sign,ty
   strength <- setNames(rowSums(adj.sub),taxaID(obj))
   return(strength)
 })
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet-methods,list,character,missing
+setMethod("strength_mgnet",c("list","character","missing"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="strength_mgnet",
+                                     signature=c("mgnet","character","missing")),
+                   sign=sign)})
 ################################################################################
 ################################################################################
 # END STRENGTH MGNET

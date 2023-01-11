@@ -5,15 +5,23 @@
 \alias{strength_mgnet}
 \alias{strength_mgnet,mgnet,character,character-method}
 \alias{strength_mgnet,mgnet,character,character}
+\alias{strength_mgnet,list,character,character-method}
+\alias{strength_mgnet-methods,list,character,character}
 \alias{strength_mgnet,mgnet,character,missing-method}
 \alias{strength_mgnet,mgnet,character,missing}
+\alias{strength_mgnet,list,character,missing-method}
+\alias{strength_mgnet-methods,list,character,missing}
 \title{Signed Vertices Strengths with Communities Info}
 \usage{
 strength_mgnet(obj, sign, type)
 
 \S4method{strength_mgnet}{mgnet,character,character}(obj, sign, type)
 
+\S4method{strength_mgnet}{list,character,character}(obj, sign, type)
+
 \S4method{strength_mgnet}{mgnet,character,missing}(obj, sign, type)
+
+\S4method{strength_mgnet}{list,character,missing}(obj, sign, type)
 }
 \arguments{
 \item{obj}{mgnet class.}
