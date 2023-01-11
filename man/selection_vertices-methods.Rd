@@ -23,5 +23,7 @@ of taxa (like to \code{[} extractor function).}
 }
 \description{
 The function takes as input a vector of logical or position
-indices to evaluate which taxa to keep. in progress...
+indices to evaluate which taxa to keep. The function make a subset of the mgnet
+object cutting the columns of data and the rows of taxa, making a subset of
+the network and creating a new communities object with only the conserved taxa.
 }

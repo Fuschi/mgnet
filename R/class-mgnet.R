@@ -934,7 +934,7 @@ setMethod("strength_mgnet",c("mgnet","character","missing"),function(obj,sign,ty
   
   if(sign=="positive"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
-  } else if(type=="extra"){
+  } else if(sign=="negative"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
   } else {
     sub.sign <- n
