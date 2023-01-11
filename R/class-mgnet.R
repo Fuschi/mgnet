@@ -448,6 +448,76 @@ setMethod("empty", c("mgnet"),function(object){
 
 ################################################################################
 ################################################################################
+# VERTICES SELECTION
+################################################################################
+################################################################################
+#' Selection a subset of taxa from mgnet object.
+#' 
+#' @description The function takes as input a vector of logical or position 
+#' indices to evaluate which taxa to keep. The function make a subset of the mgnet
+#' object cutting the columns of data and the rows of taxa, making a subset of 
+#' the network and creating a new communities object with only the conserved taxa.
+#' 
+#' @usage selection_vertices(object, idx)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' @param idx (Required) Vector of integer position indices or logical or names 
+#' of taxa (like to \code{[} extractor function).
+#'
+#' @importFrom igraph subgraph
+#' 
+#' @rdname selection_vertices-methods
+#' @docType methods
+#' @export
+setGeneric("selection_vertices", function(object,idx) standardGeneric("selection_vertices"))
+#' @rdname selection_vertices-methods
+#' @aliases selection_vertices,mgnet,vector
+setMethod("selection_vertices", c("mgnet","vector"),
+          function(object,idx){
+            
+            if(length(idx)>ntaxa(object)) stop("there are more indices than taxa")
+            
+            ifelse(length(object@data)!=0, data.new<-object@data[,idx,drop=F],  data.new<-object@data)
+            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[idx,,drop=F],  taxa.new<-object@taxa)
+            
+            if(length(object@netw)!=0){
+              netw.new<-igraph::subgraph(object@netw,idx)
+            }else{
+                netw.new<-object@netw
+            }
+              
+            if(length(object@comm)!=0){
+              comm.new <- object@comm
+              comm.new$membership <- object@comm$membership[idx]
+              comm.new$vcount <- length(comm.new$membership)
+              comm.new$modularity <- NA
+            } else {
+              comm.new <- object@comm
+            }
+            
+            return(mgnet(data=data.new,
+                         meta=object@meta,
+                         taxa=taxa.new,
+                         netw=netw.new,
+                         comm=comm.new))
+          })
+#' @rdname selection_vertices-methods
+#' @aliases selection_vertices,list,vector
+setMethod("selection_vertices",c("list","vector"),
+          function(object,idx){
+            lapply(object, selectMethod(f="selection_vertices",signature=c("mgnet","vector")),
+                   idx=idx)}
+)
+################################################################################
+################################################################################
+# END VERTICES SELECTION
+################################################################################
+################################################################################
+
+
+
+################################################################################
+################################################################################
 # ARRANGE VERTICES
 ################################################################################
 ################################################################################
@@ -774,7 +844,7 @@ setMethod("degree_mgnet",c("mgnet","character","missing"),function(obj,sign,type
   
   if(sign=="positive"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
-  } else if(type=="extra"){
+  } else if(sign=="negative"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
   } else {
     sub.sign <- n

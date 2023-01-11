@@ -885,8 +885,8 @@ setMethod("selection_sample", c("mg","vector"),
             
             if(length(idx)>nsample(object)) stop("there are more indices than sample")
             
-            ifelse(length(data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
-            ifelse(length(meta)!=0, meta.new<-object@meta[idx,,drop=F], meta.new<-object@meta)
+            ifelse(length(object@data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
+            ifelse(length(object@meta)!=0, meta.new<-object@meta[idx,,drop=F], meta.new<-object@meta)
             
             return(mg(data=data.new,
                       meta=meta.new,
@@ -933,10 +933,10 @@ setGeneric("selection_taxa", function(object,idx) standardGeneric("selection_tax
 setMethod("selection_taxa", c("mg","vector"),
           function(object,idx){
             
-            if(length(idx)>ntaxa(object)) stop("there are more indices than sample")
+            if(length(idx)>ntaxa(object)) stop("there are more indices than taxa")
             
-            ifelse(length(data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
-            ifelse(length(taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
+            ifelse(length(object@data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
+            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
             
             return(mg(data=data.new,
                       meta=object@meta,
