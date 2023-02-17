@@ -10,4 +10,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 LazyData: true
 Depends: 
-    R (>= 4.0)
+    R (>= 3.6.0),
+    methods (>= 3.6.0),
+    stats (>= 3.6.0),
+    igraph (>= 1.3)
