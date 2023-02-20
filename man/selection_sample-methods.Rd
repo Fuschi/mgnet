@@ -3,18 +3,22 @@
 \docType{methods}
 \name{selection_sample}
 \alias{selection_sample}
-\alias{selection_sample,mgnet,vector-method}
+\alias{selection_sample,mgnet-method}
+\alias{selection_sample,list-method}
 \title{Selection a subset of samples from mgnet object.}
 \usage{
-selection_sample(object, idx)
+selection_sample(object,...,condition="AND")
 
-\S4method{selection_sample}{mgnet,vector}(object, idx)
+\S4method{selection_sample}{mgnet}(object, ..., condition = "AND")
+
+\S4method{selection_sample}{list}(object, ..., condition = "AND")
 }
 \arguments{
 \item{object}{mgnet.}
 
-\item{idx}{Vector of integer position indices or logical (like to
-\code{[} extractor function).}
+\item{...}{arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved}
+
+\item{condition}{(Optional default "AND") logical operation between indices.}
 }
 \description{
 The function takes as input a vector of logical or position

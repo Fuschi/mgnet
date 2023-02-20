@@ -3,20 +3,22 @@
 \docType{methods}
 \name{selection_taxa}
 \alias{selection_taxa}
-\alias{selection_taxa,mgnet,vector-method}
-\alias{selection_taxa,list,vector-method}
+\alias{selection_taxa,mgnet-method}
+\alias{selection_taxa,list-method}
 \title{Selection a subset of taxa from mgnet object.}
 \usage{
-selection_taxa(object, idx)
+selection_taxa(object, ..., condition="AND")
 
-\S4method{selection_taxa}{mgnet,vector}(object, idx)
+\S4method{selection_taxa}{mgnet}(object, ..., condition = "AND")
 
-\S4method{selection_taxa}{list,vector}(object, idx)
+\S4method{selection_taxa}{list}(object, ..., condition = "AND")
 }
 \arguments{
 \item{object}{mgnet.}
 
-\item{idx}{Vector of integer position indices or logical or names of taxa.}
+\item{...}{arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved}
+
+\item{condition}{(Optional default "AND") logical operation between indices.}
 }
 \description{
 The function takes as input a vector of logical or position

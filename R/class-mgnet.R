@@ -543,7 +543,6 @@ setMethod("show","mgnet",
 
 
 
-
 ################################################################################
 ################################################################################
 # BASE METHODS
@@ -1063,31 +1062,77 @@ setMethod("mgmelt","list",
 #' @description The function takes as input a vector of logical or position 
 #' indices to evaluate which samples to keep.
 #' 
-#' @usage selection_sample(object, idx)
+#' @usage selection_sample(object,...,condition="AND")
 #' 
 #' @param object mgnet.
-#' @param idx Vector of integer position indices or logical (like to
-#' \code{[} extractor function).
+#' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
+#' @param condition (Optional default "AND") logical operation between indices.
 #' 
 #' @rdname selection_sample-methods
 #' @docType methods
 #' @export
-setGeneric("selection_sample", function(object,idx) standardGeneric("selection_sample"))
+setGeneric("selection_sample", function(object, ..., condition="AND") standardGeneric("selection_sample"))
 #' @rdname selection_sample-methods
-setMethod("selection_sample", c("mgnet","vector"),
-          function(object,idx){
+setMethod("selection_sample", "mgnet",
+          function(object, ..., condition="AND"){
+
+            condition <- match.arg(condition, c("AND","OR"))
+            if(length(object@netw)!=0) warning("Sample subsetting is not defined for network, the resulting object will not have the slots netw and comm")
+
+            IDX <- list(...)
+            for(i in 1:length(IDX)){
+              
+              idx <- IDX[[i]]
+              if(!is.vector(idx)) stop("all elements of ... must be vectors")
+                
+              if(is.numeric(idx)){
+                #numeric
+                if(any(is.na(idx)) | any(idx<0) | any(round(idx)!=idx) | max(idx)>nsample(object)){
+                  stop("numeric indices must be integers in range 1 to the maximum nuber of sample")
+                }
+                #transform to logical
+                IDX[[i]] <- (1:nsample(object))%in%idx
+                  
+              }else if(is.character(idx)){
+                  #character
+                  if( !any(idx%in%sample_name(object)) ){
+                    stop("string indices must be a subset of sample_name of object")
+                  }
+                  #transform to logical
+                  IDX[[i]] <- sample_name(object)%in%idx
+                    
+              }else if(is.logical(idx)){
+                  #logical
+                  if(length(idx)!=nsample(object)){
+                    stop("logical indices must have the length equal to sample number")
+                  }
+                  
+                } else {stop("the indices must character, numeric or logical vectors")}
+              }
+              
             
-            if(length(idx)>nsample(object)) stop("there are more indices than sample")
-            if(length(object@netw)!=0) warning("Sample subsetting is not defined for network the resulting object will not have the slots netw and comm")
+            IDX <- do.call(rbind,IDX)
+            # Condition  
+            if(condition=="AND"){
+              IDX <- as.logical(apply(IDX,2,prod))
+            } else {
+              IDX <- apply(IDX,2,sum)>0
+            }
             
-            ifelse(length(object@data)!=0, data.new<-object@data[idx,,drop=F], data.new<-object@data)
-            ifelse(length(object@meta_sample)!=0, meta.new<-object@meta_sample[idx,,drop=F], meta.new<-object@meta_sample)
-            
+            ifelse(length(object@data)!=0, data.new<-object@data[IDX,,drop=F], data.new<-object@data)
+            ifelse(length(object@meta_sample)!=0, meta.new<-object@meta_sample[IDX,,drop=F], meta.new<-object@meta_sample)
+
             return(mgnet(data=data.new,
                          meta_sample=meta.new,
                          taxa=object@taxa,
                          meta_taxa=object@meta_taxa))
           })
+#' @rdname selection_sample-methods
+setMethod("selection_sample","list",
+          function(object, ..., condition="AND"){
+            lapply(object, selectMethod(f="selection_sample",signature="mgnet"),
+                   condition=condition, ...=...)}
+)
 ################################################################################
 ################################################################################
 # END SAMPLE SELECTION
@@ -1107,36 +1152,77 @@ setMethod("selection_sample", c("mgnet","vector"),
 #' @description The function takes as input a vector of logical or position 
 #' indices to evaluate which taxa to keep.
 #' 
-#' @usage selection_taxa(object, idx)
+#' @usage selection_taxa(object, ..., condition="AND")
 #' 
 #' @param object mgnet.
-#' @param idx Vector of integer position indices or logical or names of taxa.
+#' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
+#' @param condition (Optional default "AND") logical operation between indices.
 #' 
 #' @importFrom igraph subgraph
 #' @rdname selection_taxa-methods
 #' @docType methods
 #' @export
-setGeneric("selection_taxa", function(object,idx) standardGeneric("selection_taxa"))
+setGeneric("selection_taxa", function(object,...,condition="AND") standardGeneric("selection_taxa"))
 #' @rdname selection_taxa-methods
-setMethod("selection_taxa", c("mgnet","vector"),
-          function(object,idx){
+setMethod("selection_taxa", "mgnet",
+          function(object,...,condition="AND"){
             
-            if(length(idx)>ntaxa(object)) stop("there are more indices than taxa")
+            condition <- match.arg(condition, c("AND","OR"))
+
+            IDX <- list(...)
+            for(i in 1:length(IDX)){
+              
+              idx <- IDX[[i]]
+              if(!is.vector(idx)) stop("all elements of ... must be vectors")
+              
+              if(is.numeric(idx)){
+                #numeric
+                if(any(is.na(idx)) | any(idx<0) | any(round(idx)!=idx) | max(idx)>ntaxa(object)){
+                  stop("numeric indices must be integers in range 1 to the maximum nuber of sample")
+                }
+                #transform to logical
+                IDX[[i]] <- (1:ntaxa(object))%in%idx
+                
+              }else if(is.character(idx)){
+                #character
+                if( !any(idx%in%taxa_name(object)) ){
+                  stop("string indices must be a subset of sample_name of object")
+                }
+                #transform to logical
+                IDX[[i]] <- taxa_name(object)%in%idx
+                
+              }else if(is.logical(idx)){
+                #logical
+                if(length(idx)!=ntaxa(object)){
+                  stop("logical indices must have the length equal to sample number")
+                }
+                
+              } else {stop("the indices must character, numeric or logical vectors")}
+            }
             
-            ifelse(length(object@data)!=0, data.new<-object@data[,idx,drop=F], data.new<-object@data)
-            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[idx,,drop=F], taxa.new<-object@taxa)
-            ifelse(length(object@meta_taxa)!=0, meta_taxa.new<-object@meta_taxa[idx,,drop=F], meta_taxa.new<-object@meta_taxa)
+            
+            IDX <- do.call(rbind,IDX)
+            # Condition  
+            if(condition=="AND"){
+              IDX <- as.logical(apply(IDX,2,prod))
+            } else {
+              IDX <- apply(IDX,2,sum)>0
+            }
+            
+            ifelse(length(object@data)!=0, data.new<-object@data[,IDX,drop=F], data.new<-object@data)
+            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[IDX,,drop=F], taxa.new<-object@taxa)
+            ifelse(length(object@meta_taxa)!=0, meta_taxa.new<-object@meta_taxa[IDX,,drop=F], meta_taxa.new<-object@meta_taxa)
             
             if(length(object@netw)!=0){
-              netw.new<-igraph::subgraph(object@netw,idx)
+              netw.new<-igraph::subgraph(object@netw,IDX)
             } else {
               netw.new<-object@netw
             }
             
             if(length(object@comm)!=0){
               comm.new <- object@comm
-              if(is.character(idx)) idx <- which(taxaID(object)%in%idx)
-              comm.new$membership <- object@comm$membership[idx]
+              if(is.character(IDX)) IDX <- which(taxaID(object)%in%IDX)
+              comm.new$membership <- object@comm$membership[IDX]
               comm.new$vcount <- length(comm.new$membership)
               comm.new$modularity <- NA
             } else {
@@ -1151,10 +1237,10 @@ setMethod("selection_taxa", c("mgnet","vector"),
                          comm=comm.new))
           })
 #' @rdname selection_taxa-methods
-setMethod("selection_taxa",c("list","vector"),
-          function(object,idx){
-            lapply(object, selectMethod(f="selection_taxa",signature=c("mgnet","vector")),
-                   idx=idx)}
+setMethod("selection_taxa","list",
+          function(object,...,condition="AND"){
+            lapply(object, selectMethod(f="selection_taxa",signature="mgnet"),
+                   condition=condition, ...=...)}
 )
 ################################################################################
 ################################################################################
@@ -1586,6 +1672,8 @@ setMethod("layout_signed","mgnet",function(obj){
 ################################################################################
 #'@export
 plot.mgnet <- function(x,layout,...) {
+  if(length(netw(x))==0) stop("missing network in mgnet")
+  
   if(missing(layout)){
     layout <- layout_signed(netw(x))
   }
@@ -1594,5 +1682,150 @@ plot.mgnet <- function(x,layout,...) {
 ################################################################################
 ################################################################################
 # END PLOT MGNET
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# DEGREE MGNET
+################################################################################
+################################################################################
+#' Signed Vertices Degrees with Communities Info
+#'
+#' @description Calculates the vertices degree using the information on the 
+#' sign of the edges and the communities. The function make possible to distinguish
+#' between positive, negative or both sign of the edges and discern intra or extra
+#' (also both cases) communities edges.
+#' 
+#' @param obj mgnet class.
+#' @param sign (default "all") character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type (default "all") character with possible values "intra","extra","all".
+#'
+#' @importFrom stats setNames
+#' @importFrom igraph degree subgraph.edges intersection crossing
+#' @rdname degree_mgnet-methods
+#' @docType methods
+#' @export
+setGeneric("degree_mgnet", function(obj,sign="all",type="all") standardGeneric("degree_mgnet"))
+#' @rdname degree_mgnet-methods
+setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  type <- match.arg(type,c("intra","extra","all"))
+  
+  if(type!="all" & length(comm(obj))==0) stop("With type setted also comm slots must be no empty")
+  
+  n <- netw(obj)
+  if(length(obj@comm)!=0) c <- comm(obj)
+  
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(sign=="negative"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  if(type=="intra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[!crossing(c,n)],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[crossing(c,n)],delete.vertices=FALSE)
+  } else {
+    sub.type <- n
+  }
+  
+  g.int <- intersection(sub.sign,sub.type)
+  return(degree(g.int))
+})
+#' @rdname degree_mgnet-methods
+setMethod("degree_mgnet","list",
+          function(obj,sign="all",type="all"){
+            lapply(obj, selectMethod(f="degree_mgnet",
+                                     signature="mgnet"),
+                   sign=sign,type=type)})
+################################################################################
+################################################################################
+# END DEGREE MGNET
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# STRENGTH MGNET
+################################################################################
+################################################################################
+#' Signed Vertices Strengths with Communities Info
+#'
+#' @description Calculates the vertices strengths using the information on the 
+#' sign of the edges and the communities. The function make possible to distinguish
+#' between positive, negative or both sign of the edges and discern intra or extra
+#' (also both cases) communities edges.
+#' 
+#' @param obj mgnet class.
+#' @param sign (default "all") character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type (default "all") character with possible values "intra","extra","all".
+#'
+#' @importFrom igraph degree subgraph.edges intersection
+#' @rdname strength_mgnet-methods
+#' @docType methods
+#' @export
+setGeneric("strength_mgnet", function(obj,sign="all",type="all") standardGeneric("strength_mgnet"))
+#' @rdname strength_mgnet-methods
+setMethod("strength_mgnet","mgnet",function(obj,sign="all",type="all"){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  type <- match.arg(type,c("intra","extra","all"))
+  
+  if(type!="all" & length(comm(obj))==0) stop("With type setted also comm slots must be no empty")
+  
+  n <- netw(obj)
+  if(length(obj@comm)!=0) c <- comm(obj)
+  
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(sign=="negative"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  if(type=="intra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[!crossing(c,n)],delete.vertices=FALSE)
+  } else if(type=="extra"){
+    sub.type <- subgraph.edges(graph=n,eids=E(n)[crossing(c,n)],delete.vertices=FALSE)
+  } else {
+    sub.type <- n
+  }
+  
+  g.int <- intersection(sub.sign,sub.type)
+  adj.int <- as_adjacency_matrix(g.int,attr="weight_1",sparse=FALSE)
+  strength <- setNames(rowSums(adj.int),taxaID(obj))
+  return(strength)
+})
+#' @rdname strength_mgnet-methods
+setMethod("strength_mgnet","list",
+          function(obj,sign="all",type="all"){
+            lapply(obj, selectMethod(f="strength_mgnet",
+                                     signature="mgnet"),
+                   sign=sign,type=type)})
+################################################################################
+################################################################################
+# END STRENGTH MGNET
 ################################################################################
 ################################################################################
