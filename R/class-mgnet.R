@@ -520,12 +520,13 @@ setMethod("show","mgnet",
                       "%)\n",sep=""))
             
             if(length(object@comm)!=0){
-              cat(paste("Signed Communities Number:",max(membership(object@comm)),"\n"))
               
               if("0" %in% names(sizes(object@comm))){
+                cat(paste("Signed Communities Number:",length(sizes(object@comm))-1,"\n"))
                 cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
                 cat(paste("Isolated Nodes:", sizes(object@comm)[[1]],"\n"))
               } else {
+                cat(paste("Signed Communities Number:",length(sizes(object@comm)),"\n"))
                 cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
                 cat("There aren't isolated nodes \n")
               }
@@ -1156,18 +1157,20 @@ setMethod("selection_sample","list",
 #' 
 #' @param object mgnet.
 #' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
-#' @param condition (Optional default "AND") logical operation between indices.
+#' @param condition (Optional default "AND") character indicates the logical operation between indices.
+#' @param trim (Option default TRUE) logical, if true the discarded taxa are removed from obj otherwise they are only set to zero in data.
 #' 
 #' @importFrom igraph subgraph
 #' @rdname selection_taxa-methods
 #' @docType methods
 #' @export
-setGeneric("selection_taxa", function(object,...,condition="AND") standardGeneric("selection_taxa"))
+setGeneric("selection_taxa", function(object,...,condition="AND",trim=TRUE) standardGeneric("selection_taxa"))
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa", "mgnet",
-          function(object,...,condition="AND"){
+          function(object,...,condition="AND",trim=TRUE){
             
             condition <- match.arg(condition, c("AND","OR"))
+            if(!is.logical(trim)) stop("trim must be logical")
 
             IDX <- list(...)
             for(i in 1:length(IDX)){
@@ -1185,11 +1188,11 @@ setMethod("selection_taxa", "mgnet",
                 
               }else if(is.character(idx)){
                 #character
-                if( !any(idx%in%taxa_name(object)) ){
+                if( !any(idx%in%taxaID(object)) ){
                   stop("string indices must be a subset of sample_name of object")
                 }
                 #transform to logical
-                IDX[[i]] <- taxa_name(object)%in%idx
+                IDX[[i]] <- taxaID(object)%in%idx
                 
               }else if(is.logical(idx)){
                 #logical
@@ -1209,32 +1212,71 @@ setMethod("selection_taxa", "mgnet",
               IDX <- apply(IDX,2,sum)>0
             }
             
-            ifelse(length(object@data)!=0, data.new<-object@data[,IDX,drop=F], data.new<-object@data)
-            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[IDX,,drop=F], taxa.new<-object@taxa)
-            ifelse(length(object@meta_taxa)!=0, meta_taxa.new<-object@meta_taxa[IDX,,drop=F], meta_taxa.new<-object@meta_taxa)
-            
-            if(length(object@netw)!=0){
-              netw.new<-igraph::subgraph(object@netw,IDX)
+            if(trim){
+              
+              ifelse(length(object@data)!=0, data.new<-object@data[,IDX,drop=F], data.new<-object@data)
+              ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[IDX,,drop=F], taxa.new<-object@taxa)
+              ifelse(length(object@meta_taxa)!=0, meta_taxa.new<-object@meta_taxa[IDX,,drop=F], meta_taxa.new<-object@meta_taxa)
+              
+              if(length(object@netw)!=0){
+                netw.new<-igraph::subgraph(object@netw,IDX)
+              } else {
+                netw.new<-object@netw
+              }
+              
+              if(length(object@comm)!=0){
+                comm.new <- object@comm
+                if(is.character(IDX)) IDX <- which(taxaID(object)%in%IDX)
+                comm.new$membership <- object@comm$membership[IDX]
+                comm.new$vcount <- length(comm.new$membership)
+                comm.new$modularity <- NA
+              } else {
+                comm.new <- object@comm
+              }
+              
+              return(mgnet(data=data.new,
+                           meta_sample=object@meta_sample,
+                           taxa=taxa.new,
+                           meta_taxa=meta_taxa.new,
+                           netw=netw.new,
+                           comm=comm.new))
+              
             } else {
-              netw.new<-object@netw
+              
+              if(length(object@data)!=0){
+                data.new <- object@data
+                data.new[,!IDX] <- 0
+              } else {
+                  data.new <- object@data
+              }
+
+              if(length(object@netw)!=0){
+               sub.netw <- subgraph(netw(object), taxaID(object)[IDX])
+               preserved.edges <- E(object@netw)%in%E(sub.netw)
+               netw.new <- subgraph.edges(graph=netw(object), 
+                                          eids=E(netw(object))[preserved.edges],
+                                          delete.vertices = FALSE)
+              } else {
+                netw.new<-object@netw
+              }
+              
+              if(length(object@comm)!=0){
+                comm.new <- object@comm
+                comm.new$membership[!IDX] <- 0
+                comm.new$modularity <- NA
+              } else {
+                comm.new <- object@comm
+              }
+              
+              return(mgnet(data=data.new,
+                           meta_sample=object@meta_sample,
+                           taxa=object@taxa,
+                           meta_taxa=object@meta_taxa,
+                           netw=netw.new,
+                           comm=comm.new))
+              
             }
             
-            if(length(object@comm)!=0){
-              comm.new <- object@comm
-              if(is.character(IDX)) IDX <- which(taxaID(object)%in%IDX)
-              comm.new$membership <- object@comm$membership[IDX]
-              comm.new$vcount <- length(comm.new$membership)
-              comm.new$modularity <- NA
-            } else {
-              comm.new <- object@comm
-            }
-            
-            return(mgnet(data=data.new,
-                         meta_sample=object@meta_sample,
-                         taxa=taxa.new,
-                         meta_taxa=meta_taxa.new,
-                         netw=netw.new,
-                         comm=comm.new))
           })
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa","list",

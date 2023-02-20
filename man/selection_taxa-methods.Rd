@@ -9,16 +9,18 @@
 \usage{
 selection_taxa(object, ..., condition="AND")
 
-\S4method{selection_taxa}{mgnet}(object, ..., condition = "AND")
+\S4method{selection_taxa}{mgnet}(object, ..., condition = "AND", trim = TRUE)
 
-\S4method{selection_taxa}{list}(object, ..., condition = "AND")
+\S4method{selection_taxa}{list}(object, ..., condition = "AND", trim = TRUE)
 }
 \arguments{
 \item{object}{mgnet.}
 
 \item{...}{arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved}
 
-\item{condition}{(Optional default "AND") logical operation between indices.}
+\item{condition}{(Optional default "AND") character indicates the logical operation between indices.}
+
+\item{trim}{(Option default TRUE) logical, if true the discarded taxa are removed from obj otherwise they are only set to zero in data.}
 }
 \description{
 The function takes as input a vector of logical or position
