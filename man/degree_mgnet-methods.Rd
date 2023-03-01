@@ -3,6 +3,7 @@
 \docType{methods}
 \name{degree_mgnet}
 \alias{degree_mgnet}
+<<<<<<< HEAD
 \alias{degree_mgnet,mgnet-method}
 \alias{degree_mgnet,list-method}
 \title{Signed Vertices Degrees with Communities Info}
@@ -12,14 +13,42 @@ degree_mgnet(obj, sign = "all", type = "all")
 \S4method{degree_mgnet}{mgnet}(obj, sign = "all", type = "all")
 
 \S4method{degree_mgnet}{list}(obj, sign = "all", type = "all")
+=======
+\alias{degree_mgnet,mgnet,character,character-method}
+\alias{degree_mgnet,mgnet,character,character}
+\alias{degree_mgnet,list,character,character-method}
+\alias{degree_mgnet-methods,list,character,character}
+\alias{degree_mgnet,mgnet,character,missing-method}
+\alias{degree_mgnet,mgnet,character,missing}
+\alias{degree_mgnet,list,character,missing-method}
+\alias{degree_mgnet-methods,list,character,missing}
+\title{Signed Vertices Degrees with Communities Info}
+\usage{
+degree_mgnet(obj, sign, type)
+
+\S4method{degree_mgnet}{mgnet,character,character}(obj, sign, type)
+
+\S4method{degree_mgnet}{list,character,character}(obj, sign, type)
+
+\S4method{degree_mgnet}{mgnet,character,missing}(obj, sign, type)
+
+\S4method{degree_mgnet}{list,character,missing}(obj, sign, type)
+>>>>>>> main
 }
 \arguments{
 \item{obj}{mgnet class.}
 
+<<<<<<< HEAD
 \item{sign}{(default "all") character indicates the sign of the edges. Possible values are
 "positive","negative","all".}
 
 \item{type}{(default "all") character with possible values "intra","extra","all".}
+=======
+\item{sign}{character indicates the sign of the edges. Possible values are
+"positive","negative","all".}
+
+\item{type}{character with possible values "intra","extra","all".}
+>>>>>>> main
 }
 \description{
 Calculates the vertices degree using the information on the

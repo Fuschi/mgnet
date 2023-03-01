@@ -4,12 +4,23 @@
 \name{arrange_vertices}
 \alias{arrange_vertices}
 \alias{arrange_vertices,mgnet,matrix-method}
+<<<<<<< HEAD
 \alias{arrange_vertices,list,matrix-method}
 \title{Arrange the vertex number}
 \usage{
 arrange_vertices(obj, new_taxa, new_meta_taxa = data.frame())
 
 \S4method{arrange_vertices}{mgnet,matrix}(obj, new_taxa, new_meta_taxa = data.frame())
+=======
+\alias{arrange_vertices,mgnet,matrix}
+\alias{arrange_vertices,list,matrix-method}
+\alias{arrange_vertices,list,matrix}
+\title{Arrange the vertex number}
+\usage{
+arrange_vertices(obj, new_taxa)
+
+\S4method{arrange_vertices}{mgnet,matrix}(obj, new_taxa)
+>>>>>>> main
 
 \S4method{arrange_vertices}{list,matrix}(obj, new_taxa)
 }
@@ -19,8 +30,11 @@ arrange_vertices(obj, new_taxa, new_meta_taxa = data.frame())
 \item{new_taxa}{data.frame with taxonomic information about the vertices wanted in new graph.
 The dataset must have the same form as taxa in MetaGenomic/MetaGenomicGraph object.
 Naturally in new_taxa all the old vertices must be present.}
+<<<<<<< HEAD
 
 \item{new_meta_taxa}{(Optional) data.frame with additional info on taxa.}
+=======
+>>>>>>> main
 }
 \description{
 Edit the vertices/taxa of the \code{\link{mgnet}} object

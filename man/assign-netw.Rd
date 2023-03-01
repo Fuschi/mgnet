@@ -3,17 +3,31 @@
 \docType{methods}
 \name{netw<-}
 \alias{netw<-}
+<<<<<<< HEAD
 \alias{netw<-,mgnet,igraph-method}
+=======
+\alias{netw<-,mg,igraph-method}
+\alias{netw<-,mgnet,igraph}
+>>>>>>> main
 \title{Assign a new netw to \code{object}}
 \usage{
 netw(object) <- value
 
+<<<<<<< HEAD
 \S4method{netw}{mgnet,igraph}(object) <- value
 }
 \arguments{
 \item{object}{mgnet.}
 
 \item{value}{\code{\link{igraph}}}
+=======
+\S4method{netw}{mg,igraph}(object) <- value
+}
+\arguments{
+\item{object}{(Required) \code{\link{mgnet-class}}.}
+
+\item{value}{(Required) \code{\link{igraph}}}
+>>>>>>> main
 }
 \description{
 Assign a new netw to \code{object}
