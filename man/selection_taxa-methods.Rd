@@ -7,7 +7,7 @@
 \alias{selection_taxa,list-method}
 \title{Selection a subset of taxa from mgnet object.}
 \usage{
-selection_taxa(object, ..., condition="AND")
+selection_taxa(object, ..., condition="AND",trim=TRUE)
 
 \S4method{selection_taxa}{mgnet}(object, ..., condition = "AND", trim = TRUE)
 

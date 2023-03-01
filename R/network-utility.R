@@ -15,7 +15,7 @@
 #' @param alpha (Optional) Level of trasparency of colors.
 #' 
 #' @importFrom qualpalr qualpal
-#' @importFrom grDevices rgb
+#' @importFrom grDevices rgb adjustcolor
 #' @export
 colormap_communities <- function(n=20, alpha=1,
                                  colorspace=list(h=c(0,360),s=c(.25,1),l=c(.25,.75))){
@@ -29,7 +29,7 @@ colormap_communities <- function(n=20, alpha=1,
   colormap <- qualpalr::qualpal(n=n, colorspace=colorspace)
   colormap <- rownames(colormap$RGB)
   colormap <- c(grDevices::rgb(1,1,1),colormap)
-  colormap <- adjustcolor(colormap,alpha.f=alpha)
+  colormap <- grDevices::adjustcolor(colormap,alpha.f=alpha)
   names(colormap) <- as.character(0:n)
   
   return(colormap)
@@ -59,6 +59,7 @@ colormap_communities <- function(n=20, alpha=1,
 #' see \code{\link{qualpal}}.
 #' @param alpha (Optional) Level of trasparency of colors.
 #' 
+#' @importFrom grDevices adjustcolor
 #' @importFrom qualpalr qualpal
 #' @export
 colormap_taxonomy <- function(taxaID, alpha=1,
@@ -77,7 +78,7 @@ colormap_taxonomy <- function(taxaID, alpha=1,
   
   colormap <- qualpalr::qualpal(n=n, colorspace)
   colormap <- rownames(colormap$RGB)
-  colormap <- adjustcolor(colormap, alpha.f=alpha)
+  colormap <- grDevices::adjustcolor(colormap, alpha.f=alpha)
   names(colormap) <- taxaID
   
   return(colormap)

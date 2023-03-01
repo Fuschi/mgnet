@@ -11,7 +11,7 @@ make_mgnet(mgnet, cor.method, thresh.method, thresh, adjust = NA)
 
 \S4method{make_mgnet}{mgnet,character,character,numeric}(mgnet, cor.method, thresh.method, thresh, adjust = NULL)
 
-\S4method{make_mgnet}{list,character,character,numeric}(mgnet, cor.method, thresh.method, thresh, adjust = NA)
+\S4method{make_mgnet}{list,character,character,numeric}(mgnet, cor.method, thresh.method, thresh, adjust = NULL)
 }
 \arguments{
 \item{mgnet}{mgnet object}

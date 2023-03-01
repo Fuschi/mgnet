@@ -48,6 +48,8 @@ setClass(
       if(is.null(colnames(object@data))) return("\n data matrix must have the cols names where the taxa IDs were saved")
       if(any(duplicated(rownames(object@data)))) return("\n find in data matrix at least a duplicated row name / sample ID.")
       if(any(duplicated(colnames(object@data)))) return("\n find in data matrix at least a duplicated col name / taxa ID.")
+      if(any(sapply(colnames(object@data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/col name cannot begin with number")
+      if(any(sapply(rownames(object@data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("sample/row name cannot begin with number")
     }
     
     #CHECK META_SAMPLE
@@ -57,6 +59,7 @@ setClass(
       if(is.null(colnames(object@meta_sample))) return("\n meta_sample data.frame have the cols names where the experimental variables were saved")
       if(any(duplicated(rownames(object@meta_sample)))) return("\n find in meta_sample matrix at least a duplicated row name / sample ID.")
       if(any(duplicated(colnames(object@meta_sample)))) return("\n find in meta_sample matrix at least a duplicated col name / experimental variable.")
+      if(any(sapply(rownames(object@data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("sample/row name cannot begin with number")
     }
     
     #CHECK TAXA
@@ -69,6 +72,8 @@ setClass(
       if(any(duplicated(rownames(object@taxa)))) return("\n find in taxa matrix at least a duplicated row name / taxa ID.")
       if(any(duplicated(colnames(object@taxa)))) return("\n find in taxa matrix at least a duplicated col name / rank.")
       if(any(duplicated(rownames(object@taxa[,ncol(object@taxa)])))) return("\n find in last column taxa matrix at least a duplicated taxa ID.")
+      if(any(sapply(colnames(object@data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/col name cannot begin with number")
+      if(any(is.na(object@taxa))) return("\n in taxa cannot be present NA")
     }
     
     #CHECK META_TAXA
@@ -78,6 +83,7 @@ setClass(
       if(is.null(colnames(object@meta_taxa))) return("\n meta_taxa data.frame have the cols names where the additional taxa info were saved")
       if(any(duplicated(rownames(object@meta_taxa)))) return("\n find in meta_taxa matrix at least a duplicated row name / sample ID.")
       if(any(duplicated(colnames(object@meta_taxa)))) return("\n find in meta_taxa matrix at least a duplicated col name / additional taxa info.")
+      if(any(sapply(rownames(object@meta_taxa),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/row name in meta_taxa cannot begin with number")
     }
     
     # CHECK NETW
@@ -86,6 +92,7 @@ setClass(
       if(is_directed(object@netw)) return("\n netw slot must be an undirected igraph object")
       if(!is_weighted(object@netw)) return("\n netw slot must be an weighted igraph object")
       if(is.null(V(object@netw)$name)) return("\n netw vertices name ( V(netw(obj))$name ) cannot be empty.")
+      if(any(sapply(V(object@netw)$name,function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa name in netw cannot begin with number")
       if(any(diag(as_adjacency_matrix(object@netw,sparse=F))!=0)) return("\n netw cannot has self loops")
     }
     
@@ -186,17 +193,6 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
                   comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
                   ){
   
-  if(!("DEPTH" %in% colnames(meta_sample)) && length(data)!=0){
-    cat("******* class mg constructor message *******\n")
-    cat("Add the samples depth as additional column named DEPTH to meta_sample\n")
-    cat("(Depths are calculated summing counts on each row/sample of data slot)\n")
-    cat("It can be accessed with the depth method\n")
-    ifelse(length(meta_sample)!=0,
-           meta_sample$DEPTH <- rowSums(data),
-           meta_sample <- data.frame("DEPTH"=rowSums(data)))
-    cat("********************************************\n")
-  }
-  
   if(length(netw)!=0 & length(adj)!=0){
     stop("the 'adj' and 'netw' arguments cannot be specified together")
   }
@@ -217,6 +213,82 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
 ################################################################################
 ################################################################################
 # END CONSTRUCTOR MGNET
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# SAMPLE SUM AND GEOMETRIC MEAN
+################################################################################
+################################################################################
+# SAMPLE SUM
+#####################################
+#' Save sample sum in mgnet.
+#' 
+#' @description 
+#' Store in mgnet object the variable sample_sum in meta_sample in which are
+#' saved the count sum for each sample. It is necessary to retrieves relative
+#' abundances of samples.
+#'
+#' @param object mgnet or list 
+#'
+#' @export
+#' @docType methods
+#' @rdname save_sample_sum-methods
+setGeneric("save_sample_sum", function(object) standardGeneric("save_sample_sum"))
+#' @rdname save_sample_sum-methods
+setMethod("save_sample_sum", "mgnet", function(object){
+  
+  if(length(object@data)==0) stop("data cannot be empty")
+  
+  ifelse(length(object@meta_sample)!=0,
+         object@meta_sample$sample_sum <- rowSums(object@data),
+         object@meta_sample <- data.frame("sample_sum"=rowSums(object@data)))
+  
+  return(object)
+})
+#' @rdname save_sample_sum-methods
+setMethod("save_sample_sum","list",
+          function(object){
+            lapply(object, selectMethod(f="save_sample_sum",signature="mgnet"))})
+#####################################
+# GEOMETRIC MEAN
+#####################################
+#' Save sample geometric mean in mgnet.
+#' 
+#' @description 
+#' Store in mgnet object the variable geometric_mean in meta_sample in which are
+#' saved the geometric mean for each sample. It is necessary to retrieves clr 
+#' transformed abundances of samples.
+#'
+#' @param object mgnet or list 
+#'
+#' @export
+#' @docType methods
+#' @rdname save_geometric_mean-methods
+setGeneric("save_geometric_mean", function(object) standardGeneric("save_geometric_mean"))
+#' @rdname save_geometric_mean-methods
+setMethod("save_geometric_mean", "mgnet", function(object){
+  
+  if(length(object@data)==0) stop("data cannot be empty")
+  ifelse(any(object@data==0), data<-object@data+1, data<-object@data)
+  
+  ifelse(length(object@meta_sample)!=0,
+         object@meta_sample$geometric_mean <- apply(data,1, function(x) exp(mean(log(x))), simplify=T),
+         object@meta_sample <- data.frame("geometric_mean"= apply(data,1, function(x) exp(mean(log(x))), simplify=T)))
+
+  return(object)
+})
+#' @rdname save_geometric_mean-methods
+setMethod("save_geometric_mean","list",
+          function(object){
+            lapply(object, selectMethod(f="save_geometric_mean",signature="mgnet"))})
+################################################################################
+################################################################################
+# SAMPLE SUM AND GEOMETRIC MEAN
 ################################################################################
 ################################################################################
 
@@ -783,29 +855,51 @@ setMethod("taxa_name",c("list","character"),
                    rank=rank)}
 )
 #####################################
-# DEPTH 
+# SAMPLE SUM 
 #####################################
-#' Get samples depth.
+#' Get samples sum.
 #' 
 #' @description 
-#' Retrieves the depth of each sample using the Depth variable in in meta slot.
-#' Depth is automatically generated if not present during the construction of 
-#' the mg object.
+#' Retrieves the sum on each sample using the sample_sum variable in in 
+#' meta_sample slot if it's present (see \code{\link{save_sample_sum}}).
 #' 
-#' @usage depth(object)
+#' @usage sample_sum(object)
 #' 
 #' @param object mgnet or list.
 #' 
-#' @rdname depth-methods
+#' @rdname sample_sum-methods
 #' @docType methods
 #' @export
-setGeneric("depth", function(object) standardGeneric("depth"))
-#' @rdname depth-methods
-setMethod("depth", "mgnet",function(object)return(object@meta_sample$DEPTH))
-#' @rdname depth-methods
-setMethod("depth","list",
+setGeneric("sample_sum", function(object) standardGeneric("sample_sum"))
+#' @rdname sample_sum-methods
+setMethod("sample_sum", "mgnet",function(object)return(object@meta_sample$sample_sum))
+#' @rdname sample_sum-methods
+setMethod("sample_sum","list",
           function(object){
-            lapply(object, selectMethod(f="depth",signature="mgnet"))})
+            lapply(object, selectMethod(f="sample_sum",signature="mgnet"))})
+#####################################
+# GEOMETRIC MEAN
+#####################################
+#' Get samples geometric mean.
+#' 
+#' @description 
+#' Retrieves the geometric mean of each sample using the geometric_mean variable in in 
+#' meta_sample slot if it's present (see \code{\link{save_geometric_mean}}).
+#' 
+#' @usage geometric(object)
+#' 
+#' @param object mgnet or list.
+#' 
+#' @rdname geometric_mean-methods
+#' @docType methods
+#' @export
+setGeneric("geometric_mean", function(object) standardGeneric("geometric_mean"))
+#' @rdname geometric_mean-methods
+setMethod("geometric_mean", "mgnet",function(object)return(object@meta_sample$geometric_mean))
+#' @rdname geometric_mean-methods
+setMethod("geometric_mean","list",
+          function(object){
+            lapply(object, selectMethod(f="geometric_mean",signature="mgnet"))})
 #####################################
 # ABUNDANCE 
 #####################################
@@ -834,13 +928,11 @@ setMethod("abundance", c("mgnet","character"),function(object,rank){
   if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
   
   different.taxa <- unique(object@taxa[,rank])
-  data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
-                           dimnames=list(sample_name(object),different.taxa))
-  
-  for(taxa.i in different.taxa){
-    idx <- which(taxa.i == object@taxa[,rank])
-    data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
-  }
+  data.aggregate <- t(aggregate(t(object@data), by=list(object@taxa[,rank]), 
+                                FUN="sum", drop=FALSE))
+  colnames(data.aggregate) <- data.aggregate[1,]
+  data.aggregate <- data.aggregate[-1,]
+  data.aggregate <- data.aggregate[,different.taxa]
   
   return(data.aggregate)
 })
@@ -860,8 +952,9 @@ setMethod("abundance",c("list","character"),
 #' Get relative abundances.
 #' 
 #' @description 
-#' Retrieves the relative abundances of data, normalized by their depths at
-#' the taxonomic rank choosen.
+#' Retrieves the relative abundances of data, normalized by their sample sum at
+#' the taxonomic rank choosen. In mgnet object must be save the variable sample_sum
+#' in meta_sample slot (see \code{\link{save_sample_sum}}).
 #' 
 #' @usage relative(object,rank)
 #' 
@@ -873,22 +966,28 @@ setMethod("abundance",c("list","character"),
 #' @export
 setGeneric("relative", function(object,rank) standardGeneric("relative"))
 #' @rdname relative-methods
-setMethod("relative", c("mgnet","missing"),function(object)return(object@data/depth(object)))
+setMethod("relative", c("mgnet","missing"),function(object){
+  
+  if(length(object@data)==0) stop("data cannot be empty")
+  if(!("sample_sum"%in%sample_info(object))) stop("sample_sum must be present in meta_sample slot. See save_sample_sum")
+  
+  return(object@data/object@meta_sample$sample_sum)
+})
 #' @rdname relative-methods
 setMethod("relative", c("mgnet","character"),function(object,rank){
   if(length(object@data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
   if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
+  if(!("sample_sum"%in%sample_info(object))) stop("sample_sum must be present in meta_sample slot. See save_sample_sum")
+  
   
   different.taxa <- unique(object@taxa[,rank])
-  data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
-                           dimnames=list(sample_name(object),different.taxa))
+  data.aggregate <- t(aggregate(t(object@data), by=list(object@taxa[,rank]), 
+                                FUN="sum", drop=FALSE))
+  colnames(data.aggregate) <- data.aggregate[1,]
+  data.aggregate <- data.aggregate[-1,]
+  data.aggregate <- data.aggregate[,different.taxa]
   
-  for(taxa.i in different.taxa){
-    idx <- which(taxa.i == object@taxa[,rank])
-    data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
-  }
-  
-  return(data.aggregate/depth(object))
+  return(data.aggregate/object@meta_sample$sample_sum)
 })
 #' @rdname relative-methods
 setMethod("relative",c("list","missing"),
@@ -900,6 +999,39 @@ setMethod("relative",c("list","character"),
             lapply(object, selectMethod(f="relative",signature=c("mgnet","character")),
                    rank=rank)}
 )
+#####################################
+# CLR 
+#####################################
+#' Get CLR transformed abundances.
+#' 
+#' @description 
+#' Retrieves the CLR transformed abundances of data. In mgnet object must be 
+#' save the variable geometric_mean in meta_sample slot ( see \code{\link{save_geometric_mean}}).
+#' 
+#' @usage CLR(object,rank)
+#' 
+#' @param object mgnet.
+#' 
+#' @rdname CLR-methods
+#' @docType methods
+#' @export
+setGeneric("CLR", function(object,rank) standardGeneric("CLR"))
+#' @rdname CLR-methods
+setMethod("CLR", "mgnet",function(object){
+  
+  if(length(object@data)==0) stop("data cannot be empty")
+  if(!("geometric_mean"%in%sample_info(object))) stop("geometric_mean must be present in meta_sample slot. See save_geometric_mean")
+  
+  ifelse(any(object@data==0),
+         data <- object@data+1,
+         data <- object@data)
+  
+  return(log(data/object@meta_sample$geometric_mean))
+})
+#' @rdname CLR-methods
+setMethod("CLR","list",
+          function(object){
+            lapply(object, selectMethod(f="CLR",signature="mgnet"))})
 #####################################
 # COMMID
 #####################################
@@ -966,21 +1098,18 @@ setMethod("aggregate_taxa", c("mgnet","character"),
             if(length(object@data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
             if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
             
-            different.taxa <- unique(object@taxa[,rank])
-            data.aggregate <- matrix(NA, nrow=nsample(object), ncol=length(different.taxa),
-                                     dimnames=list(sample_name(object),different.taxa))   
-            
-            for(taxa.i in different.taxa){
-              idx <- which(taxa.i == object@taxa[,rank])
-              data.aggregate[,taxa.i] <- apply(X=object@data, MARGIN=1, function(x) sum(x[idx]) )
-            }
+            different.taxa <- aggregate(object@data[1,],list(object@taxa[,rank]),sum)$Group.1
+            data.aggregate <- t(apply(object@data,1,
+                                    function(x) aggregate(x,list(object@taxa[,rank]),sum, drop=F)$x,
+                                    simplify=T))
+            colnames(data.aggregate) <- different.taxa
             
             taxa.aggregate <- object@taxa[,1:which(ranks(object)==rank)]
             taxa.aggregate <- taxa.aggregate[!duplicated(taxa.aggregate), ]
             rownames(taxa.aggregate) <- taxa.aggregate[,rank]
-            taxa.aggregate <- taxa.aggregate[colnames(data.aggregate),]
+            data.aggregate <- data.aggregate[,rownames(taxa.aggregate)]
             
-            return(new("mgnet",data=data.aggregate, meta=object@meta_sample, taxa=taxa.aggregate))
+            return(new("mgnet",data=data.aggregate, meta_sample=object@meta_sample, taxa=taxa.aggregate))
           })
 #' @rdname aggregate_taxa-methods
 setMethod("aggregate_taxa",c("list","character"),
@@ -1027,11 +1156,40 @@ setMethod("mgmelt", "mgnet",
             mdf <- reshape2::melt(data=object@data)
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
-            mdf$Relative <- reshape2::melt(relative(object))$value
+            
+            if("sample_sum"%in%sample_info(object)){
+              mdf$Relative <- reshape2::melt(relative(object))$value
+            }
+            
+            if("geometric_mean"%in%sample_info(object)){
+              mdf$CLR <- reshape2::melt(CLR(object))$value
+            }
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
-            if(length(object@meta_sample!=0)) mdf <- cbind(mdf,object@meta_sample[mdf$SampleID,])
+            
+            if(length(object@meta_sample!=0)){
+              if(ncol(object@meta_sample)==1){
+                df.tmp <- as.data.frame(object@meta_sample[mdf$SampleID,])
+                colnames(df.tmp) <- colnames(object@meta_sample)
+                mdf <- cbind(mdf,df.tmp)
+              } else {
+                mdf <- cbind(mdf, object@meta_sample[mdf$SampleID,])
+              }
+            } 
+            
+            if(length(object@meta_taxa!=0)){
+              if(ncol(object@meta_taxa)==1){
+                df.tmp <- as.data.frame(object@meta_taxa[mdf$TaxaID,])
+                colnames(df.tmp) <- colnames(object@meta_taxa)
+                mdf <- cbind(mdf,df.tmp)
+              } else {
+                mdf <- cbind(mdf, object@meta_taxa[mdf$TaxaID,])
+              }
+            } 
+            
+            
             if(length(object@meta_taxa!=0)) mdf <- cbind(mdf,object@meta_taxa[mdf$TaxaID,])
+            if(length(object@comm)!=0) mdf <- cbind(mdf, "commID"=commID(object)[mdf$TaxaID])
             
             if(any(duplicated(t(mdf)))){
               mdf <- mdf[,-which(duplicated(t(mdf)))]
@@ -1042,8 +1200,11 @@ setMethod("mgmelt", "mgnet",
 #' @rdname mgmelt-methods
 setMethod("mgmelt","list",
           function(object){
-            lapply(object, selectMethod(f="mgmelt",signature="mgnet"))}
-)
+            res <- lapply(object, selectMethod(f="mgmelt",signature="mgnet"))
+            res <- lapply(names(res), function(x) res[[x]] <- cbind("ID"=x,res[[x]]))
+            res <- do.call("rbind", res)
+            return(res)
+})
 ################################################################################
 ################################################################################
 # END MGMELT
@@ -1084,8 +1245,14 @@ setMethod("selection_sample", "mgnet",
             for(i in 1:length(IDX)){
               
               idx <- IDX[[i]]
-              if(!is.vector(idx)) stop("all elements of ... must be vectors")
-                
+              if(!(is.vector(idx) | is.function(idx))) stop("all elements of ... must be vectors or functions")
+              
+              if(is.function(idx)){
+                idx <- idx(object)
+              }  
+              
+              if(!is.vector(idx))stop("must be vector")
+              
               if(is.numeric(idx)){
                 #numeric
                 if(any(is.na(idx)) | any(idx<0) | any(round(idx)!=idx) | max(idx)>nsample(object)){
@@ -1132,7 +1299,7 @@ setMethod("selection_sample", "mgnet",
 setMethod("selection_sample","list",
           function(object, ..., condition="AND"){
             lapply(object, selectMethod(f="selection_sample",signature="mgnet"),
-                   condition=condition, ...=...)}
+                   ...=..., condition=condition)}
 )
 ################################################################################
 ################################################################################
@@ -1153,7 +1320,7 @@ setMethod("selection_sample","list",
 #' @description The function takes as input a vector of logical or position 
 #' indices to evaluate which taxa to keep.
 #' 
-#' @usage selection_taxa(object, ..., condition="AND")
+#' @usage selection_taxa(object, ..., condition="AND",trim=TRUE)
 #' 
 #' @param object mgnet.
 #' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
@@ -1176,7 +1343,11 @@ setMethod("selection_taxa", "mgnet",
             for(i in 1:length(IDX)){
               
               idx <- IDX[[i]]
-              if(!is.vector(idx)) stop("all elements of ... must be vectors")
+              if(!(is.vector(idx) | is.function(idx))) stop("all elements of ... must be vectors or functions")
+              
+              if(is.function(idx)){
+                idx <- idx(object)
+              }  
               
               if(is.numeric(idx)){
                 #numeric
@@ -1199,6 +1370,7 @@ setMethod("selection_taxa", "mgnet",
                 if(length(idx)!=ntaxa(object)){
                   stop("logical indices must have the length equal to sample number")
                 }
+                IDX[[i]] <- idx
                 
               } else {stop("the indices must character, numeric or logical vectors")}
             }
@@ -1280,9 +1452,9 @@ setMethod("selection_taxa", "mgnet",
           })
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa","list",
-          function(object,...,condition="AND"){
+          function(object,...,condition="AND",trim=TRUE){
             lapply(object, selectMethod(f="selection_taxa",signature="mgnet"),
-                   condition=condition, ...=...)}
+                   ...=..., condition=condition, trim=trim)}
 )
 ################################################################################
 ################################################################################

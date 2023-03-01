@@ -25,6 +25,7 @@ relative(object,rank)
 \item{rank}{(Optional)}
 }
 \description{
-Retrieves the relative abundances of data, normalized by their depths at
-the taxonomic rank choosen.
+Retrieves the relative abundances of data, normalized by their sample sum at
+the taxonomic rank choosen. In mgnet object must be save the variable sample_sum
+in meta_sample slot (see \code{\link{save_sample_sum}}).
 }

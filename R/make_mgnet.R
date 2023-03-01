@@ -32,10 +32,13 @@
 #' @rdname make_mgnet-methods
 #' @docType methods
 #' @export
-setGeneric("make_mgnet", function(mgnet, cor.method, thresh.method, thresh, adjust=NA) standardGeneric("make_mgnet"))
+setGeneric("make_mgnet", function(mgnet, cor.method, thresh.method, thresh, adjust=NULL) standardGeneric("make_mgnet"))
 #' @rdname make_mgnet-methods
 setMethod("make_mgnet", c("mgnet","character","character","numeric"),
           function(mgnet, cor.method, thresh.method, thresh, adjust=NULL){
+            
+            if(length(mgnet@data)==0) stop("data cannot be empty")
+            if(!("geometric_mean"%in%sample_info(mgnet))) stop("sample geometric mean must be set before. See save_geometric_mean")
             
             # Check mgnet
             if(!isa(mgnet,"mgnet")) stop("mgnet must belong to mgnet class")
@@ -51,16 +54,14 @@ setMethod("make_mgnet", c("mgnet","character","character","numeric"),
             # Check thresh
             if(!is.numeric(thresh) | thresh<0 | thresh>1) stop("thresh must number in range [0,1]")
             
-            # Add 1 if are present zeros
-            ifelse(any(mgnet@data==0), x<-mgnet@data+1, x<-mgnet@data)
             
             if(thresh.method=="absolute"){
-              adj <- cor(mgnet::clr(x),method=cor.method)
+              adj <- cor(mgnet::CLR(mgnet),method=cor.method)
               adj <- adj * (adj>=thresh)
             } else if(thresh.method=="density"){
-              adj <- mgnet::adjacency_edge_density(x=mgnet::clr(x),method=cor.method,th=thresh)
+              adj <- mgnet::adjacency_edge_density(x=mgnet::CLR(mgnet),method=cor.method,th=thresh)
             } else if(thresh.method=="p-value"){
-              adj <- mgnet::adjacency_p_adjust(x=mgnet::clr(x),method=cor.method,adjust=adjust,alpha=thresh)
+              adj <- mgnet::adjacency_p_adjust(x=mgnet::CLR(mgnet),method=cor.method,adjust=adjust,alpha=thresh)
             }
             
             return(mgnet(data=mgnet@data, meta_sample=mgnet@meta_sample,
@@ -69,9 +70,9 @@ setMethod("make_mgnet", c("mgnet","character","character","numeric"),
           })
 #' @rdname make_mgnet-methods
 setMethod("make_mgnet", c("list","character","character","numeric"),
-          function(mgnet, cor.method, thresh.method, thresh, adjust){
+          function(mgnet, cor.method, thresh.method, thresh, adjust=NULL){
             lapply(mgnet, 
-                   selectMethod(f="make_mgnet",signature=c("mg","character","character","numeric")),
+                   selectMethod(f="make_mgnet",signature=c("mgnet","character","character","numeric")),
                    cor.method=cor.method, thresh.method=thresh.method,
                    thresh=thresh, adjust=adjust)
           })
