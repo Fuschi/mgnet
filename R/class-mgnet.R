@@ -5,6 +5,7 @@ setOldClass("communities")
 # CLASS MGNET
 ################################################################################
 ################################################################################
+<<<<<<< HEAD
 #' S4 class to manage metagenomics networks
 #'
 #' @slot data ngs data
@@ -13,6 +14,15 @@ setOldClass("communities")
 #' @slot meta_taxa additional info on taxa.
 #' @slot netw undirected, weighted igraph network.
 #' @slot comm graph communities of netw.
+=======
+#' S4 class to manage metagenomic networks
+#'
+#' @slot data table of data
+#' @slot meta sample features
+#' @slot taxa taxonomic information
+#' @slot netw undirected, weighted and signed igraph network
+#' @slot comm graph communities of netw
+>>>>>>> main
 #'
 #' @importFrom igraph make_empty_graph cluster_fast_greedy V vcount
 #' @import methods
@@ -22,6 +32,7 @@ setOldClass("communities")
 setClass(
   Class="mgnet",
   
+<<<<<<< HEAD
   slot=c(data="matrix",
          meta_sample="data.frame",
          taxa="matrix",
@@ -34,11 +45,23 @@ setClass(
                       meta_sample=data.frame(),
                       taxa=matrix(nrow=0,ncol=0),
                       meta_taxa=data.frame(),
+=======
+  contains="mg",
+  
+  slot=c(
+    netw="igraph",
+    comm="communities"),
+  
+  prototype=prototype(data=matrix(nrow=0,ncol=0),
+                      meta=data.frame(),
+                      taxa=matrix(nrow=0,ncol=0),
+>>>>>>> main
                       netw=make_empty_graph(n=0, directed=FALSE),
                       comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))),
   
   validity=function(object){
     
+<<<<<<< HEAD
     #CHECK DATA
     #-------------------------------------#
     if( length(object@data)!=0 ){
@@ -86,14 +109,33 @@ setClass(
       if(any(sapply(rownames(object@meta_taxa),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/row name in meta_taxa cannot begin with number")
     }
     
+=======
+>>>>>>> main
     # CHECK NETW
     #-------------------------------------#
     if(length(object@netw)!=0){
       if(is_directed(object@netw)) return("\n netw slot must be an undirected igraph object")
       if(!is_weighted(object@netw)) return("\n netw slot must be an weighted igraph object")
+<<<<<<< HEAD
       if(is.null(V(object@netw)$name)) return("\n netw vertices name ( V(netw(obj))$name ) cannot be empty.")
       if(any(sapply(V(object@netw)$name,function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa name in netw cannot begin with number")
       if(any(diag(as_adjacency_matrix(object@netw,sparse=F))!=0)) return("\n netw cannot has self loops")
+=======
+    }
+    
+    # CHECK NETW AND DATA
+    #-------------------------------------#
+    if(length(object@netw)!=0 & length(object@data)!=0){
+      if(vcount(object@netw)!=ncol(object@data)) return("\n netw vertices number must be equal to columns number of data")
+      if(any(colnames(object@data)!=V(object@netw)$name)) return("\n netw vertex name and colnames of data must be equal")
+    }
+    
+    # CHECK NETW AND TAXA
+    #-------------------------------------#
+    if(length(object@netw)!=0 & length(object@taxa)!=0){
+      if(vcount(object@netw)!=nrow(object@taxa)) return("\n netw vertices number must be equal to rows number of taxa")
+      if(any(rownames(object@taxa)!=V(object@netw)$name)) return("\n netw vertex name and rownames of taxa must be equal")
+>>>>>>> main
     }
     
     # CHECK COMM
@@ -103,6 +145,7 @@ setClass(
       if(object@comm$vcount!=vcount(object@netw)) stop("comm and netw must have the same number of vertices")
     }
     
+<<<<<<< HEAD
     #CHECK DATA PROPERITES RESPECT OTHER SLOTS
     #-------------------------------------#
     if(length(object@data)!=0){
@@ -158,12 +201,23 @@ setClass(
 ################################################################################
 ################################################################################
 # END CLASS MG
+=======
+    TRUE
+  }
+)
+################################################################################
+################################################################################
+# END CLASS MGNET
+>>>>>>> main
 ################################################################################
 ################################################################################
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 ################################################################################
 ################################################################################
 # CONSTRUCTOR MGNET
@@ -175,16 +229,26 @@ setClass(
 #' class mgnet avoiding the new function.
 #' 
 #' @param data numeric matrix with all elements >=0.  
+<<<<<<< HEAD
 #' @param meta_sample data.frame with experimental variables.
 #' @param taxa character matrix with taxonomic classification.  
 #' @param meta_taxa data.frame with addition info on taxa.
 #' @param adj adjacency matrix of netw.
 #' @param netw un-directed weighted igraph network.
 #' @param comm communities object associated to netw.
+=======
+#' @param meta data.frame with experimental variables.
+#' @param taxa character matrix with taxonomic classification.  
+#' @param netw un-directed weighted igraph network.
+#' @param comm communities object associated to netw.
+#' @param adj adjacency matrix of netw.
+#' @param mg object belong to mg class.
+>>>>>>> main
 #'
 #' @importFrom igraph graph_from_adjacency_matrix
 #' @export
 mgnet <- function(data=matrix(nrow=0,ncol=0),
+<<<<<<< HEAD
                   meta_sample=data.frame(),
                   taxa=matrix(nrow=0,ncol=0),
                   meta_taxa=data.frame(),
@@ -192,6 +256,18 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
                   netw=make_empty_graph(n=0, directed=FALSE),
                   comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
                   ){
+=======
+                  meta=data.frame(),
+                  taxa=matrix(nrow=0,ncol=0),
+                  netw=make_empty_graph(n=0, directed=FALSE),
+                  comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE)),
+                  adj=matrix(nrow=0,ncol=0),
+                  mg=new("mg")){
+  
+  if((length(data)!=0 | length(meta)!=0 | length(taxa)!=0) & !empty(mg)){
+    stop("if using an object of class mg then data, meta and taxa must be left empty")
+  }
+>>>>>>> main
   
   if(length(netw)!=0 & length(adj)!=0){
     stop("the 'adj' and 'netw' arguments cannot be specified together")
@@ -205,9 +281,21 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
     netw <- graph_from_adjacency_matrix(adj,'undirected',weighted=TRUE)
   }
   
+<<<<<<< HEAD
   return(new("mgnet",data=data, meta_sample=meta_sample,
                      taxa=taxa, meta_taxa=meta_taxa,
                      netw=netw, comm=comm))
+=======
+  # if(length(netw)!=0 && length(comm)==0){
+  #   comm <- cluster_signed(netw)
+  # }
+  
+  if(empty(mg)){
+    return(new("mgnet",data=data,meta=meta,taxa=taxa,netw=netw,comm=comm))
+  } else {
+    return(new("mgnet",data=mg@data,meta=mg@meta,taxa=mg@taxa,netw=netw,comm=comm))
+  }
+>>>>>>> main
   
 }
 ################################################################################
@@ -221,6 +309,7 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
 
 ################################################################################
 ################################################################################
+<<<<<<< HEAD
 # SAMPLE SUM AND GEOMETRIC MEAN
 ################################################################################
 ################################################################################
@@ -382,6 +471,11 @@ setMethod("meta_taxa","list",
           function(object){
             lapply(object, selectMethod(f="meta_taxa",signature="mgnet"))})
 #####################################
+=======
+# GETTERS MGNET
+################################################################################
+################################################################################
+>>>>>>> main
 # NETW
 #####################################
 #' Retrieves netw.
@@ -391,6 +485,7 @@ setMethod("meta_taxa","list",
 #'
 #' @usage netw(object)
 #'
+<<<<<<< HEAD
 #' @param object mgnet or list.
 #'
 #' @export
@@ -400,6 +495,19 @@ setGeneric("netw", function(object) standardGeneric("netw"))
 #' @rdname netw-methods
 setMethod("netw", "mgnet", function(object){return(object@netw)})
 #' @rdname netw-methods
+=======
+#' @param object (Required) \code{\link{mgnet-class}}.
+#'
+#' @rdname netw
+#' @docType methods
+#' @export
+setGeneric("netw", function(object) standardGeneric("netw"))
+#' @rdname netw
+#' @aliases netw,mgnet
+setMethod("netw", "mgnet", function(object){return(object@netw)})
+#' @rdname netw
+#' @aliases netw,list
+>>>>>>> main
 setMethod("netw","list",
           function(object){
             lapply(object, selectMethod(f="netw",signature="mgnet"))})
@@ -413,6 +521,7 @@ setMethod("netw","list",
 #'
 #' @usage comm(object)
 #'
+<<<<<<< HEAD
 #' @param object mgnet or list.
 #'
 #' @export
@@ -422,6 +531,19 @@ setGeneric("comm", function(object) standardGeneric("comm"))
 #' @rdname comm-methods
 setMethod("comm", "mgnet", function(object){return(object@comm)})
 #' @rdname comm-methods
+=======
+#' @param object (Required) \code{\link{mgnet-class}}.
+#'
+#' @rdname comm
+#' @docType methods
+#' @export
+setGeneric("comm", function(object) standardGeneric("comm"))
+#' @rdname comm
+#' @aliases comm,mgnet
+setMethod("comm", "mgnet", function(object){return(object@comm)})
+#' @rdname comm
+#' @aliases comm,list
+>>>>>>> main
 setMethod("comm","list",
           function(object){
             lapply(object, selectMethod(f="comm",signature="mgnet"))})
@@ -433,7 +555,10 @@ setMethod("comm","list",
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 ################################################################################
 ################################################################################
 # SETTERS MGNET
@@ -441,6 +566,7 @@ setMethod("comm","list",
 ################################################################################
 # DATA<-
 #####################################
+<<<<<<< HEAD
 #' Assign a new ngs matrix to \code{object}
 #'
 #' @usage data(object) <- value
@@ -477,10 +603,27 @@ setMethod("meta_sample<-", c("mgnet", "data.frame"), function(object, value){
   new("mgnet",data=object@data, meta_sample=value, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
       netw=object@netw, comm=object@comm)
+=======
+#' @rdname assign-data
+#' @aliases data<-,mgnet,matrix
+setMethod("data<-", c("mgnet", "matrix"), function(object, value){
+  new("mgnet",data=value, meta=object@meta, taxa=object@taxa, netw=object@netw,
+      comm=object@comm)
+})
+#####################################
+# META<-
+#####################################
+#' @rdname assign-meta
+#' @aliases meta<-,mgnet,data.frame
+setMethod("meta<-", c("mgnet", "data.frame"), function(object, value){
+  new("mgnet",data=object@data, meta=value, taxa=object@taxa, netw=object@netw,
+      comm=object@comm)
+>>>>>>> main
 })
 #####################################
 # TAXA<-
 #####################################
+<<<<<<< HEAD
 #' Assign new taxonomy table to \code{object}
 #'
 #' @usage taxa(object) <- value
@@ -517,6 +660,13 @@ setMethod("meta_taxa<-", c("mgnet", "data.frame"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=value,
       netw=object@netw, comm=object@comm)
+=======
+#' @rdname assign-taxa
+#' @aliases taxa<-,mgnet,matrix
+setMethod("taxa<-", c("mgnet", "matrix"), function(object, value){
+  new("mgnet",data=object@data, meta=object@meta, taxa=value, netw=object@netw,
+      comm=object@comm)
+>>>>>>> main
 })
 #####################################
 # NETW<-
@@ -525,18 +675,30 @@ setMethod("meta_taxa<-", c("mgnet", "data.frame"), function(object, value){
 #'
 #' @usage netw(object) <- value
 #'
+<<<<<<< HEAD
 #' @param object mgnet.
 #' @param value \code{\link{igraph}}
+=======
+#' @param object (Required) \code{\link{mgnet-class}}.
+#' @param value (Required) \code{\link{igraph}}
+>>>>>>> main
 #'
 #' @export
 #' @docType methods
 #' @rdname assign-netw
 setGeneric("netw<-", function(object, value) standardGeneric("netw<-"))
 #' @rdname assign-netw
+<<<<<<< HEAD
 setMethod("netw<-", c("mgnet", "igraph"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
       netw=value, comm=object@comm)
+=======
+#' @aliases netw<-,mgnet,igraph
+setMethod("netw<-", c("mg", "igraph"), function(object, value){
+  new("mgnet",data=object@data, meta=object@meta, taxa=object@taxa, netw=value,
+      comm=object@comm)
+>>>>>>> main
 })
 #####################################
 # COMM<-
@@ -545,17 +707,28 @@ setMethod("netw<-", c("mgnet", "igraph"), function(object, value){
 #'
 #' @usage comm(object) <- value
 #'
+<<<<<<< HEAD
 #' @param object mgnet.
 #' @param value \code{\link{communities}}
+=======
+#' @param object (Required) \code{\link{mgnet-class}}.
+#' @param value (Required) \code{\link{communities}}
+>>>>>>> main
 #'
 #' @export
 #' @docType methods
 #' @rdname assign-comm
 setGeneric("comm<-", function(object, value) standardGeneric("comm<-"))
 #' @rdname assign-comm
+<<<<<<< HEAD
 setMethod("comm<-", c("mgnet", "communities"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
+=======
+#' @aliases comm<-,mgnet,communities
+setMethod("comm<-", c("mg", "communities"), function(object, value){
+  new("mgnet",data=object@data, meta=object@meta, taxa=object@taxa,
+>>>>>>> main
       netw=object@netw, comm=value)
 })
 ################################################################################
@@ -569,6 +742,7 @@ setMethod("comm<-", c("mgnet", "communities"), function(object, value){
 
 ################################################################################
 ################################################################################
+<<<<<<< HEAD
 # SHOW METHOD MGNET
 ################################################################################
 ################################################################################
@@ -585,6 +759,57 @@ setMethod("show","mgnet",
             cat(paste("Sample Meta Info:",paste(colnames(object@meta_sample),collapse="," )),"\n")
             cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa),collapse=",")),"\n")
             cat(paste("Taxa Meta Info:",paste(colnames(object@meta_taxa),collapse="," )),"\n")
+=======
+# EXTRACTOR MGNET
+################################################################################
+################################################################################
+#' Method extensions to extraction operator for mgnet object.
+#'
+#' @param x See \code{\link[base]{Extract}}, \code{\link{mg}} object.
+#' @param i See \code{\link[base]{Extract}}, samples indices.
+#' @param j See \code{\link[base]{Extract}}, taxa indices
+#'
+#' @seealso  \code{\link[base]{Extract}}
+#' 
+#' @export
+#' 
+#' @rdname extract-methods
+setMethod(f="[",
+          signature="mgnet",
+          definition=function(x,i,j){
+            warning("operator '[' is not well defined in mgnet class.
+                    It return a simply mg without netw and comm info")
+            return(new("mg",
+                       data=x@data[i,j,drop=FALSE],
+                       meta=x@meta[i, ,drop=FALSE],
+                       taxa=x@taxa[j, ,drop=FALSE]))
+          })
+################################################################################
+################################################################################
+# END EXTRACTOR MGNET
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# SHOW METHOD MGNET
+################################################################################
+################################################################################
+#'@importFrom igraph ecount edge_density membership sizes
+setMethod("show","mgnet",
+          function(object){
+            cat("******* Class mgnet , method Show ******* \n")
+            cat(paste("Sample Number:",max(nrow(object@data),nrow(object@meta)),"\n"))
+            cat(paste("Taxa Number:",max(ncol(object@data),nrow(object@taxa)),"\n"))
+            cat(paste("Zeros Percentage: ~",
+                      100*round(sum(object@data==0)/(nrow(object@data)*ncol(object@data)),4),
+                      "%\n",sep=""))
+            cat(paste("Sample Meta Data:",paste(colnames(object@meta),collapse="," )),"\n")
+            cat(paste("Taxonomic Ranks:",paste(colnames(object@taxa),collapse=",")),"\n")
+>>>>>>> main
             cat(paste("Edge Number (Density): ",ecount(object@netw)," (~",
                       round(edge_density(object@netw)*100,2),"%)","\n",sep=""))
             cat(paste("Positive Edge: ",sum(E(netw(object))$weight>0)," (~",
@@ -592,6 +817,7 @@ setMethod("show","mgnet",
                       "%)\n",sep=""))
             
             if(length(object@comm)!=0){
+<<<<<<< HEAD
               
               if("0" %in% names(sizes(object@comm))){
                 cat(paste("Signed Communities Number:",length(sizes(object@comm))-1,"\n"))
@@ -599,6 +825,14 @@ setMethod("show","mgnet",
                 cat(paste("Isolated Nodes:", sizes(object@comm)[[1]],"\n"))
               } else {
                 cat(paste("Signed Communities Number:",length(sizes(object@comm)),"\n"))
+=======
+              cat(paste("Signed Communities Number:",max(membership(object@comm)),"\n"))
+              
+              if("0" %in% names(sizes(object@comm))){
+                cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
+                cat(paste("Isolated Nodes:", sizes(object@comm)[[1]],"\n"))
+              } else {
+>>>>>>> main
                 cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
                 cat("There aren't isolated nodes \n")
               }
@@ -616,11 +850,16 @@ setMethod("show","mgnet",
 
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 ################################################################################
 ################################################################################
 # BASE METHODS
 ################################################################################
 ################################################################################
+<<<<<<< HEAD
 # NSAMPLE
 #####################################
 #' Get number of samples.
@@ -727,10 +966,43 @@ setMethod("taxaID", "mgnet", function(object){
   else return(0)
 })
 #' @rdname taxaID-methods
+=======
+# NTAXA
+#####################################
+#' @importFrom igraph vcount
+#' @rdname ntaxa
+#' @aliases ntaxa,mgnet
+setMethod("ntaxa", "mgnet", function(object){
+  if(length(object@data!=0)) return(ncol(object@data))
+  else if(length(object@taxa!=0)) return(nrow(object@taxa))
+  else if(length(object@netw!=0)) return(vcount(object@netw))
+  else return(NULL)
+})
+#' @rdname ntaxa
+#' @aliases ntaxa,list
+setMethod("ntaxa","list",
+          function(object){
+            lapply(object, selectMethod(f="ntaxa",signature="mgnet"))})
+#####################################
+# TAXAID
+#####################################
+#' @importFrom igraph V
+#' @rdname taxaID
+#' @aliases taxaID,mgnet
+setMethod("taxaID", "mgnet", function(object){
+  if(length(object@data!=0)) return(colnames(object@data))
+  else if(length(object@taxa!=0)) return(rownames(object@taxa))
+  else if(length(object@netw!=0)) return(V(object@netw)$name)
+  else return(0)
+})
+#' @rdname taxaID
+#' @aliases taxaID,list
+>>>>>>> main
 setMethod("taxaID","list",
           function(object){
             lapply(object, selectMethod(f="taxaID",signature="mgnet"))})
 #####################################
+<<<<<<< HEAD
 # RANKS 
 #####################################
 #' Get taxonomic ranks.
@@ -1033,6 +1305,8 @@ setMethod("CLR","list",
           function(object){
             lapply(object, selectMethod(f="CLR",signature="mgnet"))})
 #####################################
+=======
+>>>>>>> main
 # COMMID
 #####################################
 #' Get communities ID.
@@ -1042,6 +1316,7 @@ setMethod("CLR","list",
 #'
 #' @usage commID(object)
 #'
+<<<<<<< HEAD
 #' @param object mgnet-class.
 #'
 #' @importFrom igraph membership
@@ -1050,6 +1325,17 @@ setMethod("CLR","list",
 #' @export
 setGeneric("commID", function(object) standardGeneric("commID"))
 #' @rdname commID-methods
+=======
+#' @param object (Required) \code{\link{mgnet-class}}.
+#'
+#' @rdname commID
+#' @docType methods
+#' @export
+setGeneric("commID", function(object) standardGeneric("commID"))
+#' @importFrom igraph membership
+#' @rdname commID
+#' @aliases commID,mgnet
+>>>>>>> main
 setMethod("commID", "mgnet", function(object){
   if(length(object@comm)!=0){
     return(as.character(membership(object@comm)))
@@ -1057,21 +1343,42 @@ setMethod("commID", "mgnet", function(object){
     stop("the comm slot is not present")
   }
 })
+<<<<<<< HEAD
 #' @rdname commID-methods
 setMethod("commID","list",
           function(object){
             lapply(object, selectMethod(f="commID",signature="mgnet"))})
+=======
+#' @rdname commID
+#' @aliases commID,list
+setMethod("commID","list",
+          function(object){
+            lapply(object, selectMethod(f="commID",signature="mgnet"))})
+#####################################
+# EMPTY 
+#####################################
+#' @rdname empty
+#' @aliases empty,mgnet
+setMethod("empty", c("mgnet"),function(object){
+  length(object@data)==0 & length(object@meta)==0 & length(object@taxa)==0 & 
+    length(object@netw)==0 & length(object@comm)==0
+})
+>>>>>>> main
 ################################################################################
 ################################################################################
 # END BASE METHODS
 ################################################################################
+<<<<<<< HEAD
 ################################################################################
+=======
+>>>>>>> main
 
 
 
 
 ################################################################################
 ################################################################################
+<<<<<<< HEAD
 # AGGREGATE TAXA
 ################################################################################
 ################################################################################
@@ -1313,11 +1620,15 @@ setMethod("selection_sample","list",
 ################################################################################
 ################################################################################
 # TAXA SELECTION
+=======
+# VERTICES SELECTION
+>>>>>>> main
 ################################################################################
 ################################################################################
 #' Selection a subset of taxa from mgnet object.
 #' 
 #' @description The function takes as input a vector of logical or position 
+<<<<<<< HEAD
 #' indices to evaluate which taxa to keep.
 #' 
 #' @usage selection_taxa(object, ..., condition="AND",trim=TRUE)
@@ -1459,11 +1770,72 @@ setMethod("selection_taxa","list",
 ################################################################################
 ################################################################################
 # END TAXA SELECTION
+=======
+#' indices to evaluate which taxa to keep. The function make a subset of the mgnet
+#' object cutting the columns of data and the rows of taxa, making a subset of 
+#' the network and creating a new communities object with only the conserved taxa.
+#' 
+#' @usage selection_vertices(object, idx)
+#' 
+#' @param object (Required) \code{\link{mg-class}}.
+#' @param idx (Required) Vector of integer position indices or logical or names 
+#' of taxa (like to \code{[} extractor function).
+#'
+#' @importFrom igraph subgraph
+#' 
+#' @rdname selection_vertices-methods
+#' @docType methods
+#' @export
+setGeneric("selection_vertices", function(object,idx) standardGeneric("selection_vertices"))
+#' @rdname selection_vertices-methods
+#' @aliases selection_vertices,mgnet,vector
+setMethod("selection_vertices", c("mgnet","vector"),
+          function(object,idx){
+            
+            if(length(idx)>ntaxa(object)) stop("there are more indices than taxa")
+            
+            ifelse(length(object@data)!=0, data.new<-object@data[,idx,drop=F],  data.new<-object@data)
+            ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[idx,,drop=F],  taxa.new<-object@taxa)
+            
+            if(length(object@netw)!=0){
+              netw.new<-igraph::subgraph(object@netw,idx)
+            }else{
+                netw.new<-object@netw
+            }
+              
+            if(length(object@comm)!=0){
+              comm.new <- object@comm
+              if(is.character(idx)) idx <- which(taxaID(object)%in%idx)
+              comm.new$membership <- object@comm$membership[idx]
+              comm.new$vcount <- length(comm.new$membership)
+              comm.new$modularity <- NA
+            } else {
+              comm.new <- object@comm
+            }
+            
+            return(mgnet(data=data.new,
+                         meta=object@meta,
+                         taxa=taxa.new,
+                         netw=netw.new,
+                         comm=comm.new))
+          })
+#' @rdname selection_vertices-methods
+#' @aliases selection_vertices,list,vector
+setMethod("selection_vertices",c("list","vector"),
+          function(object,idx){
+            lapply(object, selectMethod(f="selection_vertices",signature=c("mgnet","vector")),
+                   idx=idx)}
+)
+################################################################################
+################################################################################
+# END VERTICES SELECTION
+>>>>>>> main
 ################################################################################
 ################################################################################
 
 
 
+<<<<<<< HEAD
 
 ################################################################################
 ################################################################################
@@ -1618,6 +1990,8 @@ setMethod(f="[",
 
 
 
+=======
+>>>>>>> main
 ################################################################################
 ################################################################################
 # ARRANGE VERTICES
@@ -1632,13 +2006,18 @@ setMethod(f="[",
 #'@param new_taxa data.frame with taxonomic information about the vertices wanted in new graph.
 #'  The dataset must have the same form as taxa in MetaGenomic/MetaGenomicGraph object.
 #'  Naturally in new_taxa all the old vertices must be present.
+<<<<<<< HEAD
 #'@param new_meta_taxa (Optional) data.frame with additional info on taxa.
 #'  
 #'@importFrom igraph make_clusters
+=======
+#'  
+>>>>>>> main
 #'@rdname arrange_vertices-methods
 #'@docType methods
 #'@export
 setGeneric(name="arrange_vertices",
+<<<<<<< HEAD
            def=function(obj, new_taxa, new_meta_taxa=data.frame()) standardGeneric("arrange_vertices"))
 #' @rdname arrange_vertices-methods
 setMethod("arrange_vertices",c("mgnet","matrix"),
@@ -1654,6 +2033,17 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
               if(any(rownames(new_taxa)!=rownames(new_meta_taxa))) stop("new_taxa and new_meta_taxa muse have the same rownames")
             }
             if(length(obj@meta_taxa)!=0 & length(new_meta_taxa)==0) stop("miss new_meta_taxa and on contrary meta_taxa of obj it is not empty")
+=======
+           def=function(obj, new_taxa) standardGeneric("arrange_vertices"))
+#' @rdname arrange_vertices-methods
+#' @aliases arrange_vertices,mgnet,matrix
+setMethod("arrange_vertices",c("mgnet","matrix"),
+          function(obj, new_taxa){
+            
+            if(length(obj@data)==0 | length(obj@taxa)==0 | length(obj@netw)==0) stop("data, taxa and netw cannot be empty")
+            if(any(!(taxaID(obj)%in%rownames(new_taxa)))) stop("find at least a taxa not present in new_taxa")
+            if(any(ranks(obj)!=colnames(new_taxa))) stop('new_taxa must have the same ranks as obj')
+>>>>>>> main
             
             sample_name <- sample_name(obj)
             ntaxa <- nrow(new_taxa)
@@ -1668,6 +2058,7 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
             adj.new <- matrix(0,nrow=ntaxa,ncol=ntaxa,
                               dimnames=list(taxa_name,taxa_name))
             adj.new[taxaID(obj),taxaID(obj)] <- adj
+<<<<<<< HEAD
             graph.new <- graph_from_adjacency_matrix(adj.new,mode="undirected",
                                                      weighted=T)
             
@@ -1698,6 +2089,17 @@ setMethod("arrange_vertices",c("list","matrix"),
           function(obj,new_taxa){
             lapply(obj, selectMethod(f="arrange_vertices",
                                      signature=c("mgnet","matrix")),
+=======
+            
+            return(mgnet(data=data,taxa=new_taxa,adj=adj.new))
+          })
+#' @rdname arrange_vertices-methods
+#' @aliases arrange_vertices,list,matrix
+setMethod("arrange_vertices",c("list","matrix"),
+          function(obj,new_taxa){
+            lapply(obj, selectMethod(f="arrange_vertices",
+                                        signature=c("mgnet","matrix")),
+>>>>>>> main
                    new_taxa=new_taxa)})
 ################################################################################
 ################################################################################
@@ -1715,6 +2117,7 @@ setMethod("arrange_vertices",c("list","matrix"),
 ################################################################################
 #' Remove smaller communities
 #' 
+<<<<<<< HEAD
 #' @description Allows you to remove communities based on the number of vertices.
 #' 
 #' @param obj mgnet.
@@ -1722,19 +2125,39 @@ setMethod("arrange_vertices",c("list","matrix"),
 #' @param trim (Optional, default TRUE) logical. If true, the function removes 
 #' all nodes not belonging to a community with size equal to size. If false the 
 #' filtered vertices are set as isolated.
+=======
+#' @description allows you to remove communities based on the number of 
+#' vertices.
+#' 
+#' @param obj \code{\link{mgnet-class}}
+#' @param size integer indicates the vertex number threshold
+#' @param trim logical. If true, the function removes all nodes not belonging 
+#' to a community with size equal to size. If false the filtered vertices are 
+#' set as isolated.
+>>>>>>> main
 #'  
 #' @importFrom igraph vcount induced.subgraph V
 #' @rdname remove_smaller_comm-methods
 #' @docType methods
 #' @export
+<<<<<<< HEAD
 setGeneric("remove_smaller_comm", function(obj,size,trim=NA) standardGeneric("remove_smaller_comm"))
 #' @rdname remove_smaller_comm-methods
 setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=TRUE){
+=======
+setGeneric("remove_smaller_comm", function(obj,size,trim) standardGeneric("remove_smaller_comm"))
+#' @rdname remove_smaller_comm-methods
+#' @aliases remove_smaller_comm,mgnet,logical
+setMethod("remove_smaller_comm", c("mgnet","numeric","logical"), function(obj, size, trim){
+>>>>>>> main
   
   #Checks Arguments
   if(!is.numeric(size) | round(size)!=size | size<0) stop("size must be integer greater than 0")
   if(!is.logical(trim)) stop("keep must be logical")
+<<<<<<< HEAD
   if(length(obj)==0) stop("missing communities info")
+=======
+>>>>>>> main
   #End Checks
   
   graph <- obj@netw
@@ -1746,7 +2169,10 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   if(!trim){
     data <- obj@data
     taxa <- obj@taxa
+<<<<<<< HEAD
     meta_taxa <- obj@meta_taxa
+=======
+>>>>>>> main
     graph.sub <- graph
     comm.sub <- comm
     comm.sub$membership[setdiff(1:comm$vcount, keep.comm.vids)] <- 0
@@ -1754,7 +2180,10 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   } else {
     data <- obj@data[,keep.comm.vids]
     taxa <- obj@taxa[keep.comm.vids,]
+<<<<<<< HEAD
     meta_taxa <- obj@meta_taxa[keep.comm.vids,]
+=======
+>>>>>>> main
     graph.sub <- induced.subgraph(graph, V(graph)[keep.comm.vids])
     comm.sub <- comm
     comm.sub$membership <- comm$membership[keep.comm.vids]
@@ -1764,6 +2193,7 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   
   
   return(new("mgnet",
+<<<<<<< HEAD
              data=data, meta_sample=obj@meta_sample, taxa=taxa, 
              meta_taxa=meta_taxa, netw=graph.sub, comm=comm.sub))
 })
@@ -1772,6 +2202,17 @@ setMethod("remove_smaller_comm",c("list","numeric","logical"),
           function(obj,size,trim){
             lapply(obj, selectMethod(f="remove_smaller_comm",
                                      signature=c("mgnet","numeric")),
+=======
+             data=data, meta=obj@meta, taxa=taxa,
+             netw=graph.sub,comm=comm.sub))
+})
+#' @rdname remove_smaller_comm-methods
+#' @aliases remove_smaller_comm-methods,list,numeric,logical
+setMethod("remove_smaller_comm",c("list","numeric","logical"),
+          function(obj,size,trim){
+            lapply(obj, selectMethod(f="remove_smaller_comm",
+                                     signature=c("mgnet","numeric","logical")),
+>>>>>>> main
                    size=size,trim=trim)})
 ################################################################################
 ################################################################################
@@ -1780,6 +2221,11 @@ setMethod("remove_smaller_comm",c("list","numeric","logical"),
 ################################################################################
 
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> main
 ################################################################################
 ################################################################################
 # GRAPHICAL DECORATIONS
@@ -1878,7 +2324,10 @@ setMethod("layout_signed","mgnet",function(obj){
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
 ################################################################################
 ################################################################################
 # PLOT MGNET
@@ -1886,8 +2335,11 @@ setMethod("layout_signed","mgnet",function(obj){
 ################################################################################
 #'@export
 plot.mgnet <- function(x,layout,...) {
+<<<<<<< HEAD
   if(length(netw(x))==0) stop("missing network in mgnet")
   
+=======
+>>>>>>> main
   if(missing(layout)){
     layout <- layout_signed(netw(x))
   }
@@ -1915,26 +2367,47 @@ plot.mgnet <- function(x,layout,...) {
 #' (also both cases) communities edges.
 #' 
 #' @param obj mgnet class.
+<<<<<<< HEAD
 #' @param sign (default "all") character indicates the sign of the edges. Possible values are
 #' "positive","negative","all".
 #' @param type (default "all") character with possible values "intra","extra","all".
+=======
+#' @param sign character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type character with possible values "intra","extra","all".
+>>>>>>> main
 #'
 #' @importFrom stats setNames
 #' @importFrom igraph degree subgraph.edges intersection crossing
 #' @rdname degree_mgnet-methods
 #' @docType methods
 #' @export
+<<<<<<< HEAD
 setGeneric("degree_mgnet", function(obj,sign="all",type="all") standardGeneric("degree_mgnet"))
 #' @rdname degree_mgnet-methods
 setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
+=======
+setGeneric("degree_mgnet", function(obj,sign,type) standardGeneric("degree_mgnet"))
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet,mgnet,character,character
+setMethod("degree_mgnet",c("mgnet","character","character"),function(obj,sign,type){
+ 
+  if(length(comm(obj))==0) stop("communities slots is empty")
+>>>>>>> main
   
   sign <- match.arg(sign,c("positive","negative","all"))
   type <- match.arg(type,c("intra","extra","all"))
   
+<<<<<<< HEAD
   if(type!="all" & length(comm(obj))==0) stop("With type setted also comm slots must be no empty")
   
   n <- netw(obj)
   if(length(obj@comm)!=0) c <- comm(obj)
+=======
+  
+  n <- netw(obj)
+  c <- comm(obj)
+>>>>>>> main
   
   # Modify isolated nodes as igraph want
   #------------------------------------#
@@ -1942,7 +2415,11 @@ setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
   
   if(sign=="positive"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+<<<<<<< HEAD
   } else if(sign=="negative"){
+=======
+  } else if(type=="extra"){
+>>>>>>> main
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
   } else {
     sub.sign <- n
@@ -1960,11 +2437,50 @@ setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
   return(degree(g.int))
 })
 #' @rdname degree_mgnet-methods
+<<<<<<< HEAD
 setMethod("degree_mgnet","list",
           function(obj,sign="all",type="all"){
             lapply(obj, selectMethod(f="degree_mgnet",
                                      signature="mgnet"),
                    sign=sign,type=type)})
+=======
+#' @aliases degree_mgnet-methods,list,character,character
+setMethod("degree_mgnet",c("list","character","character"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="degree_mgnet",
+                                     signature=c("mgnet","character","character")),
+                   sign=sign,type=type)})
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet,mgnet,character,missing
+setMethod("degree_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+
+  n <- netw(obj)
+  c <- comm(obj)
+
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(sign=="negative"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  return(degree(sub.sign))
+})
+#' @rdname degree_mgnet-methods
+#' @aliases degree_mgnet-methods,list,character,missing
+setMethod("degree_mgnet",c("list","character","missing"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="degree_mgnet",
+                                     signature=c("mgnet","character","missing")),
+                   sign=sign)})
+>>>>>>> main
 ################################################################################
 ################################################################################
 # END DEGREE MGNET
@@ -1987,25 +2503,45 @@ setMethod("degree_mgnet","list",
 #' (also both cases) communities edges.
 #' 
 #' @param obj mgnet class.
+<<<<<<< HEAD
 #' @param sign (default "all") character indicates the sign of the edges. Possible values are
 #' "positive","negative","all".
 #' @param type (default "all") character with possible values "intra","extra","all".
+=======
+#' @param sign character indicates the sign of the edges. Possible values are
+#' "positive","negative","all".
+#' @param type character with possible values "intra","extra","all".
+>>>>>>> main
 #'
 #' @importFrom igraph degree subgraph.edges intersection
 #' @rdname strength_mgnet-methods
 #' @docType methods
 #' @export
+<<<<<<< HEAD
 setGeneric("strength_mgnet", function(obj,sign="all",type="all") standardGeneric("strength_mgnet"))
 #' @rdname strength_mgnet-methods
 setMethod("strength_mgnet","mgnet",function(obj,sign="all",type="all"){
+=======
+setGeneric("strength_mgnet", function(obj,sign,type) standardGeneric("strength_mgnet"))
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet,mgnet,character,character
+setMethod("strength_mgnet",c("mgnet","character","character"),function(obj,sign,type){
+  
+  if(length(comm(obj))==0) stop("communities slots is empty")
+>>>>>>> main
   
   sign <- match.arg(sign,c("positive","negative","all"))
   type <- match.arg(type,c("intra","extra","all"))
   
+<<<<<<< HEAD
   if(type!="all" & length(comm(obj))==0) stop("With type setted also comm slots must be no empty")
   
   n <- netw(obj)
   if(length(obj@comm)!=0) c <- comm(obj)
+=======
+  n <- netw(obj)
+  c <- comm(obj)
+>>>>>>> main
   
   # Modify isolated nodes as igraph want
   #------------------------------------#
@@ -2013,7 +2549,11 @@ setMethod("strength_mgnet","mgnet",function(obj,sign="all",type="all"){
   
   if(sign=="positive"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+<<<<<<< HEAD
   } else if(sign=="negative"){
+=======
+  } else if(type=="extra"){
+>>>>>>> main
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
   } else {
     sub.sign <- n
@@ -2033,11 +2573,51 @@ setMethod("strength_mgnet","mgnet",function(obj,sign="all",type="all"){
   return(strength)
 })
 #' @rdname strength_mgnet-methods
+<<<<<<< HEAD
 setMethod("strength_mgnet","list",
           function(obj,sign="all",type="all"){
             lapply(obj, selectMethod(f="strength_mgnet",
                                      signature="mgnet"),
                    sign=sign,type=type)})
+=======
+#' @aliases strength_mgnet-methods,list,character,character
+setMethod("strength_mgnet",c("list","character","character"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="strength_mgnet",
+                                     signature=c("mgnet","character","character")),
+                   sign=sign,type=type)})
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet,mgnet,character,missing
+setMethod("strength_mgnet",c("mgnet","character","missing"),function(obj,sign,type){
+  
+  sign <- match.arg(sign,c("positive","negative","all"))
+  n <- netw(obj)
+  c <- comm(obj)
+
+  # Modify isolated nodes as igraph want
+  #------------------------------------#
+  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+  
+  if(sign=="positive"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
+  } else if(sign=="negative"){
+    sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
+  } else {
+    sub.sign <- n
+  }
+  
+  adj.sub <- as_adjacency_matrix(sub.sign,attr="weight",sparse=FALSE)
+  strength <- setNames(rowSums(adj.sub),taxaID(obj))
+  return(strength)
+})
+#' @rdname strength_mgnet-methods
+#' @aliases strength_mgnet-methods,list,character,missing
+setMethod("strength_mgnet",c("list","character","missing"),
+          function(obj,sign,type){
+            lapply(obj, selectMethod(f="strength_mgnet",
+                                     signature=c("mgnet","character","missing")),
+                   sign=sign)})
+>>>>>>> main
 ################################################################################
 ################################################################################
 # END STRENGTH MGNET

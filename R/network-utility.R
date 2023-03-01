@@ -9,6 +9,7 @@
 #' package. Create n+1 distinct color to associate with communities ID. The 
 #' first color labeled as 0 is always white for isolated nodes.
 #' 
+<<<<<<< HEAD
 #' @param n positive integer indicated the number of distinct color, n<100.
 #' @param colorspace (Optional) Permits to set the color ranges. For more details
 #' see \code{\link{qualpal}}.
@@ -30,6 +31,19 @@ colormap_communities <- function(n=20, alpha=1,
   colormap <- rownames(colormap$RGB)
   colormap <- c(grDevices::rgb(1,1,1),colormap)
   colormap <- grDevices::adjustcolor(colormap,alpha.f=alpha)
+=======
+#' @param n positive integer indicated the number of distinct color.
+#' 
+#' @importFrom randomcoloR distinctColorPalette
+#' @importFrom grDevices rgb
+#' @export
+colormap_communities <- function(n=20){
+  
+  if(round(n)!=n | !is.numeric(n) | n<=0) stop("n must be an integer positive number")
+  
+  colormap <- randomcoloR::distinctColorPalette(k=n)
+  colormap <- c(grDevices::rgb(1,1,1,.8),colormap)
+>>>>>>> main
   names(colormap) <- as.character(0:n)
   
   return(colormap)
@@ -55,6 +69,7 @@ colormap_communities <- function(n=20, alpha=1,
 #' present duplicated in the vector the function choice only unique values.
 #' 
 #' @param taxaID character vector with all taxonomic classification.
+<<<<<<< HEAD
 #' @param colorspace (Optional) Permits to set the color ranges. For more details
 #' see \code{\link{qualpal}}.
 #' @param alpha (Optional) Level of trasparency of colors.
@@ -79,6 +94,20 @@ colormap_taxonomy <- function(taxaID, alpha=1,
   colormap <- qualpalr::qualpal(n=n, colorspace)
   colormap <- rownames(colormap$RGB)
   colormap <- grDevices::adjustcolor(colormap, alpha.f=alpha)
+=======
+#' 
+#' @importFrom randomcoloR distinctColorPalette
+#' @export
+colormap_taxonomy <- function(taxaID){
+  
+  if(!is.character(taxaID)) stop("taxaID must be character")
+  if(!is.null(dim(taxaID))) stop("taxaID can't be a matrix")
+
+  taxaID <- unique(taxaID)
+  n <- length(taxaID)
+  
+  colormap <- randomcoloR::distinctColorPalette(k=n)
+>>>>>>> main
   names(colormap) <- taxaID
   
   return(colormap)

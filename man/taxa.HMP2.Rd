@@ -3,7 +3,11 @@
 \docType{data}
 \name{taxa.HMP2}
 \alias{taxa.HMP2}
+<<<<<<< HEAD
 \title{Taxonomy classification of otu.HMP2}
+=======
+\title{Samples metadata of taxa.HMP2}
+>>>>>>> main
 \format{
 \subsection{\code{taxa.HMP2}}{
 
@@ -18,6 +22,10 @@ Jackson Laboratory
 taxa.HMP2
 }
 \description{
+<<<<<<< HEAD
 Taxonomy classification of otu.HMP2
+=======
+Samples metadata of taxa.HMP2
+>>>>>>> main
 }
 \keyword{datasets}

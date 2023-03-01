@@ -8,8 +8,13 @@
 #' optimization of a signed definition of modularity score.
 #' 
 #'@param obj weighted undirected network belong to \code{\link{igraph}} class 
+<<<<<<< HEAD
 #'or an mgnet.
 #'@param OS (default Linux) string with the operating system running. Possible choices are 
+=======
+#'or an \code{\link{mg-class}}.
+#'@param OS string with the operating system running. Possible choices are 
+>>>>>>> main
 #'"Linux","Windows","Mac".
 #'
 #'@return \code{\link{communities}} igraph object able to manage to communities
@@ -23,9 +28,16 @@
 #' @rdname cluster_signed-methods
 #' @docType methods
 #' @export
+<<<<<<< HEAD
 setGeneric("cluster_signed", function(obj,OS=NA) standardGeneric("cluster_signed"))
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
+=======
+setGeneric("cluster_signed", function(obj,OS) standardGeneric("cluster_signed"))
+#' @rdname cluster_signed-methods
+#' @aliases cluster_signed,igraph,character
+setMethod("cluster_signed", c("igraph","character"), function(obj,OS){
+>>>>>>> main
   
   graph <- obj
   #Check Graph
@@ -111,13 +123,27 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   return(res)
 })
 #' @rdname cluster_signed-methods
+<<<<<<< HEAD
 setMethod("cluster_signed","mgnet",
           function(obj,OS="Linux"){
+=======
+#' @aliases cluster_signed-methods,mgnet,character
+setMethod("cluster_signed",c("mgnet","character"),
+          function(obj,OS){
+>>>>>>> main
             comm(obj) <- cluster_signed(netw(obj),OS=OS)
             return(obj)
           })
 #' @rdname cluster_signed-methods
+<<<<<<< HEAD
 setMethod("cluster_signed","list",
           function(obj,OS="Linux"){
             lapply(obj, selectMethod(f="cluster_signed",signature=c("mgnet","character")),
                    OS=OS)})
+=======
+#' @aliases cluster_signed-methods,list,character
+setMethod("cluster_signed",c("list","character"),
+          function(obj,OS){
+            lapply(obj, selectMethod(f="cluster_signed",signature=c("mgnet","character")),
+                   OS=OS)})
+>>>>>>> main

@@ -6,17 +6,27 @@
 \usage{
 mgnet(
   data = matrix(nrow = 0, ncol = 0),
+<<<<<<< HEAD
   meta_sample = data.frame(),
   taxa = matrix(nrow = 0, ncol = 0),
   meta_taxa = data.frame(),
   adj = matrix(nrow = 0, ncol = 0),
   netw = make_empty_graph(n = 0, directed = FALSE),
   comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))
+=======
+  meta = data.frame(),
+  taxa = matrix(nrow = 0, ncol = 0),
+  netw = make_empty_graph(n = 0, directed = FALSE),
+  comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE)),
+  adj = matrix(nrow = 0, ncol = 0),
+  mg = new("mg")
+>>>>>>> main
 )
 }
 \arguments{
 \item{data}{numeric matrix with all elements >=0.}
 
+<<<<<<< HEAD
 \item{meta_sample}{data.frame with experimental variables.}
 
 \item{taxa}{character matrix with taxonomic classification.}
@@ -28,6 +38,19 @@ mgnet(
 \item{netw}{un-directed weighted igraph network.}
 
 \item{comm}{communities object associated to netw.}
+=======
+\item{meta}{data.frame with experimental variables.}
+
+\item{taxa}{character matrix with taxonomic classification.}
+
+\item{netw}{un-directed weighted igraph network.}
+
+\item{comm}{communities object associated to netw.}
+
+\item{adj}{adjacency matrix of netw.}
+
+\item{mg}{object belong to mg class.}
+>>>>>>> main
 }
 \description{
 User constructor to create an object belonging to formal s4

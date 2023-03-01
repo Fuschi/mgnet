@@ -3,6 +3,7 @@
 \docType{methods}
 \name{make_mgnet}
 \alias{make_mgnet}
+<<<<<<< HEAD
 \alias{make_mgnet,mgnet,character,character,numeric-method}
 \alias{make_mgnet,list,character,character,numeric-method}
 \title{Build a meta-genomic network.}
@@ -15,16 +16,47 @@ make_mgnet(mgnet, cor.method, thresh.method, thresh, adjust = NA)
 }
 \arguments{
 \item{mgnet}{mgnet object}
+=======
+\alias{make_mgnet,mg,character,character,character,numeric-method}
+\alias{make_mgnet,mg,character,character,character,numeric}
+\alias{make_mgnet,mg,character,character,missing,numeric-method}
+\alias{make_mgnet,mg,character,character,missing,numeric}
+\alias{make_mgnet,list,character,character,character,numeric-method}
+\alias{make_mgnet,list,character,character,character,numeric}
+\alias{make_mgnet,list,character,character,missing,numeric-method}
+\alias{make_mgnet,list,character,character,missing,numeric}
+\title{Build a meta-genomic network.}
+\usage{
+make_mgnet(mg, cor.method, thresh.method, adjust, thresh)
+
+\S4method{make_mgnet}{mg,character,character,character,numeric}(mg, cor.method, thresh.method, adjust, thresh)
+
+\S4method{make_mgnet}{mg,character,character,missing,numeric}(mg, cor.method, thresh.method, adjust, thresh)
+
+\S4method{make_mgnet}{list,character,character,character,numeric}(mg, cor.method, thresh.method, adjust, thresh)
+
+\S4method{make_mgnet}{list,character,character,missing,numeric}(mg, cor.method, thresh.method, adjust, thresh)
+}
+\arguments{
+\item{mg}{mg object}
+>>>>>>> main
 
 \item{cor.method}{correlation type, possible choices are "pearson","spearman","kendall".}
 
 \item{thresh.method}{threshold method to retrieve the adjacency matrix. Possible
 choices are "absolute","density","p-value".}
 
+<<<<<<< HEAD
 \item{thresh}{numeric indicates the threshold value.}
 
 \item{adjust}{multiple test criteria, possible choices are "holm",
 "hochberg","hommel","bonferroni","BH","BY","fdr","none".}
+=======
+\item{adjust}{multiple test criteria, possible choices are "holm",
+"hochberg","hommel","bonferroni","BH","BY","fdr","none".}
+
+\item{thresh}{numeric indicates the threshold value.}
+>>>>>>> main
 }
 \description{
 The function has the purpose of building a meta-genomic network

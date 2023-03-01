@@ -59,8 +59,13 @@ clr <- function(X, mar=1){
 #' 
 #' @export
 adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
+<<<<<<< HEAD
                                method="pearson",adjust="holm",alpha=.05,
                                keep.psych=FALSE){
+=======
+                           method="pearson",adjust="holm",alpha=.05,
+                           keep.psych=FALSE){
+>>>>>>> main
   
   # Check the logical assignment of the parameters.
   if(!is.null(x) & (!is.null(r) | !is.null(n))) stop("x, r and n can't be not null togheter. The function permits the cases the abundances x OR the correlation matrix r with the number of observation n.")
@@ -100,7 +105,11 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
   } else {
     
     res.psych <- psych::corr.p(r=r,n=n,adjust=adjust,
+<<<<<<< HEAD
                                alpha=alpha,ci=FALSE)
+=======
+                                  alpha=alpha,ci=FALSE)
+>>>>>>> main
     
     if(adjust!="none"){
       padj <- res.psych$p
@@ -115,7 +124,11 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
   
   # return
   if(keep.psych){return(list("adj"=adj,
+<<<<<<< HEAD
                              "psyc"=res.psych))
+=======
+                "psyc"=res.psych))
+>>>>>>> main
   } else {return(adj)}
   
 }
@@ -186,4 +199,8 @@ adjacency_edge_density <- function(x=NULL,r=NULL, method="pearson",th=.05){
 ################################################################################
 # END ADJACENCY EDGE-DENSITY
 ################################################################################
+<<<<<<< HEAD
 ################################################################################
+=======
+################################################################################
+>>>>>>> main

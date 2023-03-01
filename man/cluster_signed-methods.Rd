@@ -3,6 +3,7 @@
 \docType{methods}
 \name{cluster_signed}
 \alias{cluster_signed}
+<<<<<<< HEAD
 \alias{cluster_signed,igraph-method}
 \alias{cluster_signed,mgnet-method}
 \alias{cluster_signed,list-method}
@@ -21,6 +22,29 @@ cluster_signed(obj, OS = NA)
 or an mgnet.}
 
 \item{OS}{(default Linux) string with the operating system running. Possible choices are
+=======
+\alias{cluster_signed,igraph,character-method}
+\alias{cluster_signed,igraph,character}
+\alias{cluster_signed,mgnet,character-method}
+\alias{cluster_signed-methods,mgnet,character}
+\alias{cluster_signed,list,character-method}
+\alias{cluster_signed-methods,list,character}
+\title{Get Communities of a Signed Weighted Graph}
+\usage{
+cluster_signed(obj, OS)
+
+\S4method{cluster_signed}{igraph,character}(obj, OS)
+
+\S4method{cluster_signed}{mgnet,character}(obj, OS)
+
+\S4method{cluster_signed}{list,character}(obj, OS)
+}
+\arguments{
+\item{obj}{weighted undirected network belong to \code{\link{igraph}} class
+or an \code{\link{mg-class}}.}
+
+\item{OS}{string with the operating system running. Possible choices are
+>>>>>>> main
 "Linux","Windows","Mac".}
 }
 \value{

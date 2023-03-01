@@ -4,6 +4,7 @@
 \alias{colormap_communities}
 \title{Create color palette for communities}
 \usage{
+<<<<<<< HEAD
 colormap_communities(
   n = 20,
   alpha = 1,
@@ -17,6 +18,12 @@ colormap_communities(
 
 \item{colorspace}{(Optional) Permits to set the color ranges. For more details
 see \code{\link{qualpal}}.}
+=======
+colormap_communities(n = 20)
+}
+\arguments{
+\item{n}{positive integer indicated the number of distinct color.}
+>>>>>>> main
 }
 \description{
 User wrapper for distinctColorPalette function of randomcoloR

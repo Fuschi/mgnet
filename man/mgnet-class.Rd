@@ -3,13 +3,20 @@
 \docType{class}
 \name{mgnet-class}
 \alias{mgnet-class}
+<<<<<<< HEAD
 \title{S4 class to manage metagenomics networks}
 \description{
 S4 class to manage metagenomics networks
+=======
+\title{S4 class to manage metagenomic networks}
+\description{
+S4 class to manage metagenomic networks
+>>>>>>> main
 }
 \section{Slots}{
 
 \describe{
+<<<<<<< HEAD
 \item{\code{data}}{ngs data}
 
 \item{\code{meta_sample}}{samples experimental features.}
@@ -21,5 +28,16 @@ S4 class to manage metagenomics networks
 \item{\code{netw}}{undirected, weighted igraph network.}
 
 \item{\code{comm}}{graph communities of netw.}
+=======
+\item{\code{data}}{table of data}
+
+\item{\code{meta}}{sample features}
+
+\item{\code{taxa}}{taxonomic information}
+
+\item{\code{netw}}{undirected, weighted and signed igraph network}
+
+\item{\code{comm}}{graph communities of netw}
+>>>>>>> main
 }}
 
