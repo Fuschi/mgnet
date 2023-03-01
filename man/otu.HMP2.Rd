@@ -3,7 +3,7 @@
 \docType{data}
 \name{otu.HMP2}
 \alias{otu.HMP2}
-\title{Collection of 16s Gut Bacteria part of Human Microbiome Project 2 (HMP2)}
+\title{Gut OTUs from Human Microbiome Project 2 (HMP2)}
 \format{
 \subsection{\code{otu.HMP2}}{
 
@@ -11,12 +11,12 @@ A matrix with 1122 rows/sample and 1953 columns/OTUs:
 }
 }
 \source{
-Jackson Laboratory
+George Weinstock
 }
 \usage{
 otu.HMP2
 }
 \description{
-Collection of 16s Gut Bacteria part of Human Microbiome Project 2 (HMP2)
+Gut OTUs from Human Microbiome Project 2 (HMP2)
 }
 \keyword{datasets}

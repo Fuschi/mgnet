@@ -3,18 +3,17 @@
 \docType{methods}
 \name{comm<-}
 \alias{comm<-}
-\alias{comm<-,mg,communities-method}
-\alias{comm<-,mgnet,communities}
+\alias{comm<-,mgnet,communities-method}
 \title{Assign a new comm to \code{object}}
 \usage{
 comm(object) <- value
 
-\S4method{comm}{mg,communities}(object) <- value
+\S4method{comm}{mgnet,communities}(object) <- value
 }
 \arguments{
-\item{object}{(Required) \code{\link{mgnet-class}}.}
+\item{object}{mgnet.}
 
-\item{value}{(Required) \code{\link{communities}}}
+\item{value}{\code{\link{communities}}}
 }
 \description{
 Assign a new comm to \code{object}

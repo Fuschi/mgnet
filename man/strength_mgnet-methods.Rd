@@ -3,33 +3,23 @@
 \docType{methods}
 \name{strength_mgnet}
 \alias{strength_mgnet}
-\alias{strength_mgnet,mgnet,character,character-method}
-\alias{strength_mgnet,mgnet,character,character}
-\alias{strength_mgnet,list,character,character-method}
-\alias{strength_mgnet-methods,list,character,character}
-\alias{strength_mgnet,mgnet,character,missing-method}
-\alias{strength_mgnet,mgnet,character,missing}
-\alias{strength_mgnet,list,character,missing-method}
-\alias{strength_mgnet-methods,list,character,missing}
+\alias{strength_mgnet,mgnet-method}
+\alias{strength_mgnet,list-method}
 \title{Signed Vertices Strengths with Communities Info}
 \usage{
-strength_mgnet(obj, sign, type)
+strength_mgnet(obj, sign = "all", type = "all")
 
-\S4method{strength_mgnet}{mgnet,character,character}(obj, sign, type)
+\S4method{strength_mgnet}{mgnet}(obj, sign = "all", type = "all")
 
-\S4method{strength_mgnet}{list,character,character}(obj, sign, type)
-
-\S4method{strength_mgnet}{mgnet,character,missing}(obj, sign, type)
-
-\S4method{strength_mgnet}{list,character,missing}(obj, sign, type)
+\S4method{strength_mgnet}{list}(obj, sign = "all", type = "all")
 }
 \arguments{
 \item{obj}{mgnet class.}
 
-\item{sign}{character indicates the sign of the edges. Possible values are
+\item{sign}{(default "all") character indicates the sign of the edges. Possible values are
 "positive","negative","all".}
 
-\item{type}{character with possible values "intra","extra","all".}
+\item{type}{(default "all") character with possible values "intra","extra","all".}
 }
 \description{
 Calculates the vertices strengths using the information on the

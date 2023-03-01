@@ -4,10 +4,19 @@
 \alias{colormap_taxonomy}
 \title{Create color palette for taxonomy}
 \usage{
-colormap_taxonomy(taxaID)
+colormap_taxonomy(
+  taxaID,
+  alpha = 1,
+  colorspace = list(h = c(0, 360), s = c(0.25, 1), l = c(0.5, 0.9))
+)
 }
 \arguments{
 \item{taxaID}{character vector with all taxonomic classification.}
+
+\item{alpha}{(Optional) Level of trasparency of colors.}
+
+\item{colorspace}{(Optional) Permits to set the color ranges. For more details
+see \code{\link{qualpal}}.}
 }
 \description{
 User wrapper for distinctColorPalette function of randomcoloR

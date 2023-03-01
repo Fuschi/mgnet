@@ -59,8 +59,8 @@ clr <- function(X, mar=1){
 #' 
 #' @export
 adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
-                           method="pearson",adjust="holm",alpha=.05,
-                           keep.psych=FALSE){
+                               method="pearson",adjust="holm",alpha=.05,
+                               keep.psych=FALSE){
   
   # Check the logical assignment of the parameters.
   if(!is.null(x) & (!is.null(r) | !is.null(n))) stop("x, r and n can't be not null togheter. The function permits the cases the abundances x OR the correlation matrix r with the number of observation n.")
@@ -100,7 +100,7 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
   } else {
     
     res.psych <- psych::corr.p(r=r,n=n,adjust=adjust,
-                                  alpha=alpha,ci=FALSE)
+                               alpha=alpha,ci=FALSE)
     
     if(adjust!="none"){
       padj <- res.psych$p
@@ -115,7 +115,7 @@ adjacency_p_adjust <- function(x=NULL,r=NULL,n=NULL,
   
   # return
   if(keep.psych){return(list("adj"=adj,
-                "psyc"=res.psych))
+                             "psyc"=res.psych))
   } else {return(adj)}
   
 }

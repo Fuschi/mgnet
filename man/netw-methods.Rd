@@ -4,9 +4,7 @@
 \name{netw}
 \alias{netw}
 \alias{netw,mgnet-method}
-\alias{netw,mgnet}
 \alias{netw,list-method}
-\alias{netw,list}
 \title{Retrieves netw.}
 \usage{
 netw(object)
@@ -16,7 +14,7 @@ netw(object)
 \S4method{netw}{list}(object)
 }
 \arguments{
-\item{object}{(Required) \code{\link{mgnet-class}}.}
+\item{object}{mgnet or list.}
 }
 \description{
 Return the igraph un-directed weighted network.

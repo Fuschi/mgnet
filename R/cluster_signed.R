@@ -8,8 +8,8 @@
 #' optimization of a signed definition of modularity score.
 #' 
 #'@param obj weighted undirected network belong to \code{\link{igraph}} class 
-#'or an \code{\link{mg-class}}.
-#'@param OS string with the operating system running. Possible choices are 
+#'or an mgnet.
+#'@param OS (default Linux) string with the operating system running. Possible choices are 
 #'"Linux","Windows","Mac".
 #'
 #'@return \code{\link{communities}} igraph object able to manage to communities
@@ -23,10 +23,9 @@
 #' @rdname cluster_signed-methods
 #' @docType methods
 #' @export
-setGeneric("cluster_signed", function(obj,OS) standardGeneric("cluster_signed"))
+setGeneric("cluster_signed", function(obj,OS=NA) standardGeneric("cluster_signed"))
 #' @rdname cluster_signed-methods
-#' @aliases cluster_signed,igraph,character
-setMethod("cluster_signed", c("igraph","character"), function(obj,OS){
+setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   
   graph <- obj
   #Check Graph
@@ -112,15 +111,13 @@ setMethod("cluster_signed", c("igraph","character"), function(obj,OS){
   return(res)
 })
 #' @rdname cluster_signed-methods
-#' @aliases cluster_signed-methods,mgnet,character
-setMethod("cluster_signed",c("mgnet","character"),
-          function(obj,OS){
+setMethod("cluster_signed","mgnet",
+          function(obj,OS="Linux"){
             comm(obj) <- cluster_signed(netw(obj),OS=OS)
             return(obj)
           })
 #' @rdname cluster_signed-methods
-#' @aliases cluster_signed-methods,list,character
-setMethod("cluster_signed",c("list","character"),
-          function(obj,OS){
+setMethod("cluster_signed","list",
+          function(obj,OS="Linux"){
             lapply(obj, selectMethod(f="cluster_signed",signature=c("mgnet","character")),
                    OS=OS)})

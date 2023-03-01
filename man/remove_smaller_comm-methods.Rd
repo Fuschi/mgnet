@@ -3,28 +3,25 @@
 \docType{methods}
 \name{remove_smaller_comm}
 \alias{remove_smaller_comm}
-\alias{remove_smaller_comm,mgnet,numeric,logical-method}
-\alias{remove_smaller_comm,mgnet,logical}
+\alias{remove_smaller_comm,mgnet,numeric,ANY-method}
 \alias{remove_smaller_comm,list,numeric,logical-method}
-\alias{remove_smaller_comm-methods,list,numeric,logical}
 \title{Remove smaller communities}
 \usage{
-remove_smaller_comm(obj, size, trim)
+remove_smaller_comm(obj, size, trim = NA)
 
-\S4method{remove_smaller_comm}{mgnet,numeric,logical}(obj, size, trim)
+\S4method{remove_smaller_comm}{mgnet,numeric,ANY}(obj, size, trim = TRUE)
 
-\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim)
+\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim = NA)
 }
 \arguments{
-\item{obj}{\code{\link{mgnet-class}}}
+\item{obj}{mgnet.}
 
 \item{size}{integer indicates the vertex number threshold}
 
-\item{trim}{logical. If true, the function removes all nodes not belonging
-to a community with size equal to size. If false the filtered vertices are
-set as isolated.}
+\item{trim}{(Optional, default TRUE) logical. If true, the function removes
+all nodes not belonging to a community with size equal to size. If false the
+filtered vertices are set as isolated.}
 }
 \description{
-allows you to remove communities based on the number of
-vertices.
+Allows you to remove communities based on the number of vertices.
 }

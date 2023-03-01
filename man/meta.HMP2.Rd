@@ -13,7 +13,7 @@ the sensibility or the resistance to the insulin and the time for each samples.
 }
 }
 \source{
-Jackson Laboratory
+George Weinstock
 }
 \usage{
 meta.HMP2

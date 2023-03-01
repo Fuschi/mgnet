@@ -4,9 +4,7 @@
 \name{commID}
 \alias{commID}
 \alias{commID,mgnet-method}
-\alias{commID,mgnet}
 \alias{commID,list-method}
-\alias{commID,list}
 \title{Get communities ID.}
 \usage{
 commID(object)
@@ -16,7 +14,7 @@ commID(object)
 \S4method{commID}{list}(object)
 }
 \arguments{
-\item{object}{(Required) \code{\link{mgnet-class}}.}
+\item{object}{mgnet-class.}
 }
 \description{
 Return vector of character with the community ID for each vertex.

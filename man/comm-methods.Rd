@@ -4,9 +4,7 @@
 \name{comm}
 \alias{comm}
 \alias{comm,mgnet-method}
-\alias{comm,mgnet}
 \alias{comm,list-method}
-\alias{comm,list}
 \title{Retrieves network communities.}
 \usage{
 comm(object)
@@ -16,7 +14,7 @@ comm(object)
 \S4method{comm}{list}(object)
 }
 \arguments{
-\item{object}{(Required) \code{\link{mgnet-class}}.}
+\item{object}{mgnet or list.}
 }
 \description{
 Return the communities associated to netw slot.
