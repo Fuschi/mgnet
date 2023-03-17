@@ -77,6 +77,7 @@ setClass(
       if(any(duplicated(rownames(object@taxa[,ncol(object@taxa)])))) return("\n find in last column taxa matrix at least a duplicated taxa ID.")
       if(any(sapply(colnames(object@data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/col name cannot begin with number")
       if(any(is.na(object@taxa))) return("\n in taxa cannot be present NA")
+      if(any(object@taxa=="")) return("\n in taxa cannot be present empty character elements (can you rename as unknow or somenthing similar??)")
     }
     
     #CHECK META_TAXA
@@ -1075,7 +1076,7 @@ setMethod("abundance", c("mgnet","character"),function(object,rank){
   
   different.taxa <- unique(object@taxa[,rank])
   data.aggregate <- t(aggregate(t(object@data), by=list(object@taxa[,rank]), 
-                                FUN="sum", drop=FALSE))
+                                FUN="sum", drop=FALSE, simplify = TRUE))
   colnames(data.aggregate) <- data.aggregate[1,]
   data.aggregate <- data.aggregate[-1,]
   data.aggregate <- data.aggregate[,different.taxa]
@@ -1153,6 +1154,60 @@ setMethod("relative",c("list","character"),
                    rank=rank)}
 )
 #####################################
+# CLR ABUNDANCE 
+#####################################
+#' Get clr abundances at taxonomy rank choosen.
+#' 
+#' @description 
+#' Retrieves the clr abundances of data the taxonomic rank choosen.
+#' In mgnet object must be save log_data slot.
+#' 
+#' @usage relative(object,rank)
+#' 
+#' @param object mgnet or list.
+#' @param rank (Optional)
+#' 
+#' @importFrom stats aggregate
+#' 
+#' @rdname clr_abundance-methods
+#' @docType methods
+#' @export
+setGeneric("clr_abundance", function(object,rank) standardGeneric("clr_abundance"))
+#' @rdname clr_abundance-methods
+setMethod("clr_abundance", c("mgnet","missing"),function(object){
+  
+  if(length(object@log_data)==0) stop("log_data cannot be empty")
+  return(object@log_data)
+  
+})
+#' @rdname clr_abundance-methods
+setMethod("clr_abundance", c("mgnet","character"),function(object,rank){
+  if(length(object@log_data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
+  if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
+
+  different.taxa <- unique(object@taxa[,rank])
+  data.aggregate <- t(aggregate(t(object@log_data), by=list(object@taxa[,rank]), 
+                                FUN="sum", drop=FALSE))
+  colnames(data.aggregate) <- data.aggregate[1,]
+  data.aggregate <- data.aggregate[-1,]
+  data.aggregate <- data.aggregate[,different.taxa]
+  class(data.aggregate) <- "numeric"
+  
+  return(data.aggregate)
+})
+#' @rdname clr_abundance-methods
+setMethod("clr_abundance",c("list","missing"),
+          function(object){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="clr_abundance",signature=c("mgnet","missing")))})
+#' @rdname clr_abundance-methods
+setMethod("clr_abundance",c("list","character"),
+          function(object,rank){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="clr_abundance",signature=c("mgnet","character")),
+                   rank=rank)}
+)
+#####################################
 # COMMID
 #####################################
 #' Get communities ID.
@@ -1182,6 +1237,58 @@ setMethod("commID","list",
           function(object){
             is_mgnet_list(object)
             lapply(object, selectMethod(f="commID",signature="mgnet"))})
+#####################################
+# TOP TAXA
+#####################################
+#' Get top taxa.
+#' 
+#' @description 
+#' Sort the top taxa at taxonomic level and function choosen
+#' 
+#' @param object mgnet or list.
+#' @param which the comparison can be made on absolute values, on relative abundances
+#' or on clr transformed data (possible values are "abs","rel","clr").
+#' @param rank taxonomic level choosen.
+#' @param fun function choosen for the comparison. It must receve as input a vector
+#' and return a number (mean, median, max, etc...).
+#' 
+#' 
+#' @rdname top_taxa-methods
+#' @docType methods
+#' @export
+setGeneric("top_taxa", function(object,which,rank,fun) standardGeneric("top_taxa"))
+#' @rdname top_taxa-methods
+setMethod("top_taxa", c("mgnet","character","character","function"),
+          function(object,which,rank,fun){
+            
+            which <- match.arg(which,c("abs","rel","clr"))
+            if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
+            if(!is.function(fun)) stop("fun must be a function")
+            if(!is.numeric(fun(c(1,2)))) stop("fun must return a number")
+            if(length(fun(c(1,2)))!=1) stop("fun must return an element of length 1")
+            
+            if(which=="abs"){
+              x <- abundance(object,rank)
+            } else if(which=="rel"){
+              if(!("sample_sum"%in%sample_info(object))) stop("for relative must be present sample_sum in meta_sample (See save_sample_sum).")
+              x <- relative(object,rank)
+            } else {
+              if(length(log_data(object))==0) stop("log_data slot cannot be empty")
+              x <- clr_abundance(object,rank)
+            }
+            
+            top_taxa <- apply(x,2,FUN=fun)
+            names(top_taxa) <- colnames(x)
+            top_taxa <- sort(top_taxa,decreasing=TRUE)
+            return(top_taxa)
+  })
+#' @rdname top_taxa-methods
+setMethod("top_taxa","list",
+          function(object,which,rank,fun){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="top_taxa",
+                                        signature=c("mgnet","character","character","function")),
+                   which=which,rank=rank,fun=fun)})
 ################################################################################
 ################################################################################
 # END BASE METHODS

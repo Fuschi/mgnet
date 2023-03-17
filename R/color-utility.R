@@ -18,7 +18,7 @@
 #' @importFrom grDevices rgb adjustcolor
 #' @export
 colormap_communities <- function(n=20, alpha=1,
-                                 colorspace=list(h=c(0,360),s=c(.25,1),l=c(.25,.75))){
+                                 colorspace=list(h=c(0,360),s=c(.5,1),l=c(.6,.9))){
   
   if(round(n)!=n | !is.numeric(n) | n<=0 | n>99) stop("n must be an integer positive number (not greater or equal to 100)")
   if(!is.numeric(alpha)) stop("alpha must be numeric")
@@ -66,9 +66,9 @@ colormap_communities <- function(n=20, alpha=1,
 #' @importFrom qualpalr qualpal
 #' @export
 colormap_taxonomy <- function(taxaID, 
-                              distinctColor=30, extraColor=rgb(.75,.75,.75,.5),
+                              distinctColor=20, extraColor=rgb(.75,.75,.75,.25),
                               alpha=1,
-                              colorspace=list(h=c(0,360),s=c(.25,1),l=c(.5,.9))){
+                              colorspace=list(h=c(0,360),s=c(.5,1),l=c(.6,.9))){
   
   if(!is.character(taxaID)) stop("taxaID must be character")
   if(!is.null(dim(taxaID))) stop("taxaID can't be a matrix")
