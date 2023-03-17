@@ -11,6 +11,7 @@ setOldClass("communities")
 #' @slot meta_sample samples experimental features.
 #' @slot taxa taxonomic table 
 #' @slot meta_taxa additional info on taxa.
+#' @slot log_data matrix contain the log-ratio transformed data (compostional trans).
 #' @slot netw undirected, weighted igraph network.
 #' @slot comm graph communities of netw.
 #'
@@ -26,6 +27,7 @@ setClass(
          meta_sample="data.frame",
          taxa="matrix",
          meta_taxa="data.frame",
+         log_data="matrix",
          netw="igraph",
          comm="communities"
          ),
@@ -34,6 +36,7 @@ setClass(
                       meta_sample=data.frame(),
                       taxa=matrix(nrow=0,ncol=0),
                       meta_taxa=data.frame(),
+                      log_data=matrix(nrow=0, ncol=0),
                       netw=make_empty_graph(n=0, directed=FALSE),
                       comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))),
   
@@ -86,6 +89,18 @@ setClass(
       if(any(sapply(rownames(object@meta_taxa),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/row name in meta_taxa cannot begin with number")
     }
     
+    #CHECK LOG_DATA
+    #-------------------------------------#
+    if( length(object@log_data)!=0 ){
+      if(!is.numeric(object@log_data)) return("\n log_data matrix must be numeric")
+      if(is.null(rownames(object@log_data))) return("\n log_data matrix must have the rows names where the samples IDs were saved.")
+      if(is.null(colnames(object@log_data))) return("\n log_data matrix must have the cols names where the taxa IDs were saved")
+      if(any(duplicated(rownames(object@log_data)))) return("\n find in log_data matrix at least a duplicated row name / sample ID.")
+      if(any(duplicated(colnames(object@log_data)))) return("\n find in log_data matrix at least a duplicated col name / taxa ID.")
+      if(any(sapply(colnames(object@log_data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("taxa/col name cannot begin with number")
+      if(any(sapply(rownames(object@log_data),function(x)grepl(substr(x,1,1),'[0-9]')))) return("sample/row name cannot begin with number")
+    }
+    
     # CHECK NETW
     #-------------------------------------#
     if(length(object@netw)!=0){
@@ -122,6 +137,13 @@ setClass(
         if(!all(colnames(object@data)==rownames(object@meta_taxa))) return("\n data colnames and meta_taxa rownames (taxa IDs) must be identical in data and taxa slots")
       }
       
+      if(length(object@log_data)!=0){
+        if(nrow(object@data)!=nrow(object@log_data)) return("\n different number of samples in data and log_data slots")
+        if(!all(rownames(object@data)==rownames(object@log_data))) return("\n rows names / sample IDs must be identical in data and log_data slots")
+        if(ncol(object@data)!=ncol(object@log_data)) return("\n different number of taxa in data and log_data slots")
+        if(!all(colnames(object@data)==colnames(object@log_data))) return("\n cols names / taxa IDs must be identical in data and log_data slots")
+      }
+      
       if(length(object@netw)!=0){
         if(vcount(object@netw)!=ncol(object@data)) return("\n netw vertices number must be equal to columns number of data")
         if(any(colnames(object@data)!=V(object@netw)$name)) return("\n netw vertex name and colnames of data must be equal")
@@ -134,7 +156,12 @@ setClass(
       
       if(length(object@meta_taxa)!=0){
         if(nrow(object@taxa)!=nrow(object@meta_taxa)) return("\n different number of taxa in taxa and meta_taxa slots")
-        if(!all(rownames(object@taxa)==rownames(object@meta_taxa))) return("\n taxa rownames and meta_taxa rownames (taxa IDs) must be identical in taxa and taxa slots")
+        if(!all(rownames(object@taxa)==rownames(object@meta_taxa))) return("\n taxa rownames and meta_taxa rownames (taxa IDs) must be identical.")
+      }
+      
+      if(length(object@log_data)!=0){
+        if(nrow(object@taxa)!=ncol(object@log_data)) return("\n different number of taxa in taxa and log_data slots")
+        if(!all(rownames(object@taxa)==colnames(object@log_data))) return("\n taxa rownames and log_data colnames (taxa IDs) must be identical.")
       }
       
       if(length(object@netw)!=0){
@@ -147,9 +174,24 @@ setClass(
     #-------------------------------------#
     if(length(object@meta_taxa)!=0){
       
+      if(length(object@log_data)!=0){
+        if(nrow(object@meta_taxa)!=ncol(object@log_data)) return("\n different number of taxa in meta_taxa and log_data slots")
+        if(!all(rownames(object@meta_taxa)==colnames(object@log_data))) return("\n meta_taxa rownames and log_data colnames (taxa IDs) must be identical.")
+      }
+      
       if(length(object@netw)!=0){
         if(vcount(object@netw)!=nrow(object@meta_taxa)) return("\n netw vertices number must be equal to rows number of meta_taxa")
         if(any(rownames(object@meta_taxa)!=V(object@netw)$name)) return("\n netw vertex name and rownames of meta_taxa must be equal")
+      }
+    }
+    
+    #CHECK LOG_DATA PROPERITES RESPECT OTHER SLOTS
+    #-------------------------------------#
+    if(length(object@log_data)!=0){
+      
+      if(length(object@netw)!=0){
+        if(vcount(object@netw)!=ncol(object@log_data)) return("\n netw vertices number must be equal to cols number of log_data")
+        if(any(colnames(object@log_data)!=V(object@netw)$name)) return("\n netw vertex name and colnames of log_data must be equal")
       }
     }
     
@@ -158,6 +200,77 @@ setClass(
 ################################################################################
 ################################################################################
 # END CLASS MG
+################################################################################
+################################################################################
+
+
+
+
+# CHECK MGNET LIST INTERNAL
+################################################################################
+#' Check mgnet list
+#' 
+#' @description Internal function to check if a list is compose from only 
+#' mgnet objects.
+#' @param object list 
+#' @keywords internal
+is_mgnet_list <- function(L){
+  if(!is.list(L)) stop("the argument must be a list")
+  check <- sapply(L, function(x) isa(x,"mgnet"))
+  
+  if(any(check==FALSE)){
+    stop("list must contain all mgnet objects")
+  } else {
+    TRUE
+  }
+}
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# SAVE SAMPLE SUM
+################################################################################
+################################################################################
+#' Save sample sum in mgnet.
+#' 
+#' @description 
+#' Store in mgnet object the variable sample_sum in meta_sample in which are
+#' saved the count sum for each sample. It is necessary to retrieves relative
+#' abundances of samples.
+#'
+#' @param object mgnet or list 
+#'
+#' @export
+#' @docType methods
+#' @rdname save_sample_sum-methods
+setGeneric("save_sample_sum", function(object) standardGeneric("save_sample_sum"))
+#' @rdname save_sample_sum-methods
+setMethod("save_sample_sum", "mgnet", function(object){
+  
+  if(length(object@data)==0) stop("data cannot be empty")
+  
+  if(length(object@meta_sample)!=0){
+    object@meta_sample <- data.frame("sample_sum"=rowSums(object@data))
+  } else if(length(object@meta_sample)!=0 & !("sample_sum"%in%colnames(object@meta_sample))){
+    object@meta_sample$sample_sum <- rowSums(object@data)
+  } else {
+    object@meta_sample$sample_sum <- rowSums(object@data)
+    message("the sample_sum column of meta_sample slot has been rewritten")
+  }
+  
+  return(object)
+})
+#' @rdname save_sample_sum-methods
+setMethod("save_sample_sum","list",
+          function(object){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="save_sample_sum",signature="mgnet"))})
+################################################################################
+################################################################################
+# SAVE SAMPLE SUM
 ################################################################################
 ################################################################################
 
@@ -178,6 +291,7 @@ setClass(
 #' @param meta_sample data.frame with experimental variables.
 #' @param taxa character matrix with taxonomic classification.  
 #' @param meta_taxa data.frame with addition info on taxa.
+#' @param log_data log-transformed data.
 #' @param adj adjacency matrix of netw.
 #' @param netw un-directed weighted igraph network.
 #' @param comm communities object associated to netw.
@@ -189,6 +303,7 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
                   taxa=matrix(nrow=0,ncol=0),
                   meta_taxa=data.frame(),
                   adj=matrix(nrow=0,ncol=0),
+                  log_data=matrix(nrow=0,ncol=0),
                   netw=make_empty_graph(n=0, directed=FALSE),
                   comm=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
                   ){
@@ -205,8 +320,15 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
     netw <- graph_from_adjacency_matrix(adj,'undirected',weighted=TRUE)
   }
   
+  if(length(data)!=0 & length(meta_sample)==0){
+    meta_sample <- data.frame("sample_sum"=rowSums(data))
+  } else if( length(meta_sample)!=0 & !("sample_sum"%in%colnames(meta_sample))){
+    meta_sample$sample_sum <- rowSums(data)
+  }
+  
   return(new("mgnet",data=data, meta_sample=meta_sample,
                      taxa=taxa, meta_taxa=meta_taxa,
+                     log_data=log_data,
                      netw=netw, comm=comm))
   
 }
@@ -221,74 +343,50 @@ mgnet <- function(data=matrix(nrow=0,ncol=0),
 
 ################################################################################
 ################################################################################
-# SAMPLE SUM AND GEOMETRIC MEAN
+# SAVE LOG-TRANSFORMED DATA
 ################################################################################
 ################################################################################
-# SAMPLE SUM
-#####################################
-#' Save sample sum in mgnet.
+#' Save log-transformed data in mgnet.
 #' 
 #' @description 
-#' Store in mgnet object the variable sample_sum in meta_sample in which are
-#' saved the count sum for each sample. It is necessary to retrieves relative
-#' abundances of samples.
+#' Store in mgnet the log-transformed data to dealing with compositional issues.
 #'
 #' @param object mgnet or list 
+#' @param method character with possible values "base" or "inter-quantile".
 #'
 #' @export
 #' @docType methods
+#' @rdname save_log_data-methods
+setGeneric("save_log_data", function(object, method="base") standardGeneric("save_log_data"))
 #' @rdname save_sample_sum-methods
-setGeneric("save_sample_sum", function(object) standardGeneric("save_sample_sum"))
-#' @rdname save_sample_sum-methods
-setMethod("save_sample_sum", "mgnet", function(object){
+setMethod("save_log_data", "mgnet", function(object, method="base"){
   
-  if(length(object@data)==0) stop("data cannot be empty")
+  method <- match.arg(method, c("base","inter-quantile"))
   
-  ifelse(length(object@meta_sample)!=0,
-         object@meta_sample$sample_sum <- rowSums(object@data),
-         object@meta_sample <- data.frame("sample_sum"=rowSums(object@data)))
+  ifelse(any(data(object)==0),
+         x <- zero_dealing(data(object)),
+         x <- data(object))
   
-  return(object)
+  ifelse(method=="base",
+         log_x <- clr(x),
+         log_x <- iqclr(x))
+  
+  if(length(log_data(object))!=0) message("log_data slot has been rewritten")
+  
+  return(mgnet(data=object@data, meta_sample=object@meta_sample,
+               taxa=object@taxa, meta_taxa=object@meta_taxa,
+               netw=object@netw, comm=object@comm,
+               log_data=log_x))
 })
-#' @rdname save_sample_sum-methods
-setMethod("save_sample_sum","list",
-          function(object){
-            lapply(object, selectMethod(f="save_sample_sum",signature="mgnet"))})
-#####################################
-# GEOMETRIC MEAN
-#####################################
-#' Save sample geometric mean in mgnet.
-#' 
-#' @description 
-#' Store in mgnet object the variable geometric_mean in meta_sample in which are
-#' saved the geometric mean for each sample. It is necessary to retrieves clr 
-#' transformed abundances of samples.
-#'
-#' @param object mgnet or list 
-#'
-#' @export
-#' @docType methods
-#' @rdname save_geometric_mean-methods
-setGeneric("save_geometric_mean", function(object) standardGeneric("save_geometric_mean"))
-#' @rdname save_geometric_mean-methods
-setMethod("save_geometric_mean", "mgnet", function(object){
-  
-  if(length(object@data)==0) stop("data cannot be empty")
-  ifelse(any(object@data==0), data<-object@data+1, data<-object@data)
-  
-  ifelse(length(object@meta_sample)!=0,
-         object@meta_sample$geometric_mean <- apply(data,1, function(x) exp(mean(log(x))), simplify=T),
-         object@meta_sample <- data.frame("geometric_mean"= apply(data,1, function(x) exp(mean(log(x))), simplify=T)))
-
-  return(object)
-})
-#' @rdname save_geometric_mean-methods
-setMethod("save_geometric_mean","list",
-          function(object){
-            lapply(object, selectMethod(f="save_geometric_mean",signature="mgnet"))})
+#' @rdname save_log_data-methods
+setMethod("save_log_data","list",
+          function(object, method){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="save_log_data",signature="mgnet"),
+                   method=method)})
 ################################################################################
 ################################################################################
-# SAMPLE SUM AND GEOMETRIC MEAN
+# SAVE LOG-TRANSFORMED DATA
 ################################################################################
 ################################################################################
 
@@ -318,6 +416,7 @@ setMethod("data", "mgnet", function(object) object@data)
 #' @rdname data-methods
 setMethod("data","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="data",signature="mgnet"))})
 #####################################
 # META SAMPLE
@@ -339,6 +438,7 @@ setMethod("meta_sample", "mgnet", function(object) object@meta_sample)
 #' @rdname meta_sample-methods
 setMethod("meta_sample","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="meta_sample",signature="mgnet"))})
 #####################################
 # TAXA
@@ -359,6 +459,7 @@ setMethod("taxa", "mgnet", function(object) object@taxa)
 #' @rdname taxa-methods
 setMethod("taxa","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="taxa",signature="mgnet"))})
 #####################################
 # META TAXA
@@ -380,7 +481,30 @@ setMethod("meta_taxa", "mgnet", function(object) object@meta_taxa)
 #' @rdname meta_taxa-methods
 setMethod("meta_taxa","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="meta_taxa",signature="mgnet"))})
+#####################################
+# LOG DATA
+#####################################
+#' Retrieves log-transformed data.
+#'
+#' @description
+#' Return the matrix associated with the log-transformed data 
+#' mg class.
+#'
+#' @param object mgnet or list 
+#'
+#' @export
+#' @docType methods
+#' @rdname log_data-methods
+setGeneric("log_data", function(object) standardGeneric("log_data"))
+#' @rdname log_data-methods
+setMethod("log_data", "mgnet", function(object) object@log_data)
+#' @rdname log_data-methods
+setMethod("log_data","list",
+          function(object){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="log_data",signature="mgnet"))})
 #####################################
 # NETW
 #####################################
@@ -402,6 +526,7 @@ setMethod("netw", "mgnet", function(object){return(object@netw)})
 #' @rdname netw-methods
 setMethod("netw","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="netw",signature="mgnet"))})
 #####################################
 # COMM
@@ -424,6 +549,7 @@ setMethod("comm", "mgnet", function(object){return(object@comm)})
 #' @rdname comm-methods
 setMethod("comm","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="comm",signature="mgnet"))})
 ################################################################################
 ################################################################################
@@ -456,6 +582,7 @@ setGeneric("data<-", function(object, value) standardGeneric("data<-"))
 setMethod("data<-", c("mgnet", "matrix"), function(object, value){
   new("mgnet",data=value, meta_sample=object@meta_sample, 
               taxa=object@taxa, meta_taxa=object@meta_taxa,
+              log_data=object@log_data,
               netw=object@netw, comm=object@comm)
 })
 #####################################
@@ -476,6 +603,7 @@ setGeneric("meta_sample<-", function(object, value) standardGeneric("meta_sample
 setMethod("meta_sample<-", c("mgnet", "data.frame"), function(object, value){
   new("mgnet",data=object@data, meta_sample=value, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
+      log_data=object@log_data,
       netw=object@netw, comm=object@comm)
 })
 #####################################
@@ -496,6 +624,7 @@ setGeneric("taxa<-", function(object, value) standardGeneric("taxa<-"))
 setMethod("taxa<-", c("mgnet", "matrix"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=value, meta_taxa=object@meta_taxa,
+      log_data=object@log_data,
       netw=object@netw, comm=object@comm)
 })
 #####################################
@@ -516,6 +645,28 @@ setGeneric("meta_taxa<-", function(object, value) standardGeneric("meta_taxa<-")
 setMethod("meta_taxa<-", c("mgnet", "data.frame"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=value,
+      log_data=object@log_data,
+      netw=object@netw, comm=object@comm)
+})
+#####################################
+# LOG DATA<-
+#####################################
+#' Assign new log_data to \code{object}
+#'
+#' @usage log_data(object) <- value
+#'
+#' @param object mgnet
+#' @param value matrix
+#'
+#' @export
+#' @docType methods
+#' @rdname assign-log_data
+setGeneric("log_data<-", function(object, value) standardGeneric("log_data<-"))
+#' @rdname assign-log_data
+setMethod("log_data<-", c("mgnet", "data.frame"), function(object, value){
+  new("mgnet",data=object@data, meta_sample=object@meta_sample, 
+      taxa=object@taxa, log_data=value,
+      log_data=object@log_data,
       netw=object@netw, comm=object@comm)
 })
 #####################################
@@ -536,6 +687,7 @@ setGeneric("netw<-", function(object, value) standardGeneric("netw<-"))
 setMethod("netw<-", c("mgnet", "igraph"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
+      log_data=object@log_data,
       netw=value, comm=object@comm)
 })
 #####################################
@@ -556,6 +708,7 @@ setGeneric("comm<-", function(object, value) standardGeneric("comm<-"))
 setMethod("comm<-", c("mgnet", "communities"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
       taxa=object@taxa, meta_taxa=object@meta_taxa,
+      log_data=object@log_data,
       netw=object@netw, comm=value)
 })
 ################################################################################
@@ -645,6 +798,7 @@ setMethod("nsample", "mgnet", function(object){
 #' @rdname nsample-methods
 setMethod("nsample","list",
           function(object){
+            is_mgnet_list(object)
             sapply(object, selectMethod(f="nsample",signature="mgnet"))})
 #####################################
 # NTAXA
@@ -668,12 +822,14 @@ setMethod("ntaxa", "mgnet", function(object){
   if(length(object@data!=0)) return(ncol(object@data))
   else if(length(object@taxa!=0)) return(nrow(object@taxa))
   else if(length(object@meta_taxa!=0)) return(nrow(object@meta_taxa))
+  else if(length(object@log_data!=0)) return(ncol(object@log_data))
   else if(length(object@netw!=0)) return(vcount(object@netw))
   else return(NULL)
 })
 #' @rdname ntaxa-methods
 setMethod("ntaxa","list",
           function(object){
+            is_mgnet_list(object)
             sapply(object, selectMethod(f="ntaxa",signature="mgnet"))})
 #####################################
 # SAMPLE NAME
@@ -695,11 +851,13 @@ setGeneric("sample_name", function(object) standardGeneric("sample_name"))
 setMethod("sample_name", "mgnet", function(object){
   if(length(object@data!=0)) return(rownames(object@data))
   else if(length(object@meta_sample!=0)) return(rownames(object@meta_sample))
-  else return(0)
+  else if(length(object@log_data!=0)) return(rownames(object@log_data))
+  else return(NULL)
 })
 #' @rdname sample_name-methods
 setMethod("sample_name","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="sample_name",signature="mgnet"))})
 #####################################
 # TAXA ID
@@ -723,12 +881,14 @@ setMethod("taxaID", "mgnet", function(object){
   if(length(object@data!=0)) return(colnames(object@data))
   else if(length(object@taxa!=0)) return(rownames(object@taxa))
   else if(length(object@meta_taxa)!=0) return(rownames(object@meta_taxa))
+  else if(length(object@log_data)!=0) return(colnames(object@log_data))
   else if(length(object@netw)!=0) return(V(object@netw)$name)
   else return(0)
 })
 #' @rdname taxaID-methods
 setMethod("taxaID","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="taxaID",signature="mgnet"))})
 #####################################
 # RANKS 
@@ -751,6 +911,7 @@ setMethod("ranks", "mgnet", function(object){return(colnames(object@taxa))})
 #' @rdname ranks-methods
 setMethod("ranks","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="ranks",signature="mgnet"))})
 #####################################
 # NRANKS 
@@ -773,6 +934,7 @@ setMethod("nrank", "mgnet", function(object){return(ncol(object@taxa))})
 #' @rdname nrank-methods
 setMethod("nrank","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="nrank",signature="mgnet"))})
 #####################################
 # SAMPLE_INFO 
@@ -795,6 +957,7 @@ setMethod("sample_info", "mgnet", function(object){return(colnames(object@meta_s
 #' @rdname sample_info-methods
 setMethod("sample_info","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="sample_info",signature="mgnet"))})
 #####################################
 # TAXA_INFO
@@ -817,6 +980,7 @@ setMethod("taxa_info", "mgnet", function(object){return(colnames(object@meta_tax
 #' @rdname taxa_info-methods
 setMethod("taxa_info","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="taxa_info",signature="mgnet"))})
 #####################################
 # TAXA NAME 
@@ -847,10 +1011,12 @@ setMethod("taxa_name", c("mgnet","character"),
 #' @rdname taxa_name-methods
 setMethod("taxa_name",c("list","missing"),
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="taxa_name",signature=c("mgnet","missing")))})
 #' @rdname taxa_name-methods
 setMethod("taxa_name",c("list","character"),
           function(object,rank){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="taxa_name",signature=c("mgnet","character")),
                    rank=rank)}
 )
@@ -876,30 +1042,8 @@ setMethod("sample_sum", "mgnet",function(object)return(object@meta_sample$sample
 #' @rdname sample_sum-methods
 setMethod("sample_sum","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="sample_sum",signature="mgnet"))})
-#####################################
-# GEOMETRIC MEAN
-#####################################
-#' Get samples geometric mean.
-#' 
-#' @description 
-#' Retrieves the geometric mean of each sample using the geometric_mean variable in in 
-#' meta_sample slot if it's present (see \code{\link{save_geometric_mean}}).
-#' 
-#' @usage geometric(object)
-#' 
-#' @param object mgnet or list.
-#' 
-#' @rdname geometric_mean-methods
-#' @docType methods
-#' @export
-setGeneric("geometric_mean", function(object) standardGeneric("geometric_mean"))
-#' @rdname geometric_mean-methods
-setMethod("geometric_mean", "mgnet",function(object)return(object@meta_sample$geometric_mean))
-#' @rdname geometric_mean-methods
-setMethod("geometric_mean","list",
-          function(object){
-            lapply(object, selectMethod(f="geometric_mean",signature="mgnet"))})
 #####################################
 # ABUNDANCE 
 #####################################
@@ -914,6 +1058,8 @@ setMethod("geometric_mean","list",
 #' 
 #' @param object mgnet or list.
 #' @param rank (Optional) character with the taxonomic rank choosen.
+#' 
+#' @importFrom stats aggregate
 #' 
 #' @export
 #' @docType methods
@@ -933,16 +1079,19 @@ setMethod("abundance", c("mgnet","character"),function(object,rank){
   colnames(data.aggregate) <- data.aggregate[1,]
   data.aggregate <- data.aggregate[-1,]
   data.aggregate <- data.aggregate[,different.taxa]
+  class(data.aggregate) <- "numeric"
   
   return(data.aggregate)
 })
 #' @rdname abundance-methods
 setMethod("abundance",c("list","missing"),
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="abundance",signature=c("mgnet","missing")))})
 #' @rdname abundance-methods
 setMethod("abundance",c("list","character"),
           function(object,rank){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="abundance",signature=c("mgnet","character")),
                    rank=rank)}
 )
@@ -960,6 +1109,9 @@ setMethod("abundance",c("list","character"),
 #' 
 #' @param object mgnet or list.
 #' @param rank (Optional)
+#' See \code{\link{save_sample_sum}}.
+#' 
+#' @importFrom stats aggregate
 #' 
 #' @rdname relative-methods
 #' @docType methods
@@ -969,16 +1121,14 @@ setGeneric("relative", function(object,rank) standardGeneric("relative"))
 setMethod("relative", c("mgnet","missing"),function(object){
   
   if(length(object@data)==0) stop("data cannot be empty")
-  if(!("sample_sum"%in%sample_info(object))) stop("sample_sum must be present in meta_sample slot. See save_sample_sum")
-  
   return(object@data/object@meta_sample$sample_sum)
+
 })
 #' @rdname relative-methods
 setMethod("relative", c("mgnet","character"),function(object,rank){
   if(length(object@data)==0 || length(object@taxa)==0) stop("data and taxa slots must be present")
   if(!(rank%in%ranks(object))) stop(paste("rank must be one this possible choises {",toString(ranks(object)),"}"))
-  if(!("sample_sum"%in%sample_info(object))) stop("sample_sum must be present in meta_sample slot. See save_sample_sum")
-  
+  if(!("sample_sum"%in%sample_info(object))) stop("to relative must be present sample_sum in meta_sample (See save_sample_sum).")
   
   different.taxa <- unique(object@taxa[,rank])
   data.aggregate <- t(aggregate(t(object@data), by=list(object@taxa[,rank]), 
@@ -986,52 +1136,22 @@ setMethod("relative", c("mgnet","character"),function(object,rank){
   colnames(data.aggregate) <- data.aggregate[1,]
   data.aggregate <- data.aggregate[-1,]
   data.aggregate <- data.aggregate[,different.taxa]
+  class(data.aggregate) <- "numeric"
   
   return(data.aggregate/object@meta_sample$sample_sum)
 })
 #' @rdname relative-methods
 setMethod("relative",c("list","missing"),
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="relative",signature=c("mgnet","missing")))})
 #' @rdname relative-methods
 setMethod("relative",c("list","character"),
           function(object,rank){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="relative",signature=c("mgnet","character")),
                    rank=rank)}
 )
-#####################################
-# CLR 
-#####################################
-#' Get CLR transformed abundances.
-#' 
-#' @description 
-#' Retrieves the CLR transformed abundances of data. In mgnet object must be 
-#' save the variable geometric_mean in meta_sample slot ( see \code{\link{save_geometric_mean}}).
-#' 
-#' @usage CLR(object,rank)
-#' 
-#' @param object mgnet.
-#' 
-#' @rdname CLR-methods
-#' @docType methods
-#' @export
-setGeneric("CLR", function(object,rank) standardGeneric("CLR"))
-#' @rdname CLR-methods
-setMethod("CLR", "mgnet",function(object){
-  
-  if(length(object@data)==0) stop("data cannot be empty")
-  if(!("geometric_mean"%in%sample_info(object))) stop("geometric_mean must be present in meta_sample slot. See save_geometric_mean")
-  
-  ifelse(any(object@data==0),
-         data <- object@data+1,
-         data <- object@data)
-  
-  return(log(data/object@meta_sample$geometric_mean))
-})
-#' @rdname CLR-methods
-setMethod("CLR","list",
-          function(object){
-            lapply(object, selectMethod(f="CLR",signature="mgnet"))})
 #####################################
 # COMMID
 #####################################
@@ -1060,6 +1180,7 @@ setMethod("commID", "mgnet", function(object){
 #' @rdname commID-methods
 setMethod("commID","list",
           function(object){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="commID",signature="mgnet"))})
 ################################################################################
 ################################################################################
@@ -1086,6 +1207,8 @@ setMethod("commID","list",
 #' 
 #' @param object mgnet.
 #' @param rank taxonomic level choosen.
+#' 
+#' @importFrom stats aggregate
 #' 
 #' @rdname aggregate_taxa-methods
 #' @docType methods
@@ -1114,6 +1237,7 @@ setMethod("aggregate_taxa", c("mgnet","character"),
 #' @rdname aggregate_taxa-methods
 setMethod("aggregate_taxa",c("list","character"),
           function(object,rank){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="aggregate_taxa",signature=c("mgnet","character")),
                    rank=rank)}
 )
@@ -1161,8 +1285,8 @@ setMethod("mgmelt", "mgnet",
               mdf$Relative <- reshape2::melt(relative(object))$value
             }
             
-            if("geometric_mean"%in%sample_info(object)){
-              mdf$CLR <- reshape2::melt(CLR(object))$value
+            if(length(log_data)!=0){
+              mdf$CLR <- reshape2::melt(object@log_data)$value
             }
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
@@ -1200,6 +1324,7 @@ setMethod("mgmelt", "mgnet",
 #' @rdname mgmelt-methods
 setMethod("mgmelt","list",
           function(object){
+            is_mgnet_list(object)
             res <- lapply(object, selectMethod(f="mgmelt",signature="mgnet"))
             res <- lapply(names(res), function(x) res[[x]] <- cbind("ID"=x,res[[x]]))
             res <- do.call("rbind", res)
@@ -1227,7 +1352,9 @@ setMethod("mgmelt","list",
 #' @usage selection_sample(object,...,condition="AND")
 #' 
 #' @param object mgnet.
-#' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
+#' @param ... arbitrary set of vectors of functions. If vectors they must contain
+#' numeric or name or logical indices to be preserved. If functions they must return
+#' indices as just explained.
 #' @param condition (Optional default "AND") logical operation between indices.
 #' 
 #' @rdname selection_sample-methods
@@ -1249,9 +1376,9 @@ setMethod("selection_sample", "mgnet",
               
               if(is.function(idx)){
                 idx <- idx(object)
+                if(!is.vector(idx))stop(paste("the function at position",i,"does not return a vector"))
               }  
               
-              if(!is.vector(idx))stop("must be vector")
               
               if(is.numeric(idx)){
                 #numeric
@@ -1274,9 +1401,10 @@ setMethod("selection_sample", "mgnet",
                   if(length(idx)!=nsample(object)){
                     stop("logical indices must have the length equal to sample number")
                   }
+                  IDX[[i]] <- idx
                   
                 } else {stop("the indices must character, numeric or logical vectors")}
-              }
+            }
               
             
             IDX <- do.call(rbind,IDX)
@@ -1289,15 +1417,17 @@ setMethod("selection_sample", "mgnet",
             
             ifelse(length(object@data)!=0, data.new<-object@data[IDX,,drop=F], data.new<-object@data)
             ifelse(length(object@meta_sample)!=0, meta.new<-object@meta_sample[IDX,,drop=F], meta.new<-object@meta_sample)
+            ifelse(length(object@log_data)!=0, log_data.new<-object@log_data[IDX,,drop=F], log_data.new<-object@log_data)
+            
 
-            return(mgnet(data=data.new,
-                         meta_sample=meta.new,
-                         taxa=object@taxa,
-                         meta_taxa=object@meta_taxa))
+            return(mgnet(data=data.new, meta_sample=meta.new,
+                         taxa=object@taxa, meta_taxa=object@meta_taxa,
+                         log_data=log_data))
           })
 #' @rdname selection_sample-methods
 setMethod("selection_sample","list",
           function(object, ..., condition="AND"){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="selection_sample",signature="mgnet"),
                    ...=..., condition=condition)}
 )
@@ -1323,7 +1453,9 @@ setMethod("selection_sample","list",
 #' @usage selection_taxa(object, ..., condition="AND",trim=TRUE)
 #' 
 #' @param object mgnet.
-#' @param ... arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved
+#' @param ... arbitrary set of vectors of functions. If vectors they must contain
+#' numeric or name or logical indices to be preserved. If functions they must return
+#' indices as just explained.
 #' @param condition (Optional default "AND") character indicates the logical operation between indices.
 #' @param trim (Option default TRUE) logical, if true the discarded taxa are removed from obj otherwise they are only set to zero in data.
 #' 
@@ -1347,6 +1479,7 @@ setMethod("selection_taxa", "mgnet",
               
               if(is.function(idx)){
                 idx <- idx(object)
+                if(!is.vector(idx))stop(paste("the function at position",i,"does not return a vector"))
               }  
               
               if(is.numeric(idx)){
@@ -1389,6 +1522,7 @@ setMethod("selection_taxa", "mgnet",
               ifelse(length(object@data)!=0, data.new<-object@data[,IDX,drop=F], data.new<-object@data)
               ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[IDX,,drop=F], taxa.new<-object@taxa)
               ifelse(length(object@meta_taxa)!=0, meta_taxa.new<-object@meta_taxa[IDX,,drop=F], meta_taxa.new<-object@meta_taxa)
+              ifelse(length(object@log_data)!=0, log_data.new<-object@log_data[,IDX,drop=F], log_data.new<-object@log_data)
               
               if(length(object@netw)!=0){
                 netw.new<-igraph::subgraph(object@netw,IDX)
@@ -1410,6 +1544,7 @@ setMethod("selection_taxa", "mgnet",
                            meta_sample=object@meta_sample,
                            taxa=taxa.new,
                            meta_taxa=meta_taxa.new,
+                           log_data=log_data.new,
                            netw=netw.new,
                            comm=comm.new))
               
@@ -1420,6 +1555,13 @@ setMethod("selection_taxa", "mgnet",
                 data.new[,!IDX] <- 0
               } else {
                   data.new <- object@data
+              }
+              
+              if(length(object@log_data)!=0){
+                log_data.new <- object@log_data
+                log_data.new[,!IDX] <- 0
+              } else {
+                data.new <- object@log_data
               }
 
               if(length(object@netw)!=0){
@@ -1444,6 +1586,7 @@ setMethod("selection_taxa", "mgnet",
                            meta_sample=object@meta_sample,
                            taxa=object@taxa,
                            meta_taxa=object@meta_taxa,
+                           log_data=log_data.new,
                            netw=netw.new,
                            comm=comm.new))
               
@@ -1453,114 +1596,13 @@ setMethod("selection_taxa", "mgnet",
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa","list",
           function(object,...,condition="AND",trim=TRUE){
+            is_mgnet_list(object)
             lapply(object, selectMethod(f="selection_taxa",signature="mgnet"),
                    ...=..., condition=condition, trim=trim)}
 )
 ################################################################################
 ################################################################################
 # END TAXA SELECTION
-################################################################################
-################################################################################
-
-
-
-
-################################################################################
-################################################################################
-# FILTER SAMPLE
-################################################################################
-################################################################################
-#' Filter samples based on across-sample abundance criteria.
-#' 
-#' @description 
-#' It applies an arbitrary set of functions list on each samples taking into account
-#' their abundances. The function takes as input a mgnet object, and returns its 
-#' trimmed mgnet version.
-#' 
-#' @usage filter_sample(object, flist)
-#' 
-#' @param object mgnet.
-#' @param flist list. Each element of flist it must be a function.
-#' 
-#' @rdname filter_sample-methods
-#' @docType methods
-#' @export
-setGeneric("filter_sample", function(object,flist) standardGeneric("filter_sample"))
-#' @rdname filter_sample-methods
-setMethod("filter_sample", c("mgnet","list"),
-          function(object,flist){
-            
-            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
-            
-            test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
-            if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance and return a logical.")
-            
-            criteria <- sapply(flist,function(x) apply(object@data,1,x))
-            criteria <- as.logical(apply(criteria,1,prod))
-            
-            return(selection_sample(object,criteria))
-          })
-#' @rdname filter_sample-methods
-setMethod("filter_sample", c("list","list"),
-          function(object,flist){
-            lapply(object, 
-                   selectMethod(f="filter_sample",signature=c("mgnet","list")),
-                   flist=flist)
-          })
-################################################################################
-################################################################################
-# END FILTER SAMPLE
-################################################################################
-################################################################################
-
-
-
-
-################################################################################
-################################################################################
-# FILTER TAXA
-################################################################################
-################################################################################
-#' Filter taxa based on across-sample abundance criteria.
-#' 
-#' @description 
-#' It applies an arbitrary set of functions list as across-sample criteria,
-#' one taxa at a time. The function takes as input a mgnet object, and returns its 
-#' trimmed mgnet version.
-#' 
-#' @usage filter_taxa(object, flist)
-#' 
-#' @param object mgnet-class.
-#' @param flist list. Each element of flist it must be a function.
-#' 
-#' @rdname filter_taxa-methods
-#' @docType methods
-#' @export
-setGeneric("filter_taxa", function(object,flist) standardGeneric("filter_taxa"))
-#' @rdname filter_taxa-methods
-setMethod("filter_taxa", c("mgnet","list"),
-          function(object,flist){
-            
-            if( any(unlist(lapply(flist,class))!="function") ){stop("all flist elements must be a function.")}
-            
-            test <- sapply(flist,function(x) try(x(c(0,1,2,3,4,5)),silent=TRUE))
-            if(!all(test %in% c("TRUE","FALSE"))) stop("All function in flist must take a vector of abundance and return a logical.")
-            
-            criteria <- sapply(flist,function(x) apply(object@data,2,x))
-            criteria <- as.logical(apply(criteria,1,prod))
-            
-            return(selection_taxa(object,criteria))
-          })
-#' @rdname filter_taxa-methods
-setMethod("filter_taxa", c("list","list"),
-          function(object,flist){
-            lapply(object, 
-                   selectMethod(f="filter_taxa",signature=c("mgnet","list")),
-                   flist=flist)
-          })
-################################################################################
-################################################################################
-# END FILTER TAXA
 ################################################################################
 ################################################################################
 
@@ -1591,6 +1633,8 @@ setMethod(f="[",
             ifelse(length(x@meta_sample)!=0, meta_sample.new<-x@meta_sample[i, ,drop=F], meta_sample.new<-x@meta_sample)
             ifelse(length(x@taxa)!=0, taxa.new<-x@taxa[j, ,drop=F], taxa.new<-x@taxa)
             ifelse(length(x@meta_taxa)!=0, meta_taxa.new<-x@meta_taxa[j, ,drop=F], meta_taxa.new<-x@meta_taxa)
+            ifelse(length(x@log_data)!=0, log_data.new<-x@log_data[i,j,drop=F], log_data.new<-x@log_data)
+            
             
             if(length(x@netw)==0){
               return(mgnet(data=data.new,
@@ -1605,7 +1649,8 @@ setMethod(f="[",
               return(mgnet(data=data.new,
                            meta_sample=meta_sample.new,
                            taxa=taxa.new,
-                           meta_taxa=meta_taxa.new
+                           meta_taxa=meta_taxa.new,
+                           log_data=log_data.new
               ))
             }
           })
@@ -1645,7 +1690,7 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
           function(obj, new_taxa, new_meta_taxa=data.frame()){
             
             if(is.null(rownames(new_taxa)) | is.null(colnames(new_taxa))) stop("new_taxa must have rownames (taxaID) and colnames (info) assigned")
-            if(length(obj@data)==0 | length(obj@taxa)==0 | length(obj@netw)==0) stop("data, taxa and netw cannot be empty")
+            if(length(obj@taxa)==0 | length(obj@netw)==0) stop("taxa and netw cannot be empty")
             if(any(!(taxaID(obj)%in%rownames(new_taxa)))) stop("find at least a taxa not present in new_taxa")
             if(any(ranks(obj)!=colnames(new_taxa))) stop('new_taxa must have the same ranks as obj')
             if(length(new_meta_taxa)!=0){
@@ -1660,10 +1705,22 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
             taxa_name <- rownames(new_taxa)
             nsample <- nsample(obj)
             
-            data <- matrix(0,nrow=nsample,ncol=ntaxa,
-                           dimnames=list(sample_name,taxa_name))
-            data[,taxaID(obj)] <- obj@data
-            
+            if(length(data)!=0){
+              data <- matrix(0,nrow=nsample,ncol=ntaxa,
+                             dimnames=list(sample_name,taxa_name))
+              data[,taxaID(obj)] <- obj@data
+            } else {
+              data <- obj@data
+            }
+
+            if(length(log_data)!=0){
+              log_data <- matrix(NA_real_,nrow=nsample,ncol=ntaxa,
+                                 dimnames=list(sample_name,taxa_name))
+              log_data[,taxaID(obj)] <- obj@log_data
+            } else {
+              log_data <- obj@log_data
+            }
+
             adj <- as_adjacency_matrix(obj@netw,sparse=F,attr="weight")
             adj.new <- matrix(0,nrow=ntaxa,ncol=ntaxa,
                               dimnames=list(taxa_name,taxa_name))
@@ -1683,7 +1740,7 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
               comm.new <- make_clusters(graph=graph.new,
                                         membership=mem.new,
                                         algorithm="signed weights louvain",
-                                        modularity=obj@comm$modularity)
+                                        modularity=FALSE)
               comm.new$modularity <- NA
             } else {
               comm.new <- obj@comm
@@ -1691,11 +1748,13 @@ setMethod("arrange_vertices",c("mgnet","matrix"),
             
             return(mgnet(data=data,meta_sample=obj@meta_sample,
                          taxa=new_taxa, meta_taxa=new_meta_taxa,
-                         netw=graph.new,comm=comm.new))
+                         netw=graph.new,comm=comm.new,
+                         log_data=log_data))
           })
 #' @rdname arrange_vertices-methods
 setMethod("arrange_vertices",c("list","matrix"),
           function(obj,new_taxa){
+            is_mgnet_list(obj)
             lapply(obj, selectMethod(f="arrange_vertices",
                                      signature=c("mgnet","matrix")),
                    new_taxa=new_taxa)})
@@ -1727,7 +1786,7 @@ setMethod("arrange_vertices",c("list","matrix"),
 #' @rdname remove_smaller_comm-methods
 #' @docType methods
 #' @export
-setGeneric("remove_smaller_comm", function(obj,size,trim=NA) standardGeneric("remove_smaller_comm"))
+setGeneric("remove_smaller_comm", function(obj,size,trim=TRUE) standardGeneric("remove_smaller_comm"))
 #' @rdname remove_smaller_comm-methods
 setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=TRUE){
   
@@ -1746,6 +1805,7 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   if(!trim){
     data <- obj@data
     taxa <- obj@taxa
+    log_data <- obj@log_data
     meta_taxa <- obj@meta_taxa
     graph.sub <- graph
     comm.sub <- comm
@@ -1754,6 +1814,7 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   } else {
     data <- obj@data[,keep.comm.vids]
     taxa <- obj@taxa[keep.comm.vids,]
+    log_data <- obj@log_data[,keep.comm.vids]
     meta_taxa <- obj@meta_taxa[keep.comm.vids,]
     graph.sub <- induced.subgraph(graph, V(graph)[keep.comm.vids])
     comm.sub <- comm
@@ -1765,11 +1826,13 @@ setMethod("remove_smaller_comm", c("mgnet","numeric"), function(obj, size, trim=
   
   return(new("mgnet",
              data=data, meta_sample=obj@meta_sample, taxa=taxa, 
-             meta_taxa=meta_taxa, netw=graph.sub, comm=comm.sub))
+             meta_taxa=meta_taxa, netw=graph.sub, comm=comm.sub,
+             log_data=log_data))
 })
 #' @rdname remove_smaller_comm-methods
 setMethod("remove_smaller_comm",c("list","numeric","logical"),
           function(obj,size,trim){
+            is_mgnet_list(obj)
             lapply(obj, selectMethod(f="remove_smaller_comm",
                                      signature=c("mgnet","numeric")),
                    size=size,trim=trim)})
@@ -1779,55 +1842,6 @@ setMethod("remove_smaller_comm",c("list","numeric","logical"),
 ################################################################################
 ################################################################################
 
-
-################################################################################
-################################################################################
-# GRAPHICAL DECORATIONS
-################################################################################
-################################################################################
-#' Add graphical decorations
-#' 
-#'@description Add graphical descriptions to network:
-#'\itemize{
-#'  \item Vertex size proportional to mean clr abundances over samples.
-#'  \item Link color could be red (+) or blue (-) respect the weights sign.
-#'}
-#' 
-#' @param obj \code{\link{mgnet-class}}
-#'  
-#' @rdname default_decoration-methods
-#' @docType methods
-#' @export
-setGeneric("default_decoration", function(obj) standardGeneric("default_decoration"))
-#' @importFrom igraph V<- E<-
-#' @importFrom grDevices rgb
-#' @rdname default_decoration-methods
-#' @aliases default_decoration,mgnet
-setMethod("default_decoration", "mgnet", function(obj){
-  
-  if(length(obj@data)==0 | length(obj@netw)==0) stop("slot data and netw must be present")
-  
-  # Vertex size
-  V(obj@netw)$size  <- 4 + colMeans(clr(obj@data+1)) + abs(min(colMeans(clr(obj@data+1))))
-  
-  # Edges color and width
-  w <- E(obj@netw)$weight
-  E(obj@netw)$color <- ifelse(w>0, grDevices::rgb(0,0,1,.5), grDevices::rgb(1,0,0,.5))
-  E(obj@netw)$width <- abs(w) / max(abs(w))
-  
-  return(obj)
-})
-#' @rdname default_decoration-methods
-#' @aliases default_decoration-methods,list,numeric,logical
-setMethod("default_decoration","list",
-          function(obj){
-            lapply(obj, selectMethod(f="default_decoration",
-                                     signature="mgnet"))})
-################################################################################
-################################################################################
-# GRAPHICAL DECORATIONS
-################################################################################
-################################################################################
 
 
 
@@ -1848,8 +1862,7 @@ setMethod("default_decoration","list",
 #' @docType methods
 #' @export
 setGeneric("layout_signed", function(obj) standardGeneric("layout_signed"))
-#' @rdname default_decoration-methods
-#' @aliases default_decoration,igraph
+#' @rdname layout_signed-methods
 setMethod("layout_signed","igraph",function(obj){
   
   graph.sub <- subgraph.edges(graph=obj,
@@ -1859,8 +1872,7 @@ setMethod("layout_signed","igraph",function(obj){
   layout <- layout.fruchterman.reingold(graph.sub)
   return(layout)
 })
-#' @rdname default_decoration-methods
-#' @aliases default_decoration,mgnet
+#' @rdname layout_signed-methods
 setMethod("layout_signed","mgnet",function(obj){
   
   graph.sub <- subgraph.edges(graph=netw(obj),
@@ -1884,6 +1896,7 @@ setMethod("layout_signed","mgnet",function(obj){
 # PLOT MGNET
 ################################################################################
 ################################################################################
+#'@importFrom igraph E<-
 #'@export
 plot.mgnet <- function(x,layout,...) {
   if(length(netw(x))==0) stop("missing network in mgnet")
@@ -1891,6 +1904,8 @@ plot.mgnet <- function(x,layout,...) {
   if(missing(layout)){
     layout <- layout_signed(netw(x))
   }
+  
+  E(netw(x))$color <- ifelse(E(netw(x))$weight>0, rgb(0,0,1,.5), rgb(1,0,0,.5))
   plot(netw(x),layout=layout,...)
 }
 ################################################################################
@@ -1962,6 +1977,7 @@ setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
 #' @rdname degree_mgnet-methods
 setMethod("degree_mgnet","list",
           function(obj,sign="all",type="all"){
+            is_mgnet_list(obj)
             lapply(obj, selectMethod(f="degree_mgnet",
                                      signature="mgnet"),
                    sign=sign,type=type)})
@@ -2035,6 +2051,7 @@ setMethod("strength_mgnet","mgnet",function(obj,sign="all",type="all"){
 #' @rdname strength_mgnet-methods
 setMethod("strength_mgnet","list",
           function(obj,sign="all",type="all"){
+            is_mgnet_list(obj)
             lapply(obj, selectMethod(f="strength_mgnet",
                                      signature="mgnet"),
                    sign=sign,type=type)})

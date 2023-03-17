@@ -6,12 +6,19 @@
 \usage{
 colormap_taxonomy(
   taxaID,
+  distinctColor = 30,
+  extraColor = rgb(0.75, 0.75, 0.75, 0.5),
   alpha = 1,
   colorspace = list(h = c(0, 360), s = c(0.25, 1), l = c(0.5, 0.9))
 )
 }
 \arguments{
 \item{taxaID}{character vector with all taxonomic classification.}
+
+\item{distinctColor}{max number of different final colors. After the values imposed
+with distinctColor the function associated a light grey to every taxaID.}
+
+\item{extraColor}{color of out of range colors, by default is light gray.}
 
 \item{alpha}{(Optional) Level of trasparency of colors.}
 

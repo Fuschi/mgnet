@@ -16,7 +16,9 @@ selection_sample(object,...,condition="AND")
 \arguments{
 \item{object}{mgnet.}
 
-\item{...}{arbitrary set of vectors containing the (numeric or name) or logical indices containing the samples to be preserved}
+\item{...}{arbitrary set of vectors of functions. If vectors they must contain
+numeric or name or logical indices to be preserved. If functions they must return
+indices as just explained.}
 
 \item{condition}{(Optional default "AND") logical operation between indices.}
 }

@@ -10,6 +10,7 @@ mgnet(
   taxa = matrix(nrow = 0, ncol = 0),
   meta_taxa = data.frame(),
   adj = matrix(nrow = 0, ncol = 0),
+  log_data = matrix(nrow = 0, ncol = 0),
   netw = make_empty_graph(n = 0, directed = FALSE),
   comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))
 )
@@ -24,6 +25,8 @@ mgnet(
 \item{meta_taxa}{data.frame with addition info on taxa.}
 
 \item{adj}{adjacency matrix of netw.}
+
+\item{log_data}{log-transformed data.}
 
 \item{netw}{un-directed weighted igraph network.}
 

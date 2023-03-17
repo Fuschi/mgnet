@@ -18,6 +18,8 @@ S4 class to manage metagenomics networks
 
 \item{\code{meta_taxa}}{additional info on taxa.}
 
+\item{\code{log_data}}{matrix contain the log-ratio transformed data (compostional trans).}
+
 \item{\code{netw}}{undirected, weighted igraph network.}
 
 \item{\code{comm}}{graph communities of netw.}

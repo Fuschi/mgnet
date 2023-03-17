@@ -55,6 +55,9 @@ colormap_communities <- function(n=20, alpha=1,
 #' present duplicated in the vector the function choice only unique values.
 #' 
 #' @param taxaID character vector with all taxonomic classification.
+#' @param distinctColor max number of different final colors. After the values imposed
+#' with distinctColor the function associated a light grey to every taxaID.
+#' @param extraColor color of out of range colors, by default is light gray.
 #' @param colorspace (Optional) Permits to set the color ranges. For more details
 #' see \code{\link{qualpal}}.
 #' @param alpha (Optional) Level of trasparency of colors.
@@ -62,24 +65,33 @@ colormap_communities <- function(n=20, alpha=1,
 #' @importFrom grDevices adjustcolor
 #' @importFrom qualpalr qualpal
 #' @export
-colormap_taxonomy <- function(taxaID, alpha=1,
+colormap_taxonomy <- function(taxaID, 
+                              distinctColor=30, extraColor=rgb(.75,.75,.75,.5),
+                              alpha=1,
                               colorspace=list(h=c(0,360),s=c(.25,1),l=c(.5,.9))){
   
   if(!is.character(taxaID)) stop("taxaID must be character")
   if(!is.null(dim(taxaID))) stop("taxaID can't be a matrix")
   if(!is.numeric(alpha)) stop("alpha must be numeric")
-  if(length(unique(taxaID))>99) stop("cannot generate more than 99 different color")
+  if(distinctColor!=round(distinctColor) | !is.numeric(distinctColor)) stop("distinctColor must be integer number")
+  if(distinctColor<1 | distinctColor>99) stop("cannot generate more than 99 different color")
   if(alpha<0 | alpha>1) stop("alpha must be in range [0,1]")
   if(!is.list(colorspace)) stop("colorspace must be a list")
   if(any(names(list)!=c("h","s","l"))) stop("colorspace must have as elements h,s,l")
   
   taxaID <- unique(taxaID)
-  n <- length(taxaID)
-  
-  colormap <- qualpalr::qualpal(n=n, colorspace)
+
+  colormap <- qualpalr::qualpal(n=distinctColor, colorspace)
   colormap <- rownames(colormap$RGB)
   colormap <- grDevices::adjustcolor(colormap, alpha.f=alpha)
-  names(colormap) <- taxaID
+  
+  if(distinctColor>=length(taxaID)){
+    colormap <- colormap[1:length(taxaID)]
+    names(colormap) <- taxaID
+  } else if(distinctColor<length(taxaID)){
+    colormap <- c(colormap, rep(extraColor, length(taxaID)-distinctColor))
+    names(colormap) <- taxaID
+  }
   
   return(colormap)
 }

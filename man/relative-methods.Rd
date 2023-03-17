@@ -22,7 +22,8 @@ relative(object,rank)
 \arguments{
 \item{object}{mgnet or list.}
 
-\item{rank}{(Optional)}
+\item{rank}{(Optional)
+See \code{\link{save_sample_sum}}.}
 }
 \description{
 Retrieves the relative abundances of data, normalized by their sample sum at

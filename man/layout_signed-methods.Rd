@@ -3,9 +3,15 @@
 \docType{methods}
 \name{layout_signed}
 \alias{layout_signed}
+\alias{layout_signed,igraph-method}
+\alias{layout_signed,mgnet-method}
 \title{Signed-Weighted Graph Layout}
 \usage{
 layout_signed(obj)
+
+\S4method{layout_signed}{igraph}(obj)
+
+\S4method{layout_signed}{mgnet}(obj)
 }
 \arguments{
 \item{obj}{network belong to igraph or mgnet class.}

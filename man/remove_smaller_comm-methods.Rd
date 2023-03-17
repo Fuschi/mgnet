@@ -7,11 +7,11 @@
 \alias{remove_smaller_comm,list,numeric,logical-method}
 \title{Remove smaller communities}
 \usage{
-remove_smaller_comm(obj, size, trim = NA)
+remove_smaller_comm(obj, size, trim = TRUE)
 
 \S4method{remove_smaller_comm}{mgnet,numeric,ANY}(obj, size, trim = TRUE)
 
-\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim = NA)
+\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim = TRUE)
 }
 \arguments{
 \item{obj}{mgnet.}
