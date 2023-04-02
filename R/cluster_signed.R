@@ -17,13 +17,13 @@
 #'the isolated nodes. In this case all isolated nodes are classified in the
 #'community \code{'0'} and not as different communities of size one
 #'
-#'@importFrom igraph graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes
+#'@importFrom igraph V graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes
 #'@importFrom stringr str_split
 #'
 #' @rdname cluster_signed-methods
 #' @docType methods
 #' @export
-setGeneric("cluster_signed", function(obj,OS=NA) standardGeneric("cluster_signed"))
+setGeneric("cluster_signed", function(obj,OS="Linux") standardGeneric("cluster_signed"))
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   
@@ -105,19 +105,21 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   
   isolated.membership <- which(sizes(res)==1)
   res$membership[res$membership %in% isolated.membership] <- 0
-  
-  
+
   #return the results as communities structure of igraph package
   return(res)
 })
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed","mgnet",
           function(obj,OS="Linux"){
-            comm(obj) <- cluster_signed(netw(obj),OS=OS)
-            return(obj)
+            comm <- cluster_signed(netw(obj),OS=OS)
+            return(mgnet(data=obj@data, meta_sample=obj@meta_sample,
+                         taxa=obj@taxa, meta_taxa=obj@meta_taxa,
+                         log_data=obj@log_data,
+                         netw=obj@netw, comm=comm))
           })
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed","list",
           function(obj,OS="Linux"){
-            lapply(obj, selectMethod(f="cluster_signed",signature=c("mgnet","character")),
-                   OS=OS)})
+            return(lapply(obj, selectMethod(f="cluster_signed",signature="mgnet"),
+                   OS=OS))})

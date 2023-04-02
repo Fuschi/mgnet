@@ -14,7 +14,7 @@ commID(object)
 \S4method{commID}{list}(object)
 }
 \arguments{
-\item{object}{mgnet-class.}
+\item{object}{mgnet or mgnet-list.}
 }
 \description{
 Return vector of character with the community ID for each vertex.

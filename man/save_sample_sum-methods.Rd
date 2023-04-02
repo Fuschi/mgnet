@@ -5,7 +5,6 @@
 \alias{save_sample_sum}
 \alias{save_sample_sum,mgnet-method}
 \alias{save_sample_sum,list-method}
-\alias{save_log_data,mgnet-method}
 \title{Save sample sum in mgnet.}
 \usage{
 save_sample_sum(object)
@@ -13,8 +12,6 @@ save_sample_sum(object)
 \S4method{save_sample_sum}{mgnet}(object)
 
 \S4method{save_sample_sum}{list}(object)
-
-\S4method{save_log_data}{mgnet}(object, method = "base")
 }
 \arguments{
 \item{object}{mgnet or list}

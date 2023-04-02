@@ -10,13 +10,17 @@
 #'
 #' @param X compositional matrix.
 #' @param mar integer indicating the margin of samples (rows=1 or cols=2).
+#' @param type character indicating the zero replacement strategy. Only two
+#' possible values are available, plus and subs.
 #' 
 #' @export
-zero_dealing <- function(X, mar=1){
+zero_dealing <- function(X, mar=1, type="plus"){
   
   if(!is.numeric(X) | !is.matrix(X)) stop("X must be numeric matrix")
   if(any(X<0)) stop("Find negative elements in X")
+  if(all(X>0)) warning("There isn't any zero in X")
   if(!(mar%in%c(1,2))) stop("mar has only 1 or 2 as possibles values")
+  type <- match.arg(type,c("plus","subs"))
   
   if(all(round(X)-X==0)){
     dl <- matrix(1,nrow=nrow(X),ncol=ncol(X))
@@ -27,7 +31,13 @@ zero_dealing <- function(X, mar=1){
            dl <- t(replicate(nrow(X),dl)))
   }
   
-  return(X + dl*.65*(X==0))
+  if(type=="plus"){
+    Y <- X + dl
+  } else {
+    Y <- X + dl*(X==0)
+  }
+  
+  return(Y)
 }
 ################################################################################
 ################################################################################

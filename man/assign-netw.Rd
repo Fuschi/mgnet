@@ -4,11 +4,14 @@
 \name{netw<-}
 \alias{netw<-}
 \alias{netw<-,mgnet,igraph-method}
+\alias{adjacency_matrix<-,mgnet,matrix-method}
 \title{Assign a new netw to \code{object}}
 \usage{
 netw(object) <- value
 
 \S4method{netw}{mgnet,igraph}(object) <- value
+
+\S4method{adjacency_matrix}{mgnet,matrix}(object) <- value
 }
 \arguments{
 \item{object}{mgnet.}

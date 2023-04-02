@@ -5,8 +5,8 @@
 ################################################################################
 #' Create color palette for communities
 #' 
-#' @description User wrapper for distinctColorPalette function of randomcoloR
-#' package. Create n+1 distinct color to associate with communities ID. The 
+#' @description User wrapper for qualpalr function of qualpalr package.
+#' Create n+1 distinct color to associate with communities ID. The 
 #' first color labeled as 0 is always white for isolated nodes.
 #' 
 #' @param n positive integer indicated the number of distinct color, n<100.
@@ -18,7 +18,7 @@
 #' @importFrom grDevices rgb adjustcolor
 #' @export
 colormap_communities <- function(n=20, alpha=1,
-                                 colorspace=list(h=c(0,360),s=c(.5,1),l=c(.6,.9))){
+                                 colorspace="pretty"){
   
   if(round(n)!=n | !is.numeric(n) | n<=0 | n>99) stop("n must be an integer positive number (not greater or equal to 100)")
   if(!is.numeric(alpha)) stop("alpha must be numeric")
@@ -68,7 +68,7 @@ colormap_communities <- function(n=20, alpha=1,
 colormap_taxonomy <- function(taxaID, 
                               distinctColor=20, extraColor=rgb(.75,.75,.75,.25),
                               alpha=1,
-                              colorspace=list(h=c(0,360),s=c(.5,1),l=c(.6,.9))){
+                              colorspace="pretty"){
   
   if(!is.character(taxaID)) stop("taxaID must be character")
   if(!is.null(dim(taxaID))) stop("taxaID can't be a matrix")

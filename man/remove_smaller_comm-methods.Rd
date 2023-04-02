@@ -3,15 +3,15 @@
 \docType{methods}
 \name{remove_smaller_comm}
 \alias{remove_smaller_comm}
-\alias{remove_smaller_comm,mgnet,numeric,ANY-method}
-\alias{remove_smaller_comm,list,numeric,logical-method}
+\alias{remove_smaller_comm,mgnet,numeric-method}
+\alias{remove_smaller_comm,list,numeric-method}
 \title{Remove smaller communities}
 \usage{
 remove_smaller_comm(obj, size, trim = TRUE)
 
-\S4method{remove_smaller_comm}{mgnet,numeric,ANY}(obj, size, trim = TRUE)
+\S4method{remove_smaller_comm}{mgnet,numeric}(obj, size, trim = TRUE)
 
-\S4method{remove_smaller_comm}{list,numeric,logical}(obj, size, trim = TRUE)
+\S4method{remove_smaller_comm}{list,numeric}(obj, size, trim = TRUE)
 }
 \arguments{
 \item{obj}{mgnet.}

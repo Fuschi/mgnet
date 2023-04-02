@@ -20,10 +20,9 @@ relative(object,rank)
 \S4method{relative}{list,character}(object, rank)
 }
 \arguments{
-\item{object}{mgnet or list.}
+\item{object}{mgnet or mgnet-list.}
 
-\item{rank}{(Optional)
-See \code{\link{save_sample_sum}}.}
+\item{rank}{(Optional) character with the taxonomic rank choosen.}
 }
 \description{
 Retrieves the relative abundances of data, normalized by their sample sum at

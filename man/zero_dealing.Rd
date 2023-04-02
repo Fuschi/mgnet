@@ -4,12 +4,15 @@
 \alias{zero_dealing}
 \title{Simplest way to replace zero.}
 \usage{
-zero_dealing(X, mar = 1)
+zero_dealing(X, mar = 1, type = "plus")
 }
 \arguments{
 \item{X}{compositional matrix.}
 
 \item{mar}{integer indicating the margin of samples (rows=1 or cols=2).}
+
+\item{type}{character indicating the zero replacement strategy. Only two
+possible values are available, plus and subs.}
 }
 \description{
 This function implement the simplest replacement of the zeros

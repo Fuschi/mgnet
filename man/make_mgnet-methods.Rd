@@ -3,22 +3,18 @@
 \docType{methods}
 \name{make_mgnet}
 \alias{make_mgnet}
-\alias{make_mgnet,mgnet,character,character,character,character,numeric-method}
-\alias{make_mgnet,list,character,character,character,character,numeric-method}
+\alias{make_mgnet,mgnet,character,character,character,numeric-method}
+\alias{make_mgnet,list,character,character,character,numeric-method}
 \title{Build a meta-genomic network.}
 \usage{
-make_mgnet(mgnet, log.method, cor.method, thresh.method, adjust, thresh)
+make_mgnet(mgnet, cor.method, thresh.method, adjust, thresh)
 
-\S4method{make_mgnet}{mgnet,character,character,character,character,numeric}(mgnet, log.method, cor.method, thresh.method, adjust, thresh)
+\S4method{make_mgnet}{mgnet,character,character,character,numeric}(mgnet, cor.method, thresh.method, adjust, thresh)
 
-\S4method{make_mgnet}{list,character,character,character,character,numeric}(mgnet, log.method, cor.method, thresh.method, adjust, thresh)
+\S4method{make_mgnet}{list,character,character,character,numeric}(mgnet, cor.method, thresh.method, adjust, thresh)
 }
 \arguments{
 \item{mgnet}{mgnet object}
-
-\item{log.method}{log-ratio transformation choosen, possible choices are "base"
-for the classical clr-transformation, "inter-quantile" for its interquantile version
-and "stored" to use the log_data slot previous saved.}
 
 \item{cor.method}{correlation type, possible choices are "pearson","spearman","kendall".}
 
@@ -32,16 +28,11 @@ choices are "absolute","density","p-value".}
 }
 \description{
 The function has the purpose of building a meta-genomic network
-starting from a mg object following the following steps:
+starting from a log_data slot in object following the following steps:
 \itemize{
-\item calculates the clr abundances from data and if there are zeros,
-add the value 1 to all elements.
-\item Evaluate the correlations between all possible pairs of taxa being able
-to choose between Pearson Kendall and Spearman.
-\item derives the adjacency matrix by applying a threshold to the lowest
-correlations with three possible criteria. The simplest by giving it the
-absolute value, based on the density of the links or considering the p-value
-corrected with multiple tests.
-\item constructs the undirected, weighted, and signed network of class igraph.
+\item Calculates the pairwise taxa correlation matrix from the log_data slot.
+\item Retrieves the adjacency matrix by applying a threshold to the lowest
+correlations with three possible criteria 'abosulte','density','p-value'.
+\item Constructs the undirected, weighted, and signed network of class igraph.
 }
 }

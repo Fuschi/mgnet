@@ -3,17 +3,22 @@
 \docType{methods}
 \name{save_log_data}
 \alias{save_log_data}
+\alias{save_log_data,mgnet-method}
 \alias{save_log_data,list-method}
 \title{Save log-transformed data in mgnet.}
 \usage{
-save_log_data(object, method = "base")
+save_log_data(object, method = "base", zero.dealing = "plus")
 
-\S4method{save_log_data}{list}(object, method = "base")
+\S4method{save_log_data}{mgnet}(object, method = "base", zero.dealing = "plus")
+
+\S4method{save_log_data}{list}(object, method)
 }
 \arguments{
 \item{object}{mgnet or list}
 
 \item{method}{character with possible values "base" or "inter-quantile".}
+
+\item{zero.dealing}{character with possible values "plus", "subs" or "none".}
 }
 \description{
 Store in mgnet the log-transformed data to dealing with compositional issues.

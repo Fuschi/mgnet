@@ -8,7 +8,7 @@
 \alias{cluster_signed,list-method}
 \title{Get Communities of a Signed Weighted Graph}
 \usage{
-cluster_signed(obj, OS = NA)
+cluster_signed(obj, OS = "Linux")
 
 \S4method{cluster_signed}{igraph}(obj, OS = "Linux")
 
