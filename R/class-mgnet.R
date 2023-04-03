@@ -245,7 +245,7 @@ setMethod("save_sample_sum", "mgnet", function(object){
   
   if(length(object@data)==0) stop("data cannot be empty")
   
-  if(length(object@meta_sample)!=0){
+  if(length(object@meta_sample)==0){
     object@meta_sample <- data.frame("sample_sum"=rowSums(object@data))
   } else if(length(object@meta_sample)!=0 & !("sample_sum"%in%colnames(object@meta_sample))){
     object@meta_sample$sample_sum <- rowSums(object@data)
