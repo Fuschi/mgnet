@@ -23,7 +23,7 @@ colormap_communities <- function(n=20, alpha=1,
   if(round(n)!=n | !is.numeric(n) | n<=0 | n>99) stop("n must be an integer positive number (not greater or equal to 100)")
   if(!is.numeric(alpha)) stop("alpha must be numeric")
   if(alpha<0 | alpha>1) stop("alpha must be in range [0,1]")
-  if(!is.list(colorspace)) stop("colorspace must be a list")
+  if(!is.list(colorspace) & !is.character(colorspace)) stop("colorspace must be a list or a character")
   if(any(names(list)!=c("h","s","l"))) stop("colorspace must have as elements h,s,l")
   
   colormap <- qualpalr::qualpal(n=n, colorspace=colorspace)
@@ -76,7 +76,7 @@ colormap_taxonomy <- function(taxaID,
   if(distinctColor!=round(distinctColor) | !is.numeric(distinctColor)) stop("distinctColor must be integer number")
   if(distinctColor<1 | distinctColor>99) stop("cannot generate more than 99 different color")
   if(alpha<0 | alpha>1) stop("alpha must be in range [0,1]")
-  if(!is.list(colorspace)) stop("colorspace must be a list")
+  if(!is.list(colorspace) & !is.character(colorspace)) stop("colorspace must be a list or a character")
   if(any(names(list)!=c("h","s","l"))) stop("colorspace must have as elements h,s,l")
   
   taxaID <- unique(taxaID)
