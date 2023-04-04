@@ -59,7 +59,7 @@ iqclr <- function(X, mar=1){
   Xclr <- mgnet::clr(X, mar=mar)
   
   # find iqlr denom
-  clr_var=apply(Xclr, c(1,2)[mar], stats::var)
+  clr_var=apply(Xclr, c(2,1)[mar], stats::var)
   qts <- stats::quantile(clr_var, na.rm=T, probs=seq(0,1,by=0.25))
   invariant.set <- which( clr_var>=qts[2] & clr_var<=qts[4] )
   
