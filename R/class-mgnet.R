@@ -1654,7 +1654,8 @@ setMethod(f="[",
               return(mgnet(data=data.new,
                            meta_sample=meta_sample.new,
                            taxa=taxa.new,
-                           meta_taxa=meta_taxa.new
+                           meta_taxa=meta_taxa.new,
+                           log_data=log_data.new
               ))
             } else if(length(x@netw)!=0 & missing(i)){
               return(selection_taxa(x,j))
