@@ -11,7 +11,7 @@ shannon_diversity(X, mar = 2, norm = TRUE)
 
 \item{mar}{a vector giving the subscripts which the function will be applied over; 1 indicates rows, 2 indicates columns, 0 for all elements.}
 
-\item{norm}{logical elements indicates if the entropy must be normalize to 1 dividing
+\item{norm}{logical elements indicates if the entropy must be normalize to 1 dividing it
 by the logarithm of the dimension (default TRUE).}
 }
 \description{

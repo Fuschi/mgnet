@@ -19,7 +19,7 @@ prevalence <- function(X, mar=2){
   if(is.vector(X)){
     return(sum(X>0)/length(X))
   } else if (mar==1 | mar==2){
-    return(apply(X,mar,function(x) sum(x>0)/length(x)))
+    return(apply(X,mar,function(x) sum(x>0)/length(x), simplify=T))
   } else {
     return(sum(X>0)/length(X))
   }
@@ -85,10 +85,39 @@ quantile_nozero <- function(X, probs=.5, mar=2, ...){
 #' 
 #' @param X vector or matrix with all elements >=0.
 #' @param mar a vector giving the subscripts which the function will be applied over; 1 indicates rows, 2 indicates columns, 0 for all elements.
-#' @param norm logical elements indicates if the entropy must be normalize to 1 dividing
+#' @param norm logical elements indicates if the entropy must be normalize to 1 dividing it
 #' by the logarithm of the dimension (default TRUE).
 #' 
 #' @export
 shannon_diversity <- function(X, mar=2, norm=TRUE){
-
+  if(!(is.vector(X) | is.matrix(X))) stop("X must be a matrix or a vector")
+  if(!is.numeric(X)) stop("X must be numeric")
+  if(any(X<0)) stop("All elements of X must be >=0")
+  if(!is.numeric(mar)) stop("mar must be numeric")
+  if(!any(mar%in%c(0,1,2))) stop("mar must be equal at one of the following choices 1,2 or 0")
+  if(!is.logical(norm)) stop("norm must be logical")
+  
+  if(is.vector(X)){
+    p <- X/sum(X)
+    e <- -sum(p*log(p), na.rm=T)
+    if(norm) e <- e/log(length(X))
+  } else {
+    
+    if(mar==1){
+      p <- X/rowSums(X)
+      e <- -rowSums(p*log(p), na.rm=T)
+      if(norm) e <- e/log(ncol(X))
+    } else if(mar==2){
+      p <- X/colSums(X)
+      e <- -colSums(p*log(p), na.rm=T)
+      if(norm) e <- e/log(nrow(X))
+    } else {
+      p <- c(X)/sum(c(X))
+      e <- -sum(p*log(p), na.rm=T)
+      if(norm) e <- e/log(length(X))
+    } 
+    
+  }
+  
+  return(e)
 }
