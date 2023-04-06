@@ -1643,6 +1643,14 @@ setMethod(f="[",
           signature="mgnet",
           definition=function(x,i,j){
             
+            if(!missing(i)){
+              if(any(duplicated(i))) stop("Find duplicated elements in i, the samples subsetting indices")
+            }
+            
+            if(!missing(j)){
+              if(any(duplicated(j))) stop("Find duplicated elements in j, the taxa subsetting indices")
+            }
+            
             ifelse(length(x@data)!=0, data.new<-x@data[i,j,drop=F], data.new<-x@data)
             ifelse(length(x@meta_sample)!=0, meta_sample.new<-x@meta_sample[i, ,drop=F], meta_sample.new<-x@meta_sample)
             ifelse(length(x@taxa)!=0, taxa.new<-x@taxa[j, ,drop=F], taxa.new<-x@taxa)
@@ -1672,6 +1680,115 @@ setMethod(f="[",
 ################################################################################
 ################################################################################
 # END EXTRACTOR MG
+################################################################################
+################################################################################
+
+
+
+
+################################################################################
+################################################################################
+# MGNET ARRANGE
+################################################################################
+################################################################################
+#' Re-arranging the samples or taxa positioning.
+#' 
+#' @description The function permits to order differently the samples or the taxa
+#' inside the mgnet object.
+#' 
+#' @param object mgnet.
+#' @param i sample indices that are numeric or character vectors or empty (missing). 
+#' @param j taxa indices that are numeric or character vectors or empty (missing). 
+#' 
+#' @importFrom igraph graph_from_adjacency_matrix
+#' @rdname arrange_mgnet-methods
+#' @docType methods
+#' @export
+setGeneric("arrange_mgnet", function(object,i,j) standardGeneric("arrange_mgnet"))
+#' @rdname arrange_mgnet-methods
+setMethod("arrange_mgnet", "mgnet",
+          function(object,i,j){
+            
+            # checks
+            #------------------------------------------------------------------#
+            if(!missing(i)){
+              
+              if(!(is.character(i)|is.numeric(i)|is.function(i))) stop("i must be numeric or character or a function")
+              if(is.function(i)) i <- i(object)
+              if(!is.null(dim(i))) stop("i must must be a vector")
+              if(length(i)!=nsample(object)) stop("i must have the length equal to the sample number of object")
+              if(any(duplicated(i))) stop("find at least a duplicated in i")
+              if(is.character(i)){
+                if(any(!(i%in%sample_name(object)))) stop("find at least an element in i not present in the sample_name of object")
+              }
+              if(is.numeric(i)){
+                if(any(!(i%in%(1:nsample(object))))) stop("i elements must be in range 1 to sample number of object")
+              }
+            }
+            
+            if(!missing(j)){
+              
+              # checks
+              if(!(is.character(j)|is.numeric(j)|is.function(j))) stop("i must be numeric or character")
+              if(is.function(j)) j <- j(object)
+              if(!is.null(dim(j))) stop("j must must be a vector")
+              if(length(j)!=ntaxa(object)) stop("i must have the length equal to the taxa number of object")
+              if(any(duplicated(j))) stop("find at least a duplicated in j")
+              if(is.character(j)){
+                if(any(!(j%in%taxaID(object)))) stop("find at least an element in j not present in the taxaID of object")
+              }
+              if(is.numeric(j)){
+                if(any(!(j%in%(1:ntaxa(object))))) stop("j elements must be in range 1 to taxa number of object")
+              }
+            }
+            #----------------------------------------------------------------#
+            # end checks
+            
+            if(missing(i)) i <- 1:nsample(object)
+            if(missing(j)) j <- 1:ntaxa(object)
+            
+            ifelse(length(object@data)!=0, data.new <- object@data[i,j],
+                                           data.new <- object@data)
+            ifelse(length(object@meta_sample)!=0, meta_sample.new <- object@meta_sample[i,],
+                                                  meta_sample.new <- object@meta_sample)
+            ifelse(length(object@taxa)!=0, taxa.new <- object@taxa[j,],
+                                           taxa.new <- object@taxa)  
+            ifelse(length(object@meta_taxa)!=0, meta_taxa.new <- object@meta_taxa[j,],
+                                                meta_taxa.new <- object@meta_taxa)
+            ifelse(length(object@log_data)!=0, log_data.new <- object@log_data[i,j],
+                                               log_data.new <- object@log_data)
+            
+            if(length(object@netw)!=0){
+              adjM <- adjacency_matrix(object)
+              adjM <- adjM[j,j]
+              netw.new <- graph_from_adjacency_matrix(adjM, mode="undirected",weighted=T)
+            } else {
+              netw.new <- object@netw
+            }
+            
+            if(length(object@comm)!=0){
+              comm.new <- object@comm
+              comm.new$membership <- comm.new$membership[j]
+            } else {
+              comm.new <- object@comm
+            }
+            
+            return(mgnet(data=data.new, meta_sample=meta_sample.new,
+                         taxa=taxa.new, meta_taxa=meta_taxa.new,
+                         log_data=log_data.new,
+                         netw=netw.new, comm=comm.new))
+              
+          })
+#' @rdname arrange_mgnet-methods
+setMethod("arrange_mgnet","list",
+          function(object,i,j){
+            is_mgnet_list(object)
+            lapply(object, selectMethod(f="arrange_mgnet",signature="mgnet"),
+                   i=i, j=j)}
+)
+################################################################################
+################################################################################
+# END ARRANGE MGNET
 ################################################################################
 ################################################################################
 
