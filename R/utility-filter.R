@@ -89,7 +89,7 @@ quantile_nozero <- function(X, probs=.5, mar=2, ...){
 #' by the logarithm of the dimension (default TRUE).
 #' 
 #' @export
-shannon_diversity <- function(X, mar=2, norm=TRUE){
+shannon_diversity <- function(X, mar=1, norm=TRUE){
   if(!(is.vector(X) | is.matrix(X))) stop("X must be a matrix or a vector")
   if(!is.numeric(X)) stop("X must be numeric")
   if(any(X<0)) stop("All elements of X must be >=0")

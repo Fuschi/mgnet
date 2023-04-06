@@ -4,7 +4,7 @@
 \alias{shannon_diversity}
 \title{Shannon alpha diversity}
 \usage{
-shannon_diversity(X, mar = 2, norm = TRUE)
+shannon_diversity(X, mar = 1, norm = TRUE)
 }
 \arguments{
 \item{X}{vector or matrix with all elements >=0.}
