@@ -1313,7 +1313,7 @@ setMethod("ncomm", "mgnet", function(object){
 setMethod("ncomm","list",
           function(object){
             is_mgnet_list(object)
-            lapply(object, selectMethod(f="ncomm",signature="mgnet"))})
+            sapply(object, selectMethod(f="ncomm",signature="mgnet"))})
 #####################################
 # COMMID
 #####################################
@@ -1642,14 +1642,6 @@ setMethod("selection_taxa","list",
 setMethod(f="[",
           signature="mgnet",
           definition=function(x,i,j){
-            
-            if(!missing(i)){
-              if(any(duplicated(i))) stop("Find duplicated elements in i, the samples subsetting indices")
-            }
-            
-            if(!missing(j)){
-              if(any(duplicated(j))) stop("Find duplicated elements in j, the taxa subsetting indices")
-            }
             
             ifelse(length(x@data)!=0, data.new<-x@data[i,j,drop=F], data.new<-x@data)
             ifelse(length(x@meta_sample)!=0, meta_sample.new<-x@meta_sample[i, ,drop=F], meta_sample.new<-x@meta_sample)
