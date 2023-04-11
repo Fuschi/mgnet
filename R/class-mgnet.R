@@ -845,7 +845,7 @@ setMethod("adjacency_list<-",c("list","list"),
 #' @usage comm(object) <- value
 #'
 #' @param object mgnet.
-#' @param value \code{\link{communities}}
+#' @param value communities
 #' 
 #' @importFrom igraph make_clusters 
 #' 
@@ -856,22 +856,31 @@ setGeneric("comm<-", function(object, value) standardGeneric("comm<-"))
 #' @rdname assign-comm
 setMethod("comm<-", c("mgnet", "communities"), function(object, value){
   
+  if(length(object@netw)==0) stop("netw slot in object cannot be empty")
+  if(ntaxa(object)!=length(value$membership)) stop("vertices number in object and in value is different")
+  
+  return(mgnet(data=object@data, meta_sample=object@meta_sample,
+               taxa=object@taxa, meta_taxa=object@meta_taxa,
+               log_data=object@log_data,
+               netw=object@netw, comm=value))
+  
+})
+#' @rdname assign-comm
+setMethod("comm<-", c("mgnet", "mgnet"), function(object, value){
+  
   if(length(netw(object))==0) stop("netw slot cannot be empty")
+  if(all(taxaID(object)%in%taxaID(value))) stop("all taxaID in value must be present also in object")
   
-  namedMemb <- setNames(membership(value), value$vertex.names)
+  namedMemb <- commID(value)
   namedMemb.new <- setNames(rep(0,ntaxa(object)), taxaID(object))
-  
-  if(!all(names(namedMemb)%in%names(namedMemb.new))) stop("find at least a taxa not present in object")
-  
   namedMemb.new[names(namedMemb)] <- namedMemb
   
   comm.new <- igraph::make_clusters(object@netw,
-                                    membership=namedMemb.new,
+                                    membership=as.numeric(namedMemb.new),
                                     algorithm="NA",
                                     modularity=1)
   comm.new$modularity <- NA
-  comm.new$vertex.names <- names(namedMemb.new)
-  
+
   return(mgnet(data=object@data, meta_sample=object@meta_sample,
                taxa=object@taxa, meta_taxa=object@meta_taxa,
                log_data=object@log_data,
@@ -881,6 +890,12 @@ setMethod("comm<-", c("mgnet", "communities"), function(object, value){
 setMethod("comm<-",c("list","list"),
           function(object,value){
             are_lists_assign(object,value)
+            classes <- sapply(value,class)
+            
+            if( !(all(classes=="communities") | all(classes)=="mgnet") ){
+              stop("all elements in value list must belong to communities or mgnet class")
+            }
+            
             for(i in 1:length(object)){
               comm(object[[i]]) <- value[[i]]}
             return(object)})
@@ -1836,7 +1851,7 @@ setMethod("show","mgnet",
                   cat(paste("Isolated Nodes:", sizes(object@comm)[[1]],"\n"))
                 } else {
                   cat(paste("Signed Communities Number:",length(sizes(object@comm)),"\n"))
-                  cat(paste("Communities Sizes:",paste(sizes(object@comm)[-1],collapse=","),"\n"))
+                  cat(paste("Communities Sizes:",paste(sizes(object@comm),collapse=","),"\n"))
                   cat("There aren't isolated nodes \n")
                 }
               }
