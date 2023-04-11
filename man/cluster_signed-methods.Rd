@@ -8,13 +8,13 @@
 \alias{cluster_signed,list-method}
 \title{Get Communities of a Signed Weighted Graph}
 \usage{
-cluster_signed(obj, OS = "Linux")
+cluster_signed(obj, OS = "Linux", add.names = TRUE)
 
-\S4method{cluster_signed}{igraph}(obj, OS = "Linux")
+\S4method{cluster_signed}{igraph}(obj, OS = "Linux", add.names = TRUE)
 
-\S4method{cluster_signed}{mgnet}(obj, OS = "Linux")
+\S4method{cluster_signed}{mgnet}(obj, OS = "Linux", add.names = TRUE)
 
-\S4method{cluster_signed}{list}(obj, OS = "Linux")
+\S4method{cluster_signed}{list}(obj, OS = "Linux", add.names = TRUE)
 }
 \arguments{
 \item{obj}{weighted undirected network belong to \code{\link{igraph}} class
@@ -22,12 +22,16 @@ or an mgnet.}
 
 \item{OS}{(default Linux) string with the operating system running. Possible choices are
 "Linux","Windows","Mac".}
+
+\item{add.names}{logical with default value set to TRUE. It indicates whether
+you want to use the name of the vertices also in the resulting communities or
+simply numerical indexes.}
 }
 \value{
 \code{\link{communities}} igraph object able to manage to communities
 graph info. The unique difference from igraph routine is the treatment with
 the isolated nodes. In this case all isolated nodes are classified in the
-community \code{'0'} and not as different communities of size one
+community \code{'0'} and not as different communities of size one.
 }
 \description{
 Adaptation in R of the algorithm for detention of weighted

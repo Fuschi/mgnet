@@ -3,20 +3,17 @@
 \docType{methods}
 \name{netw<-}
 \alias{netw<-}
-\alias{netw<-,mgnet,igraph-method}
-\alias{adjacency_matrix<-,mgnet,matrix-method}
+\alias{netw<-,mgnet-method}
 \title{Assign a new netw to \code{object}}
 \usage{
 netw(object) <- value
 
-\S4method{netw}{mgnet,igraph}(object) <- value
-
-\S4method{adjacency_matrix}{mgnet,matrix}(object) <- value
+\S4method{netw}{mgnet}(object) <- value
 }
 \arguments{
 \item{object}{mgnet.}
 
-\item{value}{\code{\link{igraph}}}
+\item{value}{\code{\link{igraph}} or the equivalent adjacency matrix.}
 }
 \description{
 Assign a new netw to \code{object}

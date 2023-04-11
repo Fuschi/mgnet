@@ -1,8 +1,7 @@
-#------------------------------------------------------------------------------#
 #' Get Communities of a Signed Weighted Graph
 #'
 #'@description Adaptation in R of the algorithm for detention of weighted 
-#'communities with sign of a graph developed by Sergio Gomez.
+#' communities with sign of a graph developed by Sergio Gomez.
 #' https://deim.urv.cat/~sergio.gomez/radatools.php. 
 #' The algorithm tries to find dense subgraph, also called communities via
 #' optimization of a signed definition of modularity score.
@@ -11,21 +10,24 @@
 #'or an mgnet.
 #'@param OS (default Linux) string with the operating system running. Possible choices are 
 #'"Linux","Windows","Mac".
+#'@param add.names logical with default value set to TRUE. It indicates whether 
+#'you want to use the name of the vertices also in the resulting communities or 
+#'simply numerical indexes.
 #'
 #'@return \code{\link{communities}} igraph object able to manage to communities
 #'graph info. The unique difference from igraph routine is the treatment with 
 #'the isolated nodes. In this case all isolated nodes are classified in the
-#'community \code{'0'} and not as different communities of size one
+#'community \code{'0'} and not as different communities of size one.
 #'
-#'@importFrom igraph V graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes
+#'@importFrom igraph V graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes is_named
 #'@importFrom stringr str_split
 #'
 #' @rdname cluster_signed-methods
 #' @docType methods
 #' @export
-setGeneric("cluster_signed", function(obj,OS="Linux") standardGeneric("cluster_signed"))
+setGeneric("cluster_signed", function(obj,OS="Linux",add.names=TRUE) standardGeneric("cluster_signed"))
 #' @rdname cluster_signed-methods
-setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
+setMethod("cluster_signed", "igraph", function(obj,OS="Linux",add.names=TRUE){
   
   graph <- obj
   #Check Graph
@@ -33,6 +35,7 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   if(!is.weighted(graph)) stop("graph must be weighted graph")
   if(is.directed(graph))  stop("graph must be undirected")
   if(file.exists("graph.net")) file.remove("graph.net")
+  if(add.names & !igraph::is_named(obj)) stop("graph has not vertices names attribute")
   
   adj <- as_adjacency_matrix(graph, attr="weight", sparse=FALSE)
   #End Checks
@@ -105,14 +108,16 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux"){
   
   isolated.membership <- which(sizes(res)==1)
   res$membership[res$membership %in% isolated.membership] <- 0
+  
+  if(add.names) names(res$membership) <- V(graph)$name
 
   #return the results as communities structure of igraph package
   return(res)
 })
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed","mgnet",
-          function(obj,OS="Linux"){
-            comm <- cluster_signed(netw(obj),OS=OS)
+          function(obj,OS="Linux",add.names=TRUE){
+            comm <- cluster_signed(netw(obj),OS=OS,add.names=add.names)
             return(mgnet(data=obj@data, meta_sample=obj@meta_sample,
                          taxa=obj@taxa, meta_taxa=obj@meta_taxa,
                          log_data=obj@log_data,
@@ -120,6 +125,6 @@ setMethod("cluster_signed","mgnet",
           })
 #' @rdname cluster_signed-methods
 setMethod("cluster_signed","list",
-          function(obj,OS="Linux"){
+          function(obj,OS="Linux",add.names=TRUE){
             return(lapply(obj, selectMethod(f="cluster_signed",signature="mgnet"),
-                   OS=OS))})
+                   OS=OS,add.names=add.names))})

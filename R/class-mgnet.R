@@ -15,7 +15,7 @@ setOldClass("communities")
 #' @slot netw undirected, weighted igraph network.
 #' @slot comm graph communities of netw.
 #'
-#' @importFrom igraph make_empty_graph cluster_fast_greedy V vcount
+#' @importFrom igraph make_empty_graph cluster_fast_greedy V vcount is_named
 #' @import methods
 #' @name mgnet-class
 #' @rdname mgnet-class
@@ -98,9 +98,9 @@ setClass(
     # CHECK NETW
     #-------------------------------------#
     if(length(object@netw)!=0){
+      if(!igraph::is_named(object@netw)) return("\n netw vertices must be named")
       if(is_directed(object@netw)) return("\n netw slot must be an undirected igraph object")
       if(!is_weighted(object@netw)) return("\n netw slot must be an weighted igraph object")
-      if(is.null(V(object@netw)$name)) return("\n netw vertices name ( V(netw(obj))$name ) cannot be empty.")
       if(any(diag(as_adjacency_matrix(object@netw,sparse=F))!=0)) return("\n netw cannot has self loops")
     }
     
@@ -562,7 +562,12 @@ setMethod("comm","list",
 #' @rdname adjacency_matrix-methods
 setGeneric("adjacency_matrix", function(object) standardGeneric("adjacency_matrix"))
 #' @rdname adjacency_matrix-methods
-setMethod("adjacency_matrix", "mgnet", function(object){return(igraph::as_adjacency_matrix(netw(object),attr="weight",sparse=F))})
+setMethod("adjacency_matrix", "mgnet", function(object){
+  if(length(netw(object))!=0){
+    return(igraph::as_adjacency_matrix(netw(object),attr="weight",sparse=F))
+    } else {
+    return(matrix(nrow=0,ncol=0))
+  }})
 #' @rdname adjacency_matrix-methods
 setMethod("adjacency_matrix","list",
           function(object){
@@ -587,7 +592,12 @@ setMethod("adjacency_matrix","list",
 #' @rdname adjacency_list-methods
 setGeneric("adjacency_list", function(object) standardGeneric("adjacency_list"))
 #' @rdname adjacency_list-methods
-setMethod("adjacency_list", "mgnet", function(object){return(igraph::as_data_frame(netw(object),what="edges"))})
+setMethod("adjacency_list", "mgnet", function(object){
+  if(length(netw(object))!=0){
+    return(igraph::as_data_frame(netw(object),what="edges"))
+  } else {
+    stop("there isn't netw")
+  }})
 #' @rdname adjacency_list-methods
 setMethod("adjacency_list","list",
           function(object){
@@ -747,46 +757,21 @@ setMethod("log_data<-", c("mgnet", "data.frame"), function(object, value){
 #' @usage netw(object) <- value
 #'
 #' @param object mgnet.
-#' @param value \code{\link{igraph}}
+#' @param value \code{\link{igraph}} or the equivalent adjacency matrix.
 #'
 #' @export
 #' @docType methods
 #' @rdname assign-netw
 setGeneric("netw<-", function(object, value) standardGeneric("netw<-"))
 #' @rdname assign-netw
-setMethod("netw<-", c("mgnet", "igraph"), function(object, value){
-  new("mgnet",data=object@data, meta_sample=object@meta_sample, 
-      taxa=object@taxa, meta_taxa=object@meta_taxa,
-      log_data=object@log_data,
-      netw=value, comm=object@comm)
-})
-#####################################
-# ADJANCENCY MATRIX<-
-#####################################
-#' Assign a new netw from adjacency matrix to \code{object}
-#'
-#' @usage adjacency_matrix(object) <- value
-#'
-#' @param object mgnet.
-#' @param value \code{\link{igraph}}
-#'
-#' @importFrom igraph graph_from_adjacency_matrix
-#' @export
-#' @docType methods
-#' @rdname adjacency_matrix-netw
-setGeneric("adjacency_matrix<-", function(object, value) standardGeneric("adjacency_matrix<-"))
-#' @rdname assign-netw
-setMethod("adjacency_matrix<-", c("mgnet", "matrix"), function(object, value){
+setMethod("netw<-", "mgnet", function(object, value){
+
+  if( !is.igraph(value) & !is.matrix(value) ) stop("value must be a matrix or an igraph object")
   
-  if(is.null(colnames(value)) | is.null(rownames(value)) ) stop("in value must be present colnames and rownames")
-  if(any(colnames(value)!=rownames(value))) stop("rownames and colnames of value must be equals")
-  
-  netw <- igraph::graph_from_adjacency_matrix(value, mode="undirected", weighted=T)
-  
-  new("mgnet",data=object@data, meta_sample=object@meta_sample, 
-      taxa=object@taxa, meta_taxa=object@meta_taxa,
-      log_data=object@log_data,
-      netw=netw)
+  mgnet(data=object@data, meta_sample=object@meta_sample, 
+        taxa=object@taxa, meta_taxa=object@meta_taxa,
+        log_data=object@log_data,
+        netw=value, comm=object@comm)
 })
 #####################################
 # ADJACENCY LIST<-
@@ -824,11 +809,11 @@ setMethod("adjacency_list<-", c("mgnet", "data.frame"), function(object, value){
   }
   
   if(length(netw(object))!=0) message("netw slot has been rewritten")
-  new("mgnet",data=object@data, meta_sample=object@meta_sample, 
-      taxa=object@taxa, meta_taxa=object@meta_taxa,
-      log_data=object@log_data,
-      netw=new_netw,
-      comm=igraph::cluster_fast_greedy(igraph::make_empty_graph(n=0, directed=FALSE)))
+  mgnet(data=object@data, meta_sample=object@meta_sample, 
+        taxa=object@taxa, meta_taxa=object@meta_taxa,
+        log_data=object@log_data,
+        netw=new_netw,
+        comm=igraph::cluster_fast_greedy(igraph::make_empty_graph(n=0, directed=FALSE)))
 })
 #' @rdname assign-adjacency_list
 setMethod("adjacency_list<-",c("list","list"),
@@ -856,35 +841,37 @@ setGeneric("comm<-", function(object, value) standardGeneric("comm<-"))
 #' @rdname assign-comm
 setMethod("comm<-", c("mgnet", "communities"), function(object, value){
   
-  if(length(object@netw)==0) stop("netw slot in object cannot be empty")
-  if(ntaxa(object)!=length(value$membership)) stop("vertices number in object and in value is different")
-  
-  return(mgnet(data=object@data, meta_sample=object@meta_sample,
-               taxa=object@taxa, meta_taxa=object@meta_taxa,
-               log_data=object@log_data,
-               netw=object@netw, comm=value))
-  
-})
-#' @rdname assign-comm
-setMethod("comm<-", c("mgnet", "mgnet"), function(object, value){
-  
-  if(length(netw(object))==0) stop("netw slot cannot be empty")
-  if(all(taxaID(object)%in%taxaID(value))) stop("all taxaID in value must be present also in object")
-  
-  namedMemb <- commID(value)
-  namedMemb.new <- setNames(rep(0,ntaxa(object)), taxaID(object))
-  namedMemb.new[names(namedMemb)] <- namedMemb
-  
-  comm.new <- igraph::make_clusters(object@netw,
-                                    membership=as.numeric(namedMemb.new),
-                                    algorithm="NA",
-                                    modularity=1)
-  comm.new$modularity <- NA
-
-  return(mgnet(data=object@data, meta_sample=object@meta_sample,
-               taxa=object@taxa, meta_taxa=object@meta_taxa,
-               log_data=object@log_data,
-               netw=object@netw, comm=comm.new))
+  if(is.null(names(value$membership))){
+    
+    if(length(object@netw)==0) stop("netw slot in object cannot be empty")
+    if(ntaxa(object)!=length(value$membership)) stop("vertices number in object and in value is different")
+    
+    return(mgnet(data=object@data, meta_sample=object@meta_sample,
+                 taxa=object@taxa, meta_taxa=object@meta_taxa,
+                 log_data=object@log_data,
+                 netw=object@netw, comm=value))
+    
+  } else {
+    
+    if(length(netw(object))==0) stop("netw slot cannot be empty")
+    if(all(taxaID(object)%in%names(value$membership))) stop("all taxaID in value must be present also in object")
+    
+    namedMemb <- value$membership
+    namedMemb.new <- setNames(rep(0,ntaxa(object)), taxaID(object))
+    namedMemb.new[names(namedMemb)] <- namedMemb
+    
+    comm.new <- igraph::make_clusters(object@netw,
+                                      membership=as.numeric(namedMemb.new),
+                                      algorithm="NA",
+                                      modularity=1)
+    comm.new$modularity <- NA
+    
+    return(mgnet(data=object@data, meta_sample=object@meta_sample,
+                 taxa=object@taxa, meta_taxa=object@meta_taxa,
+                 log_data=object@log_data,
+                 netw=object@netw, comm=comm.new))
+    
+  }
 })
 #' @rdname assign-comm
 setMethod("comm<-",c("list","list"),
@@ -892,7 +879,7 @@ setMethod("comm<-",c("list","list"),
             are_lists_assign(object,value)
             classes <- sapply(value,class)
             
-            if( !(all(classes=="communities") | all(classes)=="mgnet") ){
+            if( any(classes!="communities") ){
               stop("all elements in value list must belong to communities or mgnet class")
             }
             

@@ -4,15 +4,12 @@
 \name{comm<-}
 \alias{comm<-}
 \alias{comm<-,mgnet,communities-method}
-\alias{comm<-,mgnet,mgnet-method}
 \alias{comm<-,list,list-method}
 \title{Assign a new comm to \code{object}}
 \usage{
 comm(object) <- value
 
 \S4method{comm}{mgnet,communities}(object) <- value
-
-\S4method{comm}{mgnet,mgnet}(object) <- value
 
 \S4method{comm}{list,list}(object) <- value
 }
