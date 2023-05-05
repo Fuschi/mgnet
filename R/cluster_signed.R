@@ -10,6 +10,11 @@
 #'or an mgnet.
 #'@param OS (default Linux) string with the operating system running. Possible choices are 
 #'"Linux","Windows","Mac".
+#'@param Resistance resistance of nodes to join communities, as a common 
+#'self-loop positive or negative real number, default no resistance with value set
+#'to 0.
+#'@param Penalty_Coefficien relative importance of null-case term non-negative 
+#'real number default set to 1.
 #'@param add.names logical with default value set to TRUE. It indicates whether 
 #'you want to use the name of the vertices also in the resulting communities or 
 #'simply numerical indexes.
@@ -25,9 +30,13 @@
 #' @rdname cluster_signed-methods
 #' @docType methods
 #' @export
-setGeneric("cluster_signed", function(obj,OS="Linux",add.names=TRUE) standardGeneric("cluster_signed"))
+setGeneric("cluster_signed", function(obj,OS="Linux", 
+                                      Resistance=0, Penalty_Coefficien=1,
+                                      add.names=TRUE) standardGeneric("cluster_signed"))
 #' @rdname cluster_signed-methods
-setMethod("cluster_signed", "igraph", function(obj,OS="Linux",add.names=TRUE){
+setMethod("cluster_signed", "igraph", function(obj,OS="Linux",
+                                               Resistance=0, Penalty_Coefficien=1,
+                                               add.names=TRUE){
   
   graph <- obj
   #Check Graph
@@ -35,6 +44,9 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux",add.names=TRUE){
   if(!is.weighted(graph)) stop("graph must be weighted graph")
   if(is.directed(graph))  stop("graph must be undirected")
   if(file.exists("graph.net")) file.remove("graph.net")
+  if(!is.numeric(Resistance)) stop("Resistance must be numeric")
+  if(!is.numeric(Penalty_Coefficien)) stop("Penalty_Coefficien must be a number >= 0")
+  if(Penalty_Coefficien<0) stop("Penalty_Coefficien must be a number >= 0")
   if(add.names & !igraph::is_named(obj)) stop("graph has not vertices names attribute")
   
   adj <- as_adjacency_matrix(graph, attr="weight", sparse=FALSE)
@@ -61,7 +73,7 @@ setMethod("cluster_signed", "igraph", function(obj,OS="Linux",add.names=TRUE){
   } else if(OS=="Mac"){
     cmd <- paste(path,"Communities_Detection_Mac.exe none WS l 1",sep="")
   }
-  cmd <- paste(cmd, path.graph, path.result)
+  cmd <- paste(cmd, Resistance, Penalty_Coefficien, path.graph, path.result)
   
   #make communities detection
   if(OS=="Windows"){

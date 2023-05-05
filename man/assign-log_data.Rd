@@ -3,12 +3,12 @@
 \docType{methods}
 \name{log_data<-}
 \alias{log_data<-}
-\alias{log_data<-,mgnet,data.frame-method}
+\alias{log_data<-,mgnet,matrix-method}
 \title{Assign new log_data to \code{object}}
 \usage{
 log_data(object) <- value
 
-\S4method{log_data}{mgnet,data.frame}(object) <- value
+\S4method{log_data}{mgnet,matrix}(object) <- value
 }
 \arguments{
 \item{object}{mgnet}

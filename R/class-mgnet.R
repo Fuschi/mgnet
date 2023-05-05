@@ -743,10 +743,10 @@ setMethod("meta_taxa<-", c("mgnet", "data.frame"), function(object, value){
 #' @rdname assign-log_data
 setGeneric("log_data<-", function(object, value) standardGeneric("log_data<-"))
 #' @rdname assign-log_data
-setMethod("log_data<-", c("mgnet", "data.frame"), function(object, value){
+setMethod("log_data<-", c("mgnet", "matrix"), function(object, value){
   new("mgnet",data=object@data, meta_sample=object@meta_sample, 
-      taxa=object@taxa, log_data=value,
-      log_data=object@log_data,
+      taxa=object@taxa, meta_taxa=object@meta_taxa,
+      log_data=value,
       netw=object@netw, comm=object@comm)
 })
 #####################################
@@ -1893,7 +1893,7 @@ setMethod("mgmelt", "mgnet",
               mdf$Relative <- reshape2::melt(relative(object))$value
             }
             
-            if(length(log_data)!=0){
+            if(length(object@log_data)!=0){
               mdf$log_data <- reshape2::melt(object@log_data)$value
             }
             
@@ -1919,8 +1919,6 @@ setMethod("mgmelt", "mgnet",
               }
             } 
             
-            
-            if(length(object@meta_taxa!=0)) mdf <- cbind(mdf,object@meta_taxa[mdf$TaxaID,])
             if(length(object@comm)!=0) mdf <- cbind(mdf, "commID"=commID(object)[mdf$TaxaID])
             
             if(any(duplicated(t(mdf)))){
@@ -2210,10 +2208,7 @@ setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
   
   n <- netw(obj)
   if(length(obj@comm)!=0) c <- comm(obj)
-  
-  # Modify isolated nodes as igraph want
-  #------------------------------------#
-  c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
+
   
   if(sign=="positive"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight>0],delete.vertices=FALSE)
@@ -2221,6 +2216,12 @@ setMethod("degree_mgnet","mgnet",function(obj,sign="all",type="all"){
     sub.sign <- subgraph.edges(graph=n,eids=E(n)[E(n)$weight<0],delete.vertices=FALSE)
   } else {
     sub.sign <- n
+  }
+  
+  # Modify isolated nodes as igraph need
+  #------------------------------------#
+  if(type!="all"){
+    c$membership[c$membership==0] <- (length(c)+1):((length(c)+1)+length(c$membership[c$membership==0])-1)
   }
   
   if(type=="intra"){

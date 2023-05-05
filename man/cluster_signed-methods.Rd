@@ -8,9 +8,21 @@
 \alias{cluster_signed,list-method}
 \title{Get Communities of a Signed Weighted Graph}
 \usage{
-cluster_signed(obj, OS = "Linux", add.names = TRUE)
+cluster_signed(
+  obj,
+  OS = "Linux",
+  Resistance = 0,
+  Penalty_Coefficien = 1,
+  add.names = TRUE
+)
 
-\S4method{cluster_signed}{igraph}(obj, OS = "Linux", add.names = TRUE)
+\S4method{cluster_signed}{igraph}(
+  obj,
+  OS = "Linux",
+  Resistance = 0,
+  Penalty_Coefficien = 1,
+  add.names = TRUE
+)
 
 \S4method{cluster_signed}{mgnet}(obj, OS = "Linux", add.names = TRUE)
 
@@ -22,6 +34,13 @@ or an mgnet.}
 
 \item{OS}{(default Linux) string with the operating system running. Possible choices are
 "Linux","Windows","Mac".}
+
+\item{Resistance}{resistance of nodes to join communities, as a common
+self-loop positive or negative real number, default no resistance with value set
+to 0.}
+
+\item{Penalty_Coefficien}{relative importance of null-case term non-negative
+real number default set to 1.}
 
 \item{add.names}{logical with default value set to TRUE. It indicates whether
 you want to use the name of the vertices also in the resulting communities or
