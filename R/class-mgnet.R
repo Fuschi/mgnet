@@ -209,7 +209,7 @@ setClass(
 #' @keywords internal
 is_mgnet_list <- function(L){
   if(!is.list(L)) stop("the argument must be a list")
-  check <- sapply(L, function(x) isa(x,"mgnet"))
+  check <- sapply(L, function(x) inherits(x,"mgnet"))
   
   if(any(check==FALSE)){
     stop("list must contain all mgnet objects")
@@ -628,7 +628,7 @@ are_lists_assign <- function(object, value){
   if(any(names(object)!=names(value))) stop("object and value elements must have the same named element in the same order")
   
   # Check object is a list of mgnet
-  check <- sapply(object, function(x) isa(x,"mgnet"))
+  check <- sapply(object, function(x) inherits(x,"mgnet"))
   if(any(check==FALSE)){
     stop("object must contain all mgnet objects")
   } else {
