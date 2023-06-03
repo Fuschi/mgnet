@@ -282,24 +282,19 @@ setMethod("save_sample_sum","list",
 #'
 #' @param object mgnet or list 
 #' @param method character with possible values "base" or "inter-quantile".
-#' @param zero.dealing character with possible values "plus", "subs" or "none".
+#' @param zero.dealing character with possible values sub" or "add".
 #'
 #' @export
 #' @docType methods
 #' @rdname save_log_data-methods
-setGeneric("save_log_data", function(object, method="base", zero.dealing="plus") standardGeneric("save_log_data"))
+setGeneric("save_log_data", function(object, method="base", zero.dealing="sub") standardGeneric("save_log_data"))
 #' @rdname save_log_data-methods
-setMethod("save_log_data", "mgnet", function(object, method="base", zero.dealing="plus"){
+setMethod("save_log_data", "mgnet", function(object, method="base", zero.dealing="sub"){
   
   method <- match.arg(method, c("base","inter-quantile"))
-  zero.dealing <- match.arg(zero.dealing, c("plus","subs","none"))
-  
-  if(zero.dealing!="none"){
-    x <- zero_dealing(object@data,mar=1,type=zero.dealing)
-  } else {
-    x <- object@data
-  }
-  
+  zero.dealing <- match.arg(zero.dealing, c("sub","add"))
+
+  x <- zero_dealing(object@data,mar=1,type=zero.dealing)
   ifelse(method=="base",
          log_x <- clr(x),
          log_x <- iqclr(x))

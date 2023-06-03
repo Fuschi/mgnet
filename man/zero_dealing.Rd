@@ -11,8 +11,10 @@ zero_dealing(X, mar = 1, type = "plus")
 
 \item{mar}{integer indicating the margin of samples (rows=1 or cols=2).}
 
-\item{type}{character indicating the zero replacement strategy. Only two
-possible values are available, plus and subs.}
+\item{type}{character indicating the zero replacement strategy with
+possible values "add" or "sub". If type is equal to "add" a pseudocount is
+added to all elements of X instead if it is set "sub" the  only the zeros are
+replaced.}
 }
 \description{
 This function implement the simplest replacement of the zeros
