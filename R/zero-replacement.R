@@ -18,7 +18,7 @@ zero_dealing <- function(X, mar=1, type="plus"){
   
   if(!is.numeric(X) | !is.matrix(X)) stop("X must be numeric matrix")
   if(any(X<0)) stop("Find negative elements in X")
-  if(all(X>0)) warning("There isn't any zero in X")
+  if(all(X>0)) warning("There are no zeros in X")
   if(!(mar%in%c(1,2))) stop("mar has only 1 or 2 as possibles values")
   type <- match.arg(type,c("plus","subs"))
   
@@ -32,9 +32,9 @@ zero_dealing <- function(X, mar=1, type="plus"){
   }
   
   if(type=="plus"){
-    Y <- X + dl
+    Y <- X + .65*dl
   } else {
-    Y <- X + dl*(X==0)
+    Y <- X + .65*dl*(X==0)
   }
   
   return(Y)

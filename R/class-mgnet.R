@@ -292,7 +292,7 @@ setGeneric("save_log_data", function(object, method="base", zero.dealing="plus")
 setMethod("save_log_data", "mgnet", function(object, method="base", zero.dealing="plus"){
   
   method <- match.arg(method, c("base","inter-quantile"))
-  zero.dealing <- match.arg(zero.dealing, c("none","plus","subs"))
+  zero.dealing <- match.arg(zero.dealing, c("plus","subs","none"))
   
   if(zero.dealing!="none"){
     x <- zero_dealing(object@data,mar=1,type=zero.dealing)
