@@ -17,7 +17,5 @@ mgmelt(object)
 \item{object}{mgnet.}
 }
 \description{
-Summarize all elements present in an mg object in a single data frame.
-The functioning is similar to melt function of reshape2 package and it will
-be useful as a preprocess for ggplot2.
+Summarize all elements present of an mgnet object in a long format data frame.
 }

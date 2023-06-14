@@ -142,7 +142,8 @@ adjacency_edge_density <- function(x=NULL,r=NULL, method="pearson",th=.05){
   rtriu.sort <- sort(abs(rtriu),decreasing=TRUE)
   
   # Take the Absolute Min Values
-  th.value <- rtriu.sort[round(length(rtriu.sort)*th)]
+  th.position <- round(th*(ncol(r)*(ncol(r)-1))*.5)
+  th.value <- rtriu.sort[th.position]
   
   adj <- r * (abs(r)>=th.value)
   return(adj)

@@ -1853,6 +1853,7 @@ setMethod("show","mgnet",
 
 
 
+
 ################################################################################
 ################################################################################
 # MGMELT
@@ -1861,15 +1862,12 @@ setMethod("show","mgnet",
 #' Melt mg object into form suitable for easy casting.
 #' 
 #' @description 
-#' Summarize all elements present in an mg object in a single data frame. 
-#' The functioning is similar to melt function of reshape2 package and it will 
-#' be useful as a preprocess for ggplot2.
+#' Summarize all elements present of an mgnet object in a long format data frame.
 #' 
 #' @usage mgmelt(object)
 #' 
 #' @param object mgnet.
 #' 
-#' @importFrom reshape2 melt
 #' @rdname mgmelt-methods
 #' @docType methods
 #' @export
@@ -1880,16 +1878,19 @@ setMethod("mgmelt", "mgnet",
             
             if(length(object@data)==0){stop("\n data slot must be present")}
             
-            mdf <- reshape2::melt(data=object@data)
+            
+            mdf <- data.frame(row=rep(rownames(object@data), ncol(object@data)),
+                                column= rep(colnames(object@data), each=nrow(object@data)),
+                                value=as.vector(object@data))
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
             
             if("sample_sum"%in%sample_info(object)){
-              mdf$Relative <- reshape2::melt(relative(object))$value
+              mdf$Relative <- as.vector(relative(object))
             }
             
             if(length(object@log_data)!=0){
-              mdf$log_data <- reshape2::melt(object@log_data)$value
+              mdf$log_data <- as.vector(object@log_data)
             }
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])

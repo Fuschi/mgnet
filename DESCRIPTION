@@ -14,7 +14,6 @@ Depends:
   methods (>= 3.6.0),
   stats (>= 3.6.0),
   igraph (>= 1.3),
-  reshape2 (>= 1.4),
-  stringr (>= 1.4),
   psych (>= 2.2),
-  qualpalr (>= 0.4)
+  qualpalr (>= 0.4),
+  stringr (>= 1.4)
