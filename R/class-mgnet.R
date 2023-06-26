@@ -231,7 +231,7 @@ is_mgnet_list <- function(L){
 #' 
 #' @description 
 #' Store in mgnet object the variable sample_sum in meta_sample in which are
-#' saved the count sum for each sample. It is necessary to retrieves relative
+#' saved the count sum for each sample. It's necessary to retrieves relative
 #' abundances of samples.
 #'
 #' @param object mgnet or list 
@@ -609,15 +609,15 @@ setMethod("adjacency_list","list",
 
 # CHECK ASSIGN LISTS
 ################################################################################
-#' Check lists in assign methods
+#' Check list in assign methods
 #' 
 #' @description Internal function to check if the two list in assign methods are
 #' coherent.
 #' @param object mgnet list
 #' @param value list 
 #' @keywords internal
-are_lists_assign <- function(object, value){
-  if(!is.list(object) | !is.list(value)) stop("object and value must be a lists")
+are_list_assign <- function(object, value){
+  if(!is.list(object) | !is.list(value)) stop("object and value must be a list both")
   if(length(object)!=length(value)) stop("lengths of object and value lists must be equal")
   if(is.null(names(object)) | is.null(names(value))) stop("object and value list have not named element")
   if(any(names(object)!=names(value))) stop("object and value elements must have the same named element in the same order")
