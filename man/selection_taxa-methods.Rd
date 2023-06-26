@@ -9,9 +9,9 @@
 \usage{
 selection_taxa(object, ..., condition="AND",trim=TRUE)
 
-\S4method{selection_taxa}{mgnet}(object, ..., condition = "AND", trim = TRUE)
+\S4method{selection_taxa}{mgnet}(object, ..., condition = "AND", trim = "yes")
 
-\S4method{selection_taxa}{list}(object, ..., condition = "AND", trim = TRUE)
+\S4method{selection_taxa}{list}(object, ..., condition = "AND", trim = "yes")
 }
 \arguments{
 \item{object}{mgnet.}
@@ -22,7 +22,13 @@ indices as just explained.}
 
 \item{condition}{(Optional default "AND") character indicates the logical operation between indices.}
 
-\item{trim}{(Option default TRUE) logical, if true the discarded taxa are removed from obj otherwise they are only set to zero in data.}
+\item{trim}{character with possible values "yes","no","aggregate" that
+control the behavior of discarded taxa as:
+\itemize{
+\item{"yes":}{ remove the discared taxa from obj}
+\item{"no":}{ set to zero the abundances of discared taxa.}
+\item{"aggregate":}{ merge togheter all discarded taxa summing the abundances and creating a merged taxa info.}
+}}
 }
 \description{
 The function takes as input a vector of logical or position

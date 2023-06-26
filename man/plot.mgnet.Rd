@@ -7,7 +7,7 @@
 \method{plot}{mgnet}(
   x,
   layout,
-  vertexSize = "mean-log",
+  ...,
   expFactor = 1,
   multConst = 1,
   sumConst = 0,
@@ -18,28 +18,32 @@
   negCol = rgb(1, 0, 0),
   maxSize = NULL,
   maxWidth = NULL,
-  ...
+  force.positive = TRUE
 )
 }
 \arguments{
 \item{x}{mgnet object}
 
-\item{layout}{vertices layout in igraph style. If missing it is applied the layout_signed.}
+\item{layout}{vertices layout in igraph style. If missing it is applied the
+layout_signed.}
 
-\item{vertexSize}{numeric or character indicated the size of the vertices. If
-is character the variable can assumes the two values 'log-mean' or 'var-mean' and
-where the vertices sizes are taken from the colMeans or from the columns variance of
-the log_data slot. Otherwise if vertexSize is numeric the vertices scales as received.}
+\item{...}{additional arguments to be passed to igraph plot of the network.
+vertex.size is the most influential parameter that manages the size of the
+vertices and on which the subsequent parameters work.}
 
-\item{expFactor}{numeric value and It tune the difference in size between the smaller and the higher sizes of vertices.}
+\item{expFactor}{numeric value, it tunes the difference in size between the
+smaller and the higher sizes of vertices.}
 
-\item{multConst}{numeric positive applied to all the vertices size as multiplicative factor.}
+\item{multConst}{numeric positive, applied to all the vertices size as
+multiplicative factor.}
 
 \item{sumConst}{numeric positive summed to all vertices size.}
 
-\item{thickness}{logical that it scale the width of the edges using the its weights in absolute values.}
+\item{thickness}{logical that it scale the width of the edges using the its
+weights in absolute values.}
 
-\item{alphaFactor}{numeric in range [0,1] and it modify the alpha trasparency of edges color.}
+\item{alphaFactor}{numeric in range [0,1] and it modify the alpha
+trasparency of edges color.}
 
 \item{widthFactor}{numeric positive value that scale the width of all edges.}
 
@@ -55,7 +59,8 @@ size equal to maxSize.}
 re-scale all the edges width in order to obtain the larger edge with the
 width equal to maxWidth.}
 
-\item{...}{additional arguments to be passed to igraph plot of the network}
+\item{force.positive}{logical parameter indicates when force the vertex.size
+elements to positive numbers adding the minimum negative values.}
 }
 \description{
 Plot network belonging to a mgnet object. The function focus on characterize

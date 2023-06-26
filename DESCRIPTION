@@ -16,4 +16,5 @@ Depends:
   igraph (>= 1.3),
   psych (>= 2.2),
   qualpalr (>= 0.4),
-  stringr (>= 1.4)
+  stringr (>= 1.4),
+  reshape2 (>= 1.4)

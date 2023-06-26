@@ -1468,19 +1468,25 @@ setMethod("selection_sample","list",
 #' numeric or name or logical indices to be preserved. If functions they must return
 #' indices as just explained.
 #' @param condition (Optional default "AND") character indicates the logical operation between indices.
-#' @param trim (Option default TRUE) logical, if true the discarded taxa are removed from obj otherwise they are only set to zero in data.
+#' @param trim character with possible values "yes","no","aggregate" that 
+#' control the behavior of discarded taxa as:
+#' \itemize{
+#'  \item{"yes":}{ remove the discared taxa from obj}
+#'  \item{"no":}{ set to zero the abundances of discared taxa.}
+#'  \item{"aggregate":}{ merge togheter all discarded taxa summing the abundances and creating a merged taxa info.}
+#' }
 #' 
-#' @importFrom igraph subgraph
+#' @importFrom igraph subgraph add_vertices
 #' @rdname selection_taxa-methods
 #' @docType methods
 #' @export
-setGeneric("selection_taxa", function(object,...,condition="AND",trim=TRUE) standardGeneric("selection_taxa"))
+setGeneric("selection_taxa", function(object,...,condition="AND",trim="yes") standardGeneric("selection_taxa"))
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa", "mgnet",
-          function(object,...,condition="AND",trim=TRUE){
+          function(object,...,condition="AND",trim="yes"){
             
             condition <- match.arg(condition, c("AND","OR"))
-            if(!is.logical(trim)) stop("trim must be logical")
+            trim <- match.arg(trim, c("yes","no","aggregate"))
             
             IDX <- list(...)
             for(i in 1:length(IDX)){
@@ -1528,7 +1534,9 @@ setMethod("selection_taxa", "mgnet",
               IDX <- apply(IDX,2,sum)>0
             }
             
-            if(trim){
+            # yes
+            #-----------------------------------------#
+            if(trim=="yes"){
               
               ifelse(length(object@data)!=0, data.new<-object@data[,IDX,drop=F], data.new<-object@data)
               ifelse(length(object@taxa)!=0, taxa.new<-object@taxa[IDX,,drop=F], taxa.new<-object@taxa)
@@ -1559,7 +1567,9 @@ setMethod("selection_taxa", "mgnet",
                            netw=netw.new,
                            comm=comm.new))
               
-            } else {
+            # no
+            #-----------------------------------------#
+            } else if (trim=="no") {
               
               if(length(object@data)!=0){
                 data.new <- object@data
@@ -1600,13 +1610,86 @@ setMethod("selection_taxa", "mgnet",
                            log_data=log_data.new,
                            netw=netw.new,
                            comm=comm.new))
+            # aggregate
+            #-----------------------------------------#  
+            } else if (trim=="aggregate") {
               
+              # data
+              if(length(object@data)!=0){
+                  data.new<-object@data[,IDX,drop=F]
+                  if("merged"%in%colnames(data.new)){
+                    data.new[,"merged"] <- data.new[,"merged"] + rowSums(object@data[,!IDX,drop=F])
+                  } else {
+                    data.new <- cbind(data.new, "merged"=rowSums(object@data[,!IDX,drop=F]))
+                  }
+              } else {
+                  data.new<-object@data
+              }
+              # taxa
+              if(length(object@taxa)!=0){
+                taxa.new<-object@taxa[IDX,,drop=F]
+                if(!("merged"%in%rownames(taxa.new))){
+                  taxa.new <- rbind(taxa.new,"merged"=rep("merged",nrank(object)))
+                  }
+              } else {
+                taxa.new<-object@taxa
+              }
+              # meta taxa
+              if(length(object@meta_taxa)!=0){
+                meta_taxa<-object@meta_taxa[IDX,,drop=F]
+                if(!("merged"%in%rownames(taxa.new))){
+                  meta_taxa.new <- rbind(taxa.new,"merged"=rep(NA,ncol(object@meta_taxa)))
+                }
+              } else {
+                meta_taxa.new <- object@meta_taxa
+              }
+              # log_data
+              if(length(object@log_data)!=0){
+                log_data.new<-object@log_data[,IDX,drop=F]
+                if("merged"%in%colnames(log_data.new)){
+                  log_data.new[,"merged"] <- log_data.new[,"merged"] + rowSums(object@log_data[,!IDX,drop=F])
+                } else {
+                  log_data.new <- cbind(log_data.new, "merged"=rowSums(object@log_data[,!IDX,drop=F]))
+                }
+              } else {
+                log_data.new<-object@log_data
+              }
+              # netw
+              if(length(object@netw)!=0){
+                netw.new<-igraph::subgraph(object@netw,IDX)
+                if(!("merged"%in%taxaID(object))){
+                  netw.new <- igraph::add_vertices(netw.new, nv=1, attr=list("name"="merged"))
+                }
+              } else {
+                netw.new<-object@netw
+              }
+              # comm
+              if(length(object@comm)!=0){
+                comm.new <- object@comm
+                if(is.character(IDX)) IDX <- which(taxaID(object)%in%IDX)
+                comm.new$membership <- object@comm$membership[IDX]
+                if(!("merged"%in%taxaID(object))){
+                  comm.new$membership <- c(comm.new$membership,"merged"=0)
+                }
+                comm.new$vcount <- length(comm.new$membership)
+                comm.new$modularity <- NA
+              } else {
+                comm.new <- object@comm
+              }
+              
+              return(mgnet(data=data.new,
+                           meta_sample=object@meta_sample,
+                           taxa=taxa.new,
+                           meta_taxa=meta_taxa.new,
+                           log_data=log_data.new,
+                           netw=netw.new,
+                           comm=comm.new))
             }
             
           })
 #' @rdname selection_taxa-methods
 setMethod("selection_taxa","list",
-          function(object,...,condition="AND",trim=TRUE){
+          function(object,...,condition="AND",trim="yes"){
             is_mgnet_list(object)
             lapply(object, selectMethod(f="selection_taxa",signature="mgnet"),
                    ...=..., condition=condition, trim=trim)}
@@ -1617,6 +1700,57 @@ setMethod("selection_taxa","list",
 ################################################################################
 ################################################################################
 
+
+
+
+################################################################################
+################################################################################
+# AGGREGATE TAXA
+################################################################################
+################################################################################
+#' Rearrange data in higher taxonomic level
+#' 
+#' @description
+#' A short description...
+#' 
+#' @param obj mgnet object
+#' @param rank taxonomic level choosen
+#' 
+#' @rdname aggregate_taxa-methods
+#' @docType methods
+#' @export
+setGeneric("aggregate_taxa", function(obj, rank) standardGeneric("aggregate_taxa"))
+setMethod("aggregate_taxa", c("mgnet","character"),
+          function(obj, rank){
+            if(!(rank%in%ranks(obj))) stop("rank must be one this possible choises {",toString(ranks(obj)),"}")
+            
+            different.taxa <- unique(obj@taxa[,rank])
+            data.aggregate <- data.frame(matrix(NA, nrow=nsample(obj), ncol=length(different.taxa),
+                                                dimnames=list(sample_name(obj),different.taxa)))
+            
+            for(taxa.i in different.taxa){
+              idx <- which(taxa.i == obj@taxa[,rank])
+              data.aggregate[,taxa.i] <- apply(X=obj@data, MARGIN=1, function(x) sum(x[idx]) )
+            }
+            
+            taxa.aggregate <- obj@taxa[,1:which(ranks(obj)==rank)]
+            taxa.aggregate <- taxa.aggregate[!duplicated(taxa.aggregate), ]
+            rownames(taxa.aggregate) <- taxa.aggregate[,rank]
+            taxa.aggregate <- taxa.aggregate[colnames(data.aggregate),]
+            
+            if(length(obj@meta_taxa)!=0 | length(obj@netw)!=0 | length(obj@comm)!=0){
+              message("The informations reguarding the slots meta_taxa, netw and comm are lost after the function aggregate_taxa")
+            }
+            
+            return(new("mgnet",data=as.matrix(data.aggregate), 
+                       meta_sample=obj@meta_sample, 
+                       taxa=as.matrix(taxa.aggregate)))
+          })
+################################################################################
+################################################################################
+# END AGGREGATE TAXA
+################################################################################
+################################################################################
 
 
 
@@ -1879,18 +2013,16 @@ setMethod("mgmelt", "mgnet",
             if(length(object@data)==0){stop("\n data slot must be present")}
             
             
-            mdf <- data.frame(row=rep(rownames(object@data), ncol(object@data)),
-                                column= rep(colnames(object@data), each=nrow(object@data)),
-                                value=as.vector(object@data))
+            mdf <- reshape2::melt(data=object@data)
             colnames(mdf) <- c("SampleID","TaxaID","Abundance")
             rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
             
             if("sample_sum"%in%sample_info(object)){
-              mdf$Relative <- as.vector(relative(object))
+              mdf$Relative <- reshape2::melt(relative(object))$value
             }
             
             if(length(object@log_data)!=0){
-              mdf$log_data <- as.vector(object@log_data)
+              mdf$log_data <- reshape2::melt(object@log_data)$value
             }
             
             if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
@@ -2402,16 +2534,20 @@ setMethod("betweenness_mgnet","list",
 #' \deqn{v=\text{\footnotesize{sumConst}}+\text{\footnotesize{multConst}}\left(\text{\footnotesize{max}}(v_0)\left(\frac{v_0}{\text{\footnotesize{max}}(v_0)}\right)^{\text{expFactor}}\right)}
 #' 
 #' @param x mgnet object
-#' @param layout vertices layout in igraph style. If missing it is applied the layout_signed.
-#' @param vertexSize numeric or character indicated the size of the vertices. If 
-#' is character the variable can assumes the two values 'log-mean' or 'var-mean' and
-#' where the vertices sizes are taken from the colMeans or from the columns variance of
-#' the log_data slot. Otherwise if vertexSize is numeric the vertices scales as received.
-#' @param expFactor numeric value and It tune the difference in size between the smaller and the higher sizes of vertices.
-#' @param multConst numeric positive applied to all the vertices size as multiplicative factor.
+#' @param layout vertices layout in igraph style. If missing it is applied the 
+#' layout_signed.
+#' @param ... additional arguments to be passed to igraph plot of the network. 
+#' vertex.size is the most influential parameter that manages the size of the 
+#' vertices and on which the subsequent parameters work.
+#' @param expFactor numeric value, it tunes the difference in size between the 
+#' smaller and the higher sizes of vertices.
+#' @param multConst numeric positive, applied to all the vertices size as 
+#' multiplicative factor.
 #' @param sumConst numeric positive summed to all vertices size.
-#' @param thickness logical that it scale the width of the edges using the its weights in absolute values.
-#' @param alphaFactor numeric in range \[0,1\] and it modify the alpha trasparency of edges color.
+#' @param thickness logical that it scale the width of the edges using the its 
+#' weights in absolute values.
+#' @param alphaFactor numeric in range \[0,1\] and it modify the alpha 
+#' trasparency of edges color.
 #' @param widthFactor numeric positive value that scale the width of all edges.
 #' @param posCol rgb color for positive edges.
 #' @param negCol rgb color for negative edges.
@@ -2421,7 +2557,8 @@ setMethod("betweenness_mgnet","list",
 #' @param maxWidth numeric positive integer with default NULL value. If it is set
 #' re-scale all the edges width in order to obtain the larger edge with the
 #' width equal to maxWidth.
-#' @param ... additional arguments to be passed to igraph plot of the network
+#' @param force.positive logical parameter indicates when force the vertex.size 
+#' elements to positive numbers adding the minimum negative values.
 #' 
 #' @importFrom igraph E<- V<-
 #' @importFrom stats var
@@ -2429,46 +2566,23 @@ setMethod("betweenness_mgnet","list",
 #' @rdname plot.mgnet
 #' @export
 plot.mgnet <- function(x,layout,
-                       vertexSize="mean-log",
+                       ...,
                        expFactor=1, multConst=1, sumConst=0,
                        thickness=TRUE,
                        alphaFactor=.5, widthFactor=1,
                        posCol=rgb(0,0,1), negCol=rgb(1,0,0),
                        maxSize=NULL, maxWidth=NULL,
-                       ...) {
+                       force.positive=TRUE
+                       ) {
+  
   if(length(netw(x))==0) stop("missing network in mgnet")
-  
-  if(is.character(vertexSize)){
-    
-    if(length(x@log_data)==0) stop("if vertexSize is equal to mean-log or var-log the slot log_data cannot be empty")
-    vertexSize <- match.arg(vertexSize, c("mean-log","var-log"))
-    
-    if(vertexSize=="mean-log"){
-      minV <- ifelse(any(x@log_data<0), 
-                     abs(min(x@log_data)),
-                     0)
-      vertexSize <- colMeans(x@log_data + minV)
-    } else {
-      vertexSize <- apply(x@log_data,2,stats::var)
-    }
-    
-  } else if (is.numeric(vertexSize)){
-    if(length(vertexSize)==1){
-      if(vertexSize<0) stop("vertexSize cannot be negative")
-      vertexSize<-rep(vertexSize, ntaxa(x))
-    } else if(length(vertexSize)==ntaxa(x)){
-      if(any(vertexSize<0)) stop("vertexSize cannot contains negative values")
-    }
-  } else {
-    stop("vertexSize can be 'mean-log', 'var-log' or a number or a numeric vector with all elelemnts greater than zero")
-  }
-  
   if(!is.numeric(expFactor)) stop("expFactor must be numeric")
   if(!is.numeric(multConst) | multConst<=0) stop("multFact must be a number greater than 0")
   if(!is.numeric(sumConst)) stop("sumConst must be a number")
   if(!is.logical(thickness)) stop("thickness must be logical")
   if(!is.numeric(alphaFactor) | alphaFactor<0 | alphaFactor>1) stop("alphaFactor must be a number in range [0,1]")
   if(!is.numeric(widthFactor) | widthFactor<=0) stop("widthFactor must be a positive number")
+  if(!is.logical(force.positive)) stop("force.positive must be logical")
   
   if(missing(layout)){
     layout <- layout_signed(netw(x))
@@ -2490,13 +2604,27 @@ plot.mgnet <- function(x,layout,
   E(g)$color <- adjustcolor(E(g)$color,alpha.f=alphaFactor)
   
   # Nodes
-  V(g)$size <- max(vertexSize)*(vertexSize/max(vertexSize))^(expFactor)
-  V(g)$size <- sumConst + multConst* V(g)$size
-  if(!is.null(maxSize)){
-    V(g)$size <- (V(g)$size/max(V(g)$size))*maxSize
+  params <- list(...)
+  if(!is.null(V(g)$size)){
+    vertexSize <- V(g)$size
+  }
+  if("vertex.size"%in%names(params)){
+    vertexSize <- params[["vertex.size"]]
+  } else {
+    vertexSize <- 15
   }
   
-  plot(g,layout=layout,...)
+  if(force.positive & any(vertexSize<0)){
+    vertexSize <- vertexSize - min(vertexSize)
+  }
+  
+  vertexSize <- max(vertexSize)*(vertexSize/max(vertexSize))^(expFactor)
+  vertexSize <- sumConst + multConst* vertexSize
+  if(!is.null(maxSize)){
+    vertexSize <- (vertexSize/max(vertexSize))*maxSize
+  }
+  
+  plot(g, layout=layout, vertex.size=vertexSize, ...)
 }
 ################################################################################
 ################################################################################

@@ -23,6 +23,7 @@
 #' @param thresh numeric indicates the threshold value.
 #'
 #' @importFrom igraph graph_from_adjacency_matrix
+#' @importFrom reshape2 melt
 #' 
 #' @rdname make_mgnet-methods
 #' @docType methods
