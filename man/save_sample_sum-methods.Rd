@@ -18,6 +18,6 @@ save_sample_sum(object)
 }
 \description{
 Store in mgnet object the variable sample_sum in meta_sample in which are
-saved the count sum for each sample. It is necessary to retrieves relative
+saved the count sum for each sample. It's necessary to retrieves relative
 abundances of samples.
 }

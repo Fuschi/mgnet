@@ -4,7 +4,7 @@
 \alias{zero_dealing}
 \title{Simplest way to replace zero.}
 \usage{
-zero_dealing(X, mar = 1, type = "plus")
+zero_dealing(X, mar = 1, type = "sub")
 }
 \arguments{
 \item{X}{compositional matrix.}
@@ -18,5 +18,5 @@ replaced.}
 }
 \description{
 This function implement the simplest replacement of the zeros
-in a compositional data sets.
+in a compositional dataset.
 }

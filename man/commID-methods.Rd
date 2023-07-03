@@ -3,18 +3,21 @@
 \docType{methods}
 \name{commID}
 \alias{commID}
-\alias{commID,mgnet-method}
-\alias{commID,list-method}
+\alias{commID,mgnet,missing-method}
+\alias{commID,list,character-method}
 \title{Get communities ID.}
 \usage{
-commID(object)
+commID(object,format)
 
-\S4method{commID}{mgnet}(object)
+\S4method{commID}{mgnet,missing}(object)
 
-\S4method{commID}{list}(object)
+\S4method{commID}{list,character}(object, format)
 }
 \arguments{
 \item{object}{mgnet or mgnet-list.}
+
+\item{format}{character indicates the class of the output if the ibject is an
+mgnet list. The possible choices are list or data.frame.}
 }
 \description{
 Return vector of character with the community ID for each vertex.

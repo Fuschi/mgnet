@@ -6,7 +6,7 @@
 #' Simplest way to replace zero.
 #' 
 #' @description This function implement the simplest replacement of the zeros 
-#' in a compositional data sets.
+#' in a compositional dataset.
 #'
 #' @param X compositional matrix.
 #' @param mar integer indicating the margin of samples (rows=1 or cols=2).
@@ -16,12 +16,12 @@
 #' replaced.
 #' 
 #' @export
-zero_dealing <- function(X, mar=1, type="plus"){
+zero_dealing <- function(X, mar=1, type="sub"){
   
   if(!is.numeric(X) | !is.matrix(X)) stop("X must be numeric matrix")
   if(any(X<0)) stop("Find negative elements in X")
   if(!(mar%in%c(1,2))) stop("mar has only 1 or 2 as possibles values")
-  type <- match.arg(type,c("sum","sub"))
+  type <- match.arg(type,c("add","sub"))
   
   if(all(round(X)-X==0)){
     dl <- matrix(.65,nrow=nrow(X),ncol=ncol(X))
@@ -33,7 +33,7 @@ zero_dealing <- function(X, mar=1, type="plus"){
     dl <- .65*dl
   }
   
-  if(type=="plus"){
+  if(type=="add"){
     Y <- X + dl
   } else {
     Y <- X + dl*(X==0)

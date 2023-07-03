@@ -813,7 +813,7 @@ setMethod("adjacency_list<-", c("mgnet", "data.frame"), function(object, value){
 #' @rdname assign-adjacency_list
 setMethod("adjacency_list<-",c("list","list"),
           function(object,value){
-            are_lists_assign(object,value)
+            are_list_assign(object,value)
             for(i in 1:length(object)){
               adjacency_list(object[[i]]) <- value[[i]]}
             return(object)})
@@ -871,7 +871,7 @@ setMethod("comm<-", c("mgnet", "communities"), function(object, value){
 #' @rdname assign-comm
 setMethod("comm<-",c("list","list"),
           function(object,value){
-            are_lists_assign(object,value)
+            are_list_assign(object,value)
             classes <- sapply(value,class)
             
             if( any(classes!="communities") ){
@@ -1319,18 +1319,20 @@ setMethod("ncomm","list",
 #' @description 
 #' Return vector of character with the community ID for each vertex.
 #'
-#' @usage commID(object)
+#' @usage commID(object,format)
 #'
 #' @param object mgnet or mgnet-list.
+#' @param format character indicates the class of the output if the ibject is an 
+#' mgnet list. The possible choices are list or data.frame.
 #'
 #' @importFrom igraph membership
 #' @importFrom stats setNames
 #' @rdname commID-methods
 #' @docType methods
 #' @export
-setGeneric("commID", function(object) standardGeneric("commID"))
+setGeneric("commID", function(object, format) standardGeneric("commID"))
 #' @rdname commID-methods
-setMethod("commID", "mgnet", function(object){
+setMethod("commID", c("mgnet","missing"), function(object){
   if(length(object@comm)!=0){
     return(setNames(as.character(membership(object@comm)),taxaID(object)))
   } else {
@@ -1338,10 +1340,25 @@ setMethod("commID", "mgnet", function(object){
   }
 })
 #' @rdname commID-methods
-setMethod("commID","list",
-          function(object){
+setMethod("commID",c("list","character"),
+          function(object, format){
+            format <- match.arg(format, choices=c("list","data.frame"))
             is_mgnet_list(object)
-            lapply(object, selectMethod(f="commID",signature="mgnet"))})
+            
+            if(format=="list"){
+              return(lapply(object, selectMethod(f="commID",signature=c("mgnet","missing"))))
+            } else {
+              taxa.merge <- unique(unlist(taxaID(object)))
+              res <- matrix(NA_character_, nrow=length(taxa.merge), ncol=length(object),
+                            dimnames=list(taxa.merge, names(object)))
+              res <- data.frame(res,stringsAsFactors=FALSE)
+              for(n in names(object)){
+                res[taxaID(object[[n]]),n] <- commID(object[[n]])
+              }
+              return(res)
+            }
+            
+        })
 ################################################################################
 ################################################################################
 # END BASE METHODS
@@ -1582,7 +1599,7 @@ setMethod("selection_taxa", "mgnet",
                 log_data.new <- object@log_data
                 log_data.new[,!IDX] <- 0
               } else {
-                data.new <- object@log_data
+                log_data.new <- object@log_data
               }
               
               if(length(object@netw)!=0){
