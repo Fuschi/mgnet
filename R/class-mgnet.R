@@ -954,33 +954,33 @@ setMethod("ntaxa","list",
             is_mgnet_list(object)
             sapply(object, selectMethod(f="ntaxa",signature="mgnet"))})
 #####################################
-# SAMPLE NAME
+# SAMPLEID
 #####################################
-#' Get samples names.
+#' Get samples IDs.
 #' 
 #' @description 
 #' Return names of samples as character vector.
 #'
-#' @usage sample_name(object)
+#' @usage sampleID(object)
 #'
 #' @param object mgnet or list.
 #'
-#' @rdname sample_name-methods
+#' @rdname sampleID-methods
 #' @docType methods
 #' @export
-setGeneric("sample_name", function(object) standardGeneric("sample_name"))
-#' @rdname sample_name-methods
-setMethod("sample_name", "mgnet", function(object){
+setGeneric("sampleID", function(object) standardGeneric("sampleID"))
+#' @rdname sampleID-methods
+setMethod("sampleID", "mgnet", function(object){
   if(length(object@data!=0)) return(rownames(object@data))
   else if(length(object@meta_sample!=0)) return(rownames(object@meta_sample))
   else if(length(object@log_data!=0)) return(rownames(object@log_data))
   else return(NULL)
 })
-#' @rdname sample_name-methods
-setMethod("sample_name","list",
+#' @rdname sampleID-methods
+setMethod("sampleID","list",
           function(object){
             is_mgnet_list(object)
-            lapply(object, selectMethod(f="sample_name",signature="mgnet"))})
+            lapply(object, selectMethod(f="sampleID",signature="mgnet"))})
 #####################################
 # TAXA ID
 #####################################
@@ -1373,7 +1373,7 @@ setMethod("commID",c("list","character"),
 # SAMPLE SELECTION
 ################################################################################
 ################################################################################
-#' Manage the communities membership of taxa 
+#' Selection a subset of sample from mgnet object 
 #' 
 #' @description The function takes as input a vector of logical or position 
 #' indices to evaluate which samples to keep.
@@ -1419,11 +1419,11 @@ setMethod("selection_sample", "mgnet",
                 
               }else if(is.character(idx)){
                 #character
-                if( !any(idx%in%sample_name(object)) ){
-                  stop("string indices must be a subset of sample_name of object")
+                if( !any(idx%in%sampleID(object)) ){
+                  stop("string indices must be a subset of sampleID of object")
                 }
                 #transform to logical
-                IDX[[i]] <- sample_name(object)%in%idx
+                IDX[[i]] <- sampleID(object)%in%idx
                 
               }else if(is.logical(idx)){
                 #logical
@@ -1478,7 +1478,7 @@ setMethod("selection_sample","list",
 #' @description The function takes as input a vector of logical or position 
 #' indices to evaluate which taxa to keep.
 #' 
-#' @usage selection_taxa(object, ..., condition="AND",trim=TRUE)
+#' @usage selection_taxa(object, ..., condition="AND",trim="yes")
 #' 
 #' @param object mgnet.
 #' @param ... arbitrary set of vectors of functions. If vectors they must contain
@@ -1527,7 +1527,7 @@ setMethod("selection_taxa", "mgnet",
               }else if(is.character(idx)){
                 #character
                 if( !any(idx%in%taxaID(object)) ){
-                  stop("string indices must be a subset of sample_name of object")
+                  stop("string indices must be a subset of sampleID of object")
                 }
                 #transform to logical
                 IDX[[i]] <- taxaID(object)%in%idx
@@ -1725,10 +1725,13 @@ setMethod("selection_taxa","list",
 # AGGREGATE TAXA
 ################################################################################
 ################################################################################
-#' Rearrange data in higher taxonomic level
+#' Aggregate data in higher taxonomic level
 #' 
 #' @description
-#' A short description...
+#' The function aggregates mgnet data and taxa in an higher taxonomic 
+#' classification. It calculates the sum of data abundances over all taxa that 
+#' map to the same higher-level group and removes ambiguous levels from the 
+#' taxonomy table. 
 #' 
 #' @param obj mgnet object
 #' @param rank taxonomic level choosen
@@ -1737,20 +1740,14 @@ setMethod("selection_taxa","list",
 #' @docType methods
 #' @export
 setGeneric("aggregate_taxa", function(obj, rank) standardGeneric("aggregate_taxa"))
+#' @rdname aggregate_taxa-methods
 setMethod("aggregate_taxa", c("mgnet","character"),
           function(obj, rank){
             if(!(rank%in%ranks(obj))) stop("rank must be one this possible choises {",toString(ranks(obj)),"}")
             
-            different.taxa <- unique(obj@taxa[,rank])
-            data.aggregate <- data.frame(matrix(NA, nrow=nsample(obj), ncol=length(different.taxa),
-                                                dimnames=list(sample_name(obj),different.taxa)))
+            data.aggregate <- mgnet::abundance(obj,rank)
             
-            for(taxa.i in different.taxa){
-              idx <- which(taxa.i == obj@taxa[,rank])
-              data.aggregate[,taxa.i] <- apply(X=obj@data, MARGIN=1, function(x) sum(x[idx]) )
-            }
-            
-            taxa.aggregate <- obj@taxa[,1:which(ranks(obj)==rank)]
+            taxa.aggregate <- obj@taxa[,seq_len(match(rank, mgnet::ranks(obj)))]
             taxa.aggregate <- taxa.aggregate[!duplicated(taxa.aggregate), ]
             rownames(taxa.aggregate) <- taxa.aggregate[,rank]
             taxa.aggregate <- taxa.aggregate[colnames(data.aggregate),]
@@ -1763,6 +1760,18 @@ setMethod("aggregate_taxa", c("mgnet","character"),
                        meta_sample=obj@meta_sample, 
                        taxa=as.matrix(taxa.aggregate)))
           })
+#' @rdname aggregate_taxa-methods
+setMethod("aggregate_taxa", c("list","character"),
+          function(obj,rank){
+            is_mgnet_list(obj)
+            ranks.list <- ranks(obj)
+            check.rank.list <- sapply(ranks.list, function(x) rank%in%x)
+            if(!all(check.rank.list)){
+              stop("rank must be present in all taxonomic level of mgnet list")
+            }
+            lapply(obj, selectMethod(f="aggregate_taxa",signature=c("mgnet","character")),
+                   rank=rank)}
+)
 ################################################################################
 ################################################################################
 # END AGGREGATE TAXA
@@ -1859,7 +1868,7 @@ setMethod("arrange_mgnet", "mgnet",
               if(length(i)!=nsample(object)) stop("i must have the length equal to the sample number of object")
               if(any(duplicated(i))) stop("find at least a duplicated in i")
               if(is.character(i)){
-                if(any(!(i%in%sample_name(object)))) stop("find at least an element in i not present in the sample_name of object")
+                if(any(!(i%in%sampleID(object)))) stop("find at least an element in i not present in the sampleID of object")
               }
               if(is.numeric(i)){
                 if(any(!(i%in%(1:nsample(object))))) stop("i elements must be in range 1 to sample number of object")
@@ -1958,7 +1967,12 @@ setMethod("show","mgnet",
             }
             
             if(length(object@meta_sample)!=0){
-              cat(paste("Sample Meta Info:",paste(colnames(object@meta_sample),collapse="," )),"\n")
+              info <- colnames(object@meta_sample)
+              if(length(info)>4){
+                cat(paste("Sample Meta Info: ",paste(info[1:4],collapse="," ),",etc...", sep=""),"\n")
+              } else {
+                cat(paste("Sample Meta Info:",paste(info,collapse="," )),"\n")
+              }
             }
             
             if(length(object@taxa)!=0){
@@ -1966,9 +1980,14 @@ setMethod("show","mgnet",
             }
             
             if(length(object@meta_taxa)!=0){
-              cat(paste("Taxa Meta Info:",paste(colnames(object@meta_taxa),collapse="," )),"\n")
+              info <- colnames(object@meta_taxa)
+              if(length(info)>4){
+                cat(paste("Taxa Meta Info: ",paste(info[1:4],collapse="," ),",etc...", sep=""),"\n")
+              } else {
+                cat(paste("Taxa Meta Info:",paste(info,collapse="," )),"\n")
+              }
             }
-            
+
             if(length(object@netw)!=0){
               cat(paste("Edge Number (Density): ",ecount(object@netw)," (~",round(igraph::edge_density(object@netw)*100,2),"%)","\n",sep=""))
               cat(paste("Positive Edge: ",sum(E(netw(object))$weight>0)," (~",100*round(sum(E(netw(object))$weight>0)/ecount(netw(object)),2),"%)\n",sep=""))
@@ -2030,41 +2049,40 @@ setMethod("mgmelt", "mgnet",
             if(length(object@data)==0){stop("\n data slot must be present")}
             
             
-            mdf <- reshape2::melt(data=object@data)
-            colnames(mdf) <- c("SampleID","TaxaID","Abundance")
-            rownames(mdf) <- paste(mdf$SampleID,"-",mdf$TaxaID,sep="")
+            mdf <- as.data.frame.table(object@data)
+            colnames(mdf) <- c("sampleID","taxaID","abundance")
             
             if("sample_sum"%in%sample_info(object)){
-              mdf$Relative <- reshape2::melt(relative(object))$value
+              mdf$relative <- relative(object)[cbind(mdf$sampleID, mdf$taxaID)]
             }
             
             if(length(object@log_data)!=0){
-              mdf$log_data <- reshape2::melt(object@log_data)$value
+              mdf$log_data <- log_data(object)[cbind(mdf$sampleID, mdf$taxaID)]
             }
             
-            if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$TaxaID,])
+            if(length(object@taxa!=0)) mdf <- cbind(mdf,object@taxa[mdf$taxaID,])
             
             if(length(object@meta_sample!=0)){
               if(ncol(object@meta_sample)==1){
-                df.tmp <- as.data.frame(object@meta_sample[mdf$SampleID,])
+                df.tmp <- as.data.frame(object@meta_sample[mdf$sampleID,])
                 colnames(df.tmp) <- colnames(object@meta_sample)
                 mdf <- cbind(mdf,df.tmp)
               } else {
-                mdf <- cbind(mdf, object@meta_sample[mdf$SampleID,])
+                mdf <- cbind(mdf, object@meta_sample[mdf$sampleID,])
               }
             } 
             
             if(length(object@meta_taxa!=0)){
               if(ncol(object@meta_taxa)==1){
-                df.tmp <- as.data.frame(object@meta_taxa[mdf$TaxaID,])
+                df.tmp <- as.data.frame(object@meta_taxa[mdf$taxaID,])
                 colnames(df.tmp) <- colnames(object@meta_taxa)
                 mdf <- cbind(mdf,df.tmp)
               } else {
-                mdf <- cbind(mdf, object@meta_taxa[mdf$TaxaID,])
+                mdf <- cbind(mdf, object@meta_taxa[mdf$taxaID,])
               }
             } 
             
-            if(length(object@comm)!=0) mdf <- cbind(mdf, "commID"=commID(object)[mdf$TaxaID])
+            if(length(object@comm)!=0) mdf <- cbind(mdf, "commID"=commID(object)[mdf$taxaID])
             
             if(any(duplicated(t(mdf)))){
               mdf <- mdf[,-which(duplicated(t(mdf)))]

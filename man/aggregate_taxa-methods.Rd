@@ -3,9 +3,15 @@
 \docType{methods}
 \name{aggregate_taxa}
 \alias{aggregate_taxa}
-\title{Rearrange data in higher taxonomic level}
+\alias{aggregate_taxa,mgnet,character-method}
+\alias{aggregate_taxa,list,character-method}
+\title{Aggregate data in higher taxonomic level}
 \usage{
 aggregate_taxa(obj, rank)
+
+\S4method{aggregate_taxa}{mgnet,character}(obj, rank)
+
+\S4method{aggregate_taxa}{list,character}(obj, rank)
 }
 \arguments{
 \item{obj}{mgnet object}
@@ -13,5 +19,8 @@ aggregate_taxa(obj, rank)
 \item{rank}{taxonomic level choosen}
 }
 \description{
-A short description...
+The function aggregates mgnet data and taxa in an higher taxonomic
+classification. It calculates the sum of data abundances over all taxa that
+map to the same higher-level group and removes ambiguous levels from the
+taxonomy table.
 }

@@ -5,7 +5,7 @@
 \alias{selection_sample}
 \alias{selection_sample,mgnet-method}
 \alias{selection_sample,list-method}
-\title{Manage the communities membership of taxa}
+\title{Selection a subset of sample from mgnet object}
 \usage{
 selection_sample(object,...,condition="AND")
 
