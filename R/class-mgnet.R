@@ -1519,7 +1519,7 @@ setMethod("selection_taxa", "mgnet",
               if(is.numeric(idx)){
                 #numeric
                 if(any(is.na(idx)) | any(idx<0) | any(round(idx)!=idx) | max(idx)>ntaxa(object)){
-                  stop("numeric indices must be integers in range 1 to the maximum nuber of sample")
+                  stop("numeric indices must be integers in range 1 to the maximum nuber of taxa")
                 }
                 #transform to logical
                 IDX[[i]] <- (1:ntaxa(object))%in%idx
@@ -1527,7 +1527,7 @@ setMethod("selection_taxa", "mgnet",
               }else if(is.character(idx)){
                 #character
                 if( !any(idx%in%taxaID(object)) ){
-                  stop("string indices must be a subset of sampleID of object")
+                  stop("string indices must be a subset of taxaID of object")
                 }
                 #transform to logical
                 IDX[[i]] <- taxaID(object)%in%idx
@@ -1535,7 +1535,7 @@ setMethod("selection_taxa", "mgnet",
               }else if(is.logical(idx)){
                 #logical
                 if(length(idx)!=ntaxa(object)){
-                  stop("logical indices must have the length equal to sample number")
+                  stop("logical indices must have the length equal to taxa number")
                 }
                 IDX[[i]] <- idx
                 
