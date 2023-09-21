@@ -1651,14 +1651,14 @@ setMethod("selection_taxa", "mgnet",
               } else {
                 taxa.new<-object@taxa
               }
-              # meta taxa
+              # meta_taxa
               if(length(object@meta_taxa)!=0){
-                meta_taxa<-object@meta_taxa[IDX,,drop=F]
-                if(!("merged"%in%rownames(taxa.new))){
-                  meta_taxa.new <- rbind(taxa.new,"merged"=rep(NA,ncol(object@meta_taxa)))
+                meta_taxa.new<-object@meta_taxa[IDX,,drop=F]
+                if(!("merged"%in%rownames(meta_taxa.new))){
+                  meta_taxa.new <- rbind(meta_taxa.new,"merged"=rep("merged",ncol(object@meta_taxa)))
                 }
               } else {
-                meta_taxa.new <- object@meta_taxa
+                meta_taxa.new<-object@meta_taxa
               }
               # log_data
               if(length(object@log_data)!=0){
