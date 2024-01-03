@@ -32,7 +32,7 @@ setGeneric("make_mgnet", function(mgnet, cor.method, thresh.method, adjust, thre
 setMethod("make_mgnet", c("mgnet","character","character","character","numeric"),
           function(mgnet, cor.method, thresh.method, adjust, thresh){
             
-            if(length(mgnet@log_data)==0) stop("data cannot be empty")
+            if(length(mgnet@log_data)==0) stop("log_data cannot be empty")
             
             # Check cor.method
             cor.method <- match.arg(cor.method,c("pearson","spearman","kendall"))
