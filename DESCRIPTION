@@ -1,0 +1,16 @@
+Package: mgnet
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+  person("Alessandro", "Fuschi", role = c("aut", "cre"), email="alessandro.fuschi2@unibo.it")
+Description: What the package does (one paragraph).
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+LazyData: true
+Depends: 
+  R (>= 3.6.0),
+  methods (>= 3.6.0),
+  igraph (>= 1.3)
+
