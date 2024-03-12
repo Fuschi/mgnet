@@ -1,200 +1,593 @@
+#------------------------------------------------------------------------------#
 #' Internal: Assert Unique Row and Column Names
 #'
-#' Validates that a given object (matrix or data.frame) has unique row and
-#' column names. This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class.
+#' Validates the presence and uniqueness of row and column names for a given object, 
+#' either a matrix or a data.frame. This function is essential for maintaining data 
+#' integrity within the `mgnet` class by ensuring that identifiers are both provided 
+#' and uniquely identify each row and column. Error messages from the validation process 
+#' are accumulated in an external vector, allowing for comprehensive feedback on data issues.
 #'
-#' @param obj An object to check, either a matrix or a data.frame.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The object to check, which must be either a matrix or a data.frame. 
+#'        The function verifies that this object has non-null, unique row and column names.
+#' @param errors A character vector accumulating error messages from validation checks.
+#'
+#' @return Returns the updated `errors` character vector. If no new validation issues are identified, 
+#'         the vector is returned unchanged. If issues are found, corresponding error messages are 
+#'         appended to the vector before it is returned, thereby accumulating messages across
+#'         different validation checks.
+#'
 #' @keywords internal
-#' @noRd
-.assertUniqueRowColNames <- function(obj, slotName) {
+.assertUniqueRowColNames <- function(obj, errors) {
+
+  err <- character() 
   
-  errors <- character()
-  
-  if (!is.null(rownames(obj)) && anyDuplicated(rownames(obj))) {
-    errors <- c(errors, sprintf("%s: Row names must be unique.", slotName))
-  } else if (is.null(rownames(obj))) {
-    errors <- c(errors, sprintf("%s: Object must have row names.", slotName))
+  if (is.null(rownames(obj))) {
+    err <- c(err, "row names are missing.")
+  } else if (anyDuplicated(rownames(obj)) > 0) {
+    err <- c(err, "row names must be unique.")
   }
   
-  if (!is.null(colnames(obj)) && anyDuplicated(colnames(obj))) {
-    errors <- c(errors, sprintf("%s: Column names must be unique.", slotName))
-  } else if (is.null(colnames(obj))) {
-    errors <- c(errors, sprintf("%s: Object must have column names.", slotName))
+  if (is.null(colnames(obj))) {
+    err <- c(err, "column names are missing.")
+  } else if (anyDuplicated(colnames(obj)) > 0) {
+    err <- c(err, "column names must be unique.")
   }
+  
+  errors <- c(errors, err)
   return(errors)
 }
 
-
-#' Internal: Assert Abundance Slot
+#------------------------------------------------------------------------------#
+#' Internal: Assert Numeric Matrix
 #'
-#' Validates that a given matrix is numeric and it has all values >=0. 
-#' This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class for the abundance slot.
+#' Validates that the given object is a numeric matrix. This function is used 
+#' internally to ensure data slots intended to be numeric matrices, such as abundance 
+#' matrices, meet the required data type specifications.
 #'
-#' @param obj A matrix to check.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The object to check.
+#' @param errors A character vector accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if `obj`
+#'         is not a numeric matrix; otherwise, the original `errors` vector is returned.
+#'
 #' @keywords internal
-#' @noRd
-.assertAbundance <- function(obj, slotName) {
-  
-  errors <- character()
-  errors <- c(errors,.assertUniqueRowColNames(obj))
-  
+.assertNumericMatrix <- function(obj, errors) {
   if (!is.matrix(obj) || !is.numeric(obj)) {
-    errors <- c(errors, sprintf("%s must be a numeric matrix", slotName))
+    errors <- c(errors, "must be a numeric matrix.")
   }
-  if (any(obj<0, na.rm=TRUE)) {
-    errors <- c(errors, sprintf("%s elements must be greater or equal to zero", slotName))
-  }
-  if (any(is.na(obj))) {
-    errors <- c(errors, sprintf("%s cannot be composed from NA elements", slotName))
-  }
-  
-  if(length(errors)>0){
-    errors <- c(paste("DEBUGGER of",slotName,"slot"),
-                paste("\t-",errors))
-  }
-  
   return(errors)
 }
 
-
-#' Internal: Assert sampleInfo or taxaInfo Slot
+#------------------------------------------------------------------------------#
+#' Internal: Assert Data Frame
 #'
-#' Validates that a given data.frame has unique row and column names. 
-#' This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class for the sampleInfo slot.
+#' Validates that the given object is a data frame. This function is essential for 
+#' ensuring that slots expected to contain metadata or other tabular data are correctly 
+#' formatted as data frames.
 #'
-#' @param obj A data.frame to check.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The object to check.
+#' @param errors A character vector for accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if `obj`
+#'         is not a data frame; otherwise, the original `errors` vector is returned.
+#'
 #' @keywords internal
-#' @noRd
-.assertMetaInfo <- function(obj, slotName) {
-  
-  errors <- character()
-  errors <- c(errors,.assertUniqueRowColNames(obj))
-  
+.assertDataFrame <- function(obj, errors) {
   if (!is.data.frame(obj)) {
-    errors <- c(errors, sprintf("%s must be a data.frame", slotName))
+    errors <- c(errors, "must be a data frame.")
   }
-  
-  if(length(errors)>0){
-    errors <- c(paste("DEBUGGER of",slotName,"slot"),
-                paste("\t-",errors))
-  }
-  
   return(errors)
 }
 
-
-#' Internal: Assert Lineage Slot
+#------------------------------------------------------------------------------#
+#' Internal: Assert Character Matrix
 #'
-#' Validates that a given matrix is character with unique row and column names. 
-#' This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class for the lineage slot.
+#' Validates that a given object is a character matrix. This function ensures that 
+#' slots intended to hold character data, such as taxonomic classifications, adhere 
+#' to the expected matrix format with character data types.
 #'
-#' @param obj A matrix to check.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The object to check.
+#' @param errors A character vector for accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if `obj`
+#'         is not a character matrix; otherwise, the original `errors` vector is returned.
+#'
 #' @keywords internal
-#' @noRd
-.assertLineage <- function(obj, slotName) {
-  
-  errors <- character()
-  errors <- c(errors,.assertUniqueRowColNames(obj))
-  
-  if (!is.matrix(obj) || !is.character(obj)) {
-    errors <- c(errors, sprintf("%s must be a character matrix", slotName))
+.assertCharacterMatrix <- function(obj, errors) {
+  if (!is.matrix(obj) || !all(apply(obj, c(1,2), is.character))) {
+    errors <- c(errors, "must be a character matrix.")
   }
-  if (any(is.na(obj))) {
-    errors <- c(errors, sprintf("%s cannot be composed from NA elements", slotName))
-  }
-  
-  if(length(errors)>0){
-    errors <- c(paste("DEBUGGER of",slotName,"slot"),
-                paste("\t-",errors))
-  }
-  
   return(errors)
 }
 
-
-#' Internal: Assert Association Slot
+#------------------------------------------------------------------------------#
+#' Internal: Assert All Elements Greater Than Zero
 #'
-#' Validates that a given matrix is numeric with unique row and column names. 
-#' This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class for the lineage slot.
+#' Validates that all elements of a given numeric matrix or vector are greater than zero.
+#' This function is crucial for slots where negative values are not permissible, ensuring
+#' data integrity and consistency.
 #'
-#' @param obj A matrix to check.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The numeric matrix or vector to check.
+#' @param errors A character vector for accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if any element
+#'         in `obj` is not greater than zero; otherwise, the original `errors` vector is returned.
+#'
 #' @keywords internal
-#' @noRd
-.assertLineage <- function(obj, slotName) {
-  
-  errors <- character()
-  errors <- c(errors,.assertUniqueRowColNames(obj))
-  
-  if (!is.matrix(obj) || !is.character(obj)) {
-    errors <- c(errors, sprintf("%s must be a character matrix", slotName))
+.assertAllPositive <- function(obj, errors) {
+  if (any(obj < 0, na.rm = TRUE)) {
+    errors <- c(errors, "all elements must be >= 0.")
   }
-  if (any(is.na(obj))) {
-    errors <- c(errors, sprintf("%s cannot be composed from NA elements", slotName))
-  }
-  
-  if(length(errors)>0){
-    errors <- c(paste("DEBUGGER of",slotName,"slot"),
-                paste("\t-",errors))
-  }
-  
   return(errors)
 }
 
-
-#' Internal: Assert Association Slot
+#------------------------------------------------------------------------------#
+#' Internal: Assert igraph Network with Named Vertices
 #'
-#' Validates that a given matrix is numeric and square. 
-#' This function is designed for internal use within the package
-#' to enforce data integrity in the 'mgnet' class for the association slot.
+#' Validates that the given object is an igraph network and checks that all vertices have names.
+#' This function is crucial for ensuring network data integrity, requiring both the correct
+#' structure and identifiable vertices for further analysis.
 #'
-#' @param obj A matrix to check.
-#' @param slotName A character string providing the name of the slot being checked,
-#' used in the construction of error messages for clarity.
-#' @return A character vector containing error messages if the conditions are not met,
-#' otherwise an empty character vector indicating success.
+#' @param obj The object to check, expected to be an igraph network.
+#' @param errors A character vector for accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if `obj`
+#'         is not an igraph network or if any vertices are unnamed; otherwise,
+#'         the original `errors` vector is returned.
+#'
+#' @importFrom igraph V is_named
 #' @keywords internal
-#' @noRd
-.assertAssociation <- function(obj, slotName) {
-  
-  errors <- character()
-  errors <- c(errors,.assertUniqueRowColNames(obj))
-  
-  if (!is.matrix(obj) || !is.numeric(obj) || (nrow(obj)!=ncol(obj))) {
-    errors <- c(errors, sprintf("%s must be a numeric square matrix", slotName))
+.assertNamedIgraph <- function(obj, errors) {
+  if (!inherits(obj, "igraph")) {
+    errors <- c(errors, "must be an igraph network.")
+  } else {
+    if (any(is.na(V(obj)$name)) || !is_named(obj)) {
+      errors <- c(errors, "all vertices in the igraph network must have names.")}
   }
-  if (any(is.na(obj))) {
-    errors <- c(errors, sprintf("%s cannot be composed from NA elements", slotName))
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Communities Class Membership
+#'
+#' Validates that the given object is an instance of the `communities` class.
+#' This function ensures that community detection results are stored in an appropriate
+#' format, facilitating the analysis of microbial community structure.
+#'
+#' @param obj The object to check.
+#' @param errors A character vector for accumulating error messages from validation checks.
+#'
+#' @return An updated character vector containing any new error messages if `obj`
+#'         does not belong to the `communities` class; otherwise, the original
+#'         `errors` vector is returned.
+#'
+#' @keywords internal
+.assertCommunitiesClass <- function(obj, errors) {
+  if (!inherits(obj, "communities")) {
+    errors <- c(errors, "must belong to the communities class.")
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Column Names Between Two Slots
+#'
+#' Validates that two specified slots within an S4 object have the same number of columns
+#' and matching column names. This function is crucial for ensuring consistency and
+#' alignment between related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot to compare.
+#' @param slotName2 The name of the second slot to compare.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If the number of columns or
+#'         the column names between the two slots do not match, appropriate error messages
+#'         are added to the vector. If there are no discrepancies, the original vector is
+#'         returned unchanged.
+#'
+#' @keywords internal
+.assertMatchingColumnNames <- function(obj, slotName1, slotName2, errors) {
+  
+  obj1 <- slot(obj, slotName1)
+  obj2 <- slot(obj, slotName2)
+  
+  if ( ncol(obj1) != ncol(obj2) ){
+    errors <- c(errors, sprintf("columns number of %s and %s are not equal.",
+                                slotName1,slotName2))
+  }else if ( any(colnames(obj1) != colnames(obj2)) ) {
+    errors <- c(errors, sprintf("columns names of %s and %s do not match.",
+                                slotName1, slotName2))
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Row Names Between Two Slots
+#'
+#' Validates that two specified slots within an S4 object have the same number of rows
+#' and matching row names. This function is crucial for ensuring consistency and
+#' alignment between related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot to compare.
+#' @param slotName2 The name of the second slot to compare.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If the number of columns or
+#'         the column names between the two slots do not match, appropriate error messages
+#'         are added to the vector. If there are no discrepancies, the original vector is
+#'         returned unchanged.
+#'
+#' @keywords internal
+.assertMatchingRowNames <- function(obj, slotName1, slotName2, errors) {
+  
+  obj1 <- slot(obj, slotName1)
+  obj2 <- slot(obj, slotName2)
+  
+  if ( nrow(obj1) != nrow(obj2) ){
+    errors <- c(errors, sprintf("rows number of %s and %s are not equal.",
+                                slotName1,slotName2))
+  }else if ( any(rownames(obj1) != rownames(obj2)) ) {
+    errors <- c(errors, sprintf("rows names of %s and %s do not match.",
+                                slotName1, slotName2))
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Row and Column Names Between Two Slots
+#'
+#' Validates that two specified slots within an S4 object have the same number of 
+#' rows and columns and matching row and column names. 
+#' This function is crucial for ensuring consistency and
+#' alignment between related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot to compare.
+#' @param slotName2 The name of the second slot to compare.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If the number of columns or
+#'         the column names between the two slots do not match, appropriate error messages
+#'         are added to the vector. If there are no discrepancies, the original vector is
+#'         returned unchanged.
+#'
+#' @keywords internal
+.assertMatchingNames <- function(obj, slotName1, slotName2, errors) {
+  
+  obj1 <- slot(obj, slotName1)
+  obj2 <- slot(obj, slotName2)
+  
+  if ( any(dim(obj1) != dim(obj2)) ){
+    errors <- c(errors, sprintf("dimensions of %s and %s are not equal.",
+                                slotName1,slotName2))
+  } else if (length(errors)==0){
+    if ( any(rownames(obj1) != rownames(obj2)) ) {
+      errors <- c(errors, sprintf("rows names of %s and %s do not match.",
+                                  slotName1, slotName2))}
+    if ( any(colnames(obj1) != colnames(obj2)) ) {
+      errors <- c(errors, sprintf("columns names of %s and %s do not match.",
+                                  slotName1, slotName2))}
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Row Names and Column Names Between Two Slots
+#' 
+#' Validates that two specified slots within an S4 object have the first the same 
+#' number of rows of the second columns and matching the respective names. 
+#' This function is crucial for ensuring consistency and alignment between 
+#' related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot to compare.
+#' @param slotName2 The name of the second slot to compare.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If the number of columns or
+#'         the column names between the two slots do not match, appropriate error messages
+#'         are added to the vector. If there are no discrepancies, the original vector is
+#'         returned unchanged.
+#'
+#' @keywords internal
+.assertMatchingRowColsNames <- function(obj, slotName1, slotName2, errors) {
+  
+  obj1 <- slot(obj, slotName1)
+  obj2 <- slot(obj, slotName2)
+  
+  if ( nrow(obj1) != ncol(obj2) ){
+    errors <- c(errors, sprintf("rows number of %s and columns number %s are not equal.",
+                                slotName1,slotName2))
+  } else if ( any(rownames(obj1) != colnames(obj2)) ) {
+    errors <- c(errors, sprintf("rows names of %s and columns names %s do not match.",
+                                slotName1, slotName2))
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Col Names and Row Names Between Two Slots
+#' 
+#' Validates that two specified slots within an S4 object have the first the same 
+#' number of columns of the second rows and matching the respective names. 
+#' This function is crucial for ensuring consistency and alignment between 
+#' related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot to compare.
+#' @param slotName2 The name of the second slot to compare.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If the number of columns or
+#'         the column names between the two slots do not match, appropriate error messages
+#'         are added to the vector. If there are no discrepancies, the original vector is
+#'         returned unchanged.
+#'
+#' @importFrom methods slot
+#' @keywords internal
+.assertMatchingColsRowsNames <- function(obj, slotName1, slotName2, errors) {
+  
+  obj1 <- slot(obj, slotName1)
+  obj2 <- slot(obj, slotName2)
+  
+  if ( ncol(obj1) != nrow(obj2) ){
+    errors <- c(errors, sprintf("columns number of %s and rows number %s are not equal.",
+                                slotName1,slotName2))
+  } else if ( any(colnames(obj1) != rownames(obj2)) ) {
+    errors <- c(errors, sprintf("columns names of %s and rows names %s do not match.",
+                                slotName1, slotName2))
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Dimension and Network Vertices Names
+#' 
+#' Validates that the specified slots within an S4 object match the names of the
+#' network slot.
+#' This function is crucial for ensuring consistency and alignment between 
+#' related datasets within the `mgnet` class, such as ensuring that
+#' matrices representing different types of data (e.g., raw and processed data) are
+#' compatible in terms of their structure and labeling.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slot The name of the slot to compare.
+#' @param which rows or columns of the slot to compare with the network.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. 
+#'
+#' @importFrom igraph V vcount
+#' @importFrom methods slot
+#' @keywords internal
+.assertMatchingNamesVertices <- function(obj, slotName, which, errors) {
+  
+  netw <- slot(obj, "network")
+  obj <- slot(obj, slotName)
+  
+  if(which=="rows"){
+    slot_length <- nrow(obj)
+    slot_names <- rownames(obj)
+  } else if (which=="columns"){
+    slot_length <- ncol(obj)
+    slot_names <- colnames(obj)
   }
   
-  if(length(errors)>0){
-    errors <- c(paste("DEBUGGER of",slotName,"slot"),
-                paste("\t-",errors))
+  netw_length <- vcount(netw)
+  netw_names <- V(netw)$name
+  
+  if ( slot_length != netw_length ){
+    errors <- c(errors, sprintf("%s number of %s and network vertices number are not equal.",
+                                which,slotName))
+  } else if ( any(slot_names != netw_names) ) {
+    errors <- c(errors, sprintf("%s names of %s and network vertices names do not match.",
+                                which, slotName))
+  }
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
+#' Internal: Assert Consistency Between Network and Communities
+#'
+#' Validates the consistency between the network and its associated communities within an S4 object. 
+#' This function checks that a network is present and that the number of vertices in the network 
+#' matches the number of community assignments. This is essential for ensuring that community 
+#' detection results accurately reflect the structure of the network.
+#'
+#' @param obj An S4 object containing `network` and `communities` slots.
+#' @param errors A character vector that accumulates error messages from various validation checks. 
+#'        New errors identified by this function are appended to this vector.
+#'
+#' @return Returns the updated `errors` character vector with any new error messages appended.
+#'         If the network is missing or if the number of vertices in the network does not match 
+#'         the number of community assignments, corresponding error messages are added.
+#'
+#' @details The function performs two main checks: first, it verifies that the `network` slot 
+#'          is not empty, indicating that a network structure exists. Second, it compares the 
+#'          number of vertices in the network (using `vcount`) with the length of the community 
+#'          assignments in the `communities$membership` vector. These validations ensure that 
+#'          community data is aligned with the network's topology.
+#'
+#' @importFrom igraph vcount
+#' @importFrom methods slot
+#' @keywords internal
+.assertMatchingCommunitiesNetwork <- function(obj, errors) {
+  
+  # Correcting 'object' to 'obj' based on the parameter name
+  if(length(slot(obj, "network")) == 0){
+    errors <- c(errors, "communities cannot exist without the associated network.")
+  } else if (length(slot(obj, "communities")$membership) != vcount(slot(obj, "network"))){
+    errors <- c(errors, "network and communities slots must have the same number of vertices.")
   }
   
   return(errors)
 }
+
+#------------------------------------------------------------------------------#
+# SET VALIDITY FUNCTION
+#------------------------------------------------------------------------------#
+# Set validity method for the mgnet class
+# This method ensures that all instances of the mgnet class meet the predefined criteria
+# for data integrity and consistency. Each slot of the mgnet object is checked for specific
+# conditions, such as being non-empty, having the correct data type, and meeting domain-specific
+# requirements (e.g., numeric matrices must have all elements >= 0).
+setValidity("mgnet", function(object) {
+  
+  errors <- list()
+  
+  #CHECK ABUNDANCE
+  #-------------------------------------#
+  errors$abundance <- character()
+  if( length(object@abundance)!=0 ){
+    errors$abundance <- .assertNumericMatrix(object@abundance, errors$abundance)
+    
+    if ( length(errors$abundance)==0 ){
+      errors$abundance <- .assertUniqueRowColNames(object@abundance, errors$abundance)
+      errors$abundance <- .assertAllPositive(object@abundance, errors$abundance)
+    }
+  }
+  
+  #CHECK LOG-ABUNDANCE
+  #-------------------------------------#
+  errors$log_abundance <- character()
+  if( length(object@log_abundance)!=0 ){
+    errors$log_abundance <- .assertNumericMatrix(object@log_abundance, errors$log_abundance)
+    
+    if ( length(errors$log_abundance)==0 ){
+      errors$log_abundance <- .assertUniqueRowColNames(object@log_abundance, errors$log_abundance)
+    }
+  }
+      
+  #CHECK INFO_SAMPLE
+  #-------------------------------------#
+  errors$info_sample <- character()
+  if( length(object@info_sample)!=0 ){
+    errors$info_sample <- .assertDataFrame(object@info_sample, errors$info_sample)
+    
+    if ( length(errors$info_sample)==0 ){
+      errors$info_sample <- .assertUniqueRowColNames(object@info_sample, errors$info_sample)
+    }
+  } 
+  
+  #CHECK LINEAGE
+  #-------------------------------------#
+  errors$lineage <- character()
+  if( length(object@lineage)!=0 ){
+    errors$lineage <- .assertCharacterMatrix(object@lineage, errors$lineage)
+    
+    if ( length(errors$lineage)==0 ){
+      errors$lineage <- .assertUniqueRowColNames(object@lineage, errors$lineage)
+    }
+  }
+  
+  #CHECK INFO_TAXA
+  #-------------------------------------#
+  errors$info_taxa <- character()
+  if( length(object@info_taxa)!=0 ){
+    errors$info_taxa <- .assertDataFrame(object@info_taxa, errors$info_taxa)
+    
+    if ( length(errors$info_taxa)==0 ){
+      errors$info_taxa <- .assertUniqueRowColNames(object@info_taxa, errors$info_taxa)
+    }
+  }
+  
+  # CHECK NETWORK
+  #-------------------------------------#
+  errors$network <- character()
+  if(length(object@network)!=0){
+    errors$network <- .assertNamedIgraph(object@network, errors$network)
+  }
+  
+  # CHECK COMMUNITIES
+  #-------------------------------------#
+  errors$communities <- character()
+  if(length(object@communities)!=0){
+    errors$communities <- .assertNamedIgraph(object@communities, errors$communities)
+  }
+  
+  # CHECK RECIPROCAL PROPERTIES
+  #-------------------------------------#
+  errors$reciprocal <- character()
+  
+  if(length(object@abundance)!=0 && length(errors$abundance)==0){
+    if(length(object@log_abundance)!=0 && length(errors$log_abundance)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "abundance", "log_abundance", errors$reciprocal)}
+    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "abundance", "info_sample", errors$reciprocal)}
+    if(length(object@lineage)!=0 && length(errors$lineage)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "lineage", errors$reciprocal)}
+    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "info_taxa", errors$reciprocal)}
+    if(length(object@network)!=0 && length(errors$network)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "rows", errors$reciprocal)}
+  }
+  
+  if(length(object@log_abundance)!=0 && length(errors$log_abundance)==0){
+    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "log_abundance", "info_sample", errors$reciprocal)}
+    if(length(object@lineage)!=0 && length(errors$lineage)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "log_abundance", "lineage", errors$reciprocal)}
+    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "log_abundance", "info_taxa", errors$reciprocal)}
+    if(length(object@network)!=0 && length(errors$network)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "log_abundance", "rows", errors$reciprocal)}
+  }
+  
+  if(length(object@lineage)!=0 && length(errors$lineage)==0){
+    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "lineage", "info_taxa", errors$reciprocal)}
+    if(length(object@network)!=0 && length(errors$network)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "lineage", "rows", errors$reciprocal)}
+  }
+  
+  if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
+    if(length(object@network)!=0 && length(errors$network)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "info_taxa", "rows", errors$reciprocal)}
+  }
+  
+  if(length(object@communities)!=0 && length(errors$communities)==0){
+    errors$reciprocal <- .assertMatchingCommunitiesNetwork(object, errors$reciprocal)
+  }
+
+  # FORMAT ERROR OUTPUT
+  errors <- Filter(function(x) length(x) > 0, errors)
+  if(length(errors)==0){
+    return(TRUE)
+  } else {
+    errors <- lapply(errors, function(x) paste("- ", x, "\n", sep="") )
+    errors <- lapply(errors, function(x) paste(x, collapse=""))
+    errors <- mapply(function(slot,msg){
+      paste("\nDEBUGGER of ",slot,":\n", msg, sep="")
+    }, slot=names(errors), msg=errors)
+    errors <- paste(c(errors), sep="\n")
+    errors <- gsub("reciprocal", "reciprocal properties", errors)
+    return(errors)
+  }
+})
+#------------------------------------------------------------------------------#
+# END SET VALIDITY FUNCTION
+#------------------------------------------------------------------------------#
