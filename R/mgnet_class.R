@@ -3,30 +3,36 @@ setOldClass("communities")
 ################################################################################
 # CLASS MGNET
 ################################################################################
-#' Metagenomic Network (mgnet) Class
+#' MetaGenomic NETwork (mgnet) Class
 #'
-#' An S4 class for comprehensive management and analysis of metagenomic networks. 
-#' It encapsulates various types of metagenomic data, including abundance matrices, 
-#' sample metadata, taxonomic information, and network analysis results. 
-#' This class serves as a robust framework for analyzing microbial communities 
+#' An S4 class for comprehensive management and analysis of metagenomic networks.
+#' It encapsulates various types of metagenomic data, including abundance matrices,
+#' sample metadata, taxonomic information, and network analysis results.
+#' This class serves as a robust framework for analyzing microbial communities
 #' and their interactions, supporting advanced analysis workflows for metagenomics research.
 #'
-#' @slot abundance A numeric matrix representing next-generation sequencing (NGS) 
-#'        data, where rows correspond to samples and columns to taxa, with values indicating 
+#' @slot abundance A numeric matrix representing next-generation sequencing (NGS)
+#'        data, where rows correspond to samples and columns to taxa, with values indicating
 #'        the abundance of each taxa in each sample.
-#' @slot log_abundance A numeric matrix of log-ratio transformed abundance data, 
+#' @slot log_abundance A numeric matrix of log-ratio transformed abundance data,
 #'        facilitating compositional data analysis, mirroring the structure of `abundance`.
-#' @slot info_sample A data.frame containing metadata for samples, indexed by sample IDs, 
+#' @slot info_sample A data.frame containing metadata for samples, indexed by sample IDs,
 #'        with each row corresponding to a sample and each column to an experimental variable.
-#' @slot lineage A character matrix with taxonomic classification for each taxa, 
-#'        where each row corresponds to a taxa and columns to taxonomic ranks such as phylum, 
+#' @slot lineage A character matrix with taxonomic classification for each taxa,
+#'        where each row corresponds to a taxa and columns to taxonomic ranks such as phylum,
 #'        class, order, family, genus, and species.
-#' @slot info_taxa A data.frame with additional information on taxa, indexed by taxa IDs, 
+#' @slot info_taxa A data.frame with additional information on taxa, indexed by taxa IDs,
 #'        providing a flexible structure for storing diverse metadata related to taxa.
-#' @slot network An `igraph` object representing a network of taxa interactions, 
+#' @slot network An `igraph` object representing a network of taxa interactions,
 #'        capturing the complex relationships between microbial taxa within the community.
-#' @slot communities An object storing community detection results, typically obtained 
+#' @slot communities An object storing community detection results, typically obtained
 #'        from network analysis, facilitating the exploration of microbial community structure.
+#'
+#' @section Reserved Keywords:
+#' The `mgnet` class reserves three keywords for internal use, which should not be used
+#' as column names in the provided matrices or data.frames: `sampleID`, `taxaID`, and `sampleSum`.
+#' These keywords are utilized for specific functionalities and methods within the `mgnet` package.
+#' Using these names as column identifiers in your data may lead to unexpected behavior or errors.
 #'
 #' @importFrom igraph make_empty_graph cluster_fast_greedy
 #' @importFrom methods setClass
@@ -35,7 +41,7 @@ setOldClass("communities")
 #'
 #' @examples
 #' # Creating an empty mgnet object
-#' empty_mgnet <- new("mgnet")
+#' empty_mgnet <- mgnet()
 #'
 #' @exportClass mgnet
 setClass("mgnet",

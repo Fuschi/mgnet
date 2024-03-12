@@ -38,6 +38,42 @@
 }
 
 #------------------------------------------------------------------------------#
+#' Internal: Check for Reserved Keywords in Column Names
+#'
+#' This function checks if any of the specified reserved keywords are present as column names in a given object.
+#' If such keywords are found, it appends an error message to the provided list of errors.
+#' This check helps prevent conflicts with internal functionality that relies on these reserved keywords.
+#'
+#' @param obj The data object to check, expected to have column names (e.g., a data frame or a matrix with column names).
+#' @param errors A character vector where error messages will be accumulated.
+#'               New error messages are appended if reserved keywords are found as column names.
+#'
+#' @return A character vector of accumulated error messages, including any new errors found during this check.
+#'
+#' @keywords internal
+.assertNoReservedKeywords <- function(obj, errors) {
+  # Define the list of reserved keywords
+  reservedKeywords <- c("sample_id", "taxa_id", "sample_sum")
+  
+  # Check if obj has column names to avoid unnecessary warnings
+  if (!is.null(colnames(obj))) {
+    # Iterate through each reserved keyword
+    for (keyword in reservedKeywords) {
+      if (keyword %in% colnames(obj)) {
+        message <- switch(keyword,
+                          "sample_id" = "column name 'sample_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
+                          "taxa_id" = "column name 'taxa_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
+                          "sample_sum" = "column name 'sample_sum' is a reserved keyword and cannot be used. This information is created at the creation of the object and is used to calculate the relative abundances. See ?mgnet-class for details."
+        )
+        errors <- c(errors, message)
+      }
+    }
+  }
+  
+  return(errors)
+}
+
+#------------------------------------------------------------------------------#
 #' Internal: Assert Numeric Matrix
 #'
 #' Validates that the given object is a numeric matrix. This function is used 
@@ -468,6 +504,7 @@ setValidity("mgnet", function(object) {
     if ( length(errors$abundance)==0 ){
       errors$abundance <- .assertUniqueRowColNames(object@abundance, errors$abundance)
       errors$abundance <- .assertAllPositive(object@abundance, errors$abundance)
+      errors$abundance <- .assertNoReservedKeywords(object@abundance, errors$abundance)
     }
   }
   
@@ -479,6 +516,8 @@ setValidity("mgnet", function(object) {
     
     if ( length(errors$log_abundance)==0 ){
       errors$log_abundance <- .assertUniqueRowColNames(object@log_abundance, errors$log_abundance)
+      errors$log_abundance <- .assertNoReservedKeywords(object@log_abundance, errors$log_abundance)
+      
     }
   }
       
@@ -490,6 +529,7 @@ setValidity("mgnet", function(object) {
     
     if ( length(errors$info_sample)==0 ){
       errors$info_sample <- .assertUniqueRowColNames(object@info_sample, errors$info_sample)
+      errors$info_sample <- .assertNoReservedKeywords(object@info_sample, errors$info_sample)
     }
   } 
   
@@ -501,6 +541,7 @@ setValidity("mgnet", function(object) {
     
     if ( length(errors$lineage)==0 ){
       errors$lineage <- .assertUniqueRowColNames(object@lineage, errors$lineage)
+      errors$lineage <- .assertNoReservedKeywords(object@lineage, errors$lineage)
     }
   }
   
@@ -512,6 +553,7 @@ setValidity("mgnet", function(object) {
     
     if ( length(errors$info_taxa)==0 ){
       errors$info_taxa <- .assertUniqueRowColNames(object@info_taxa, errors$info_taxa)
+      errors$info_taxa <- .assertNoReservedKeywords(object@info_taxa, errors$info_taxa)
     }
   }
   

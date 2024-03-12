@@ -3,7 +3,7 @@
 \docType{class}
 \name{mgnet-class}
 \alias{mgnet-class}
-\title{Metagenomic Network (mgnet) Class}
+\title{MetaGenomic NETwork (mgnet) Class}
 \description{
 An S4 class for comprehensive management and analysis of metagenomic networks.
 It encapsulates various types of metagenomic data, including abundance matrices,
@@ -38,9 +38,17 @@ capturing the complex relationships between microbial taxa within the community.
 from network analysis, facilitating the exploration of microbial community structure.}
 }}
 
+\section{Reserved Keywords}{
+
+The \code{mgnet} class reserves three keywords for internal use, which should not be used
+as column names in the provided matrices or data.frames: \code{sampleID}, \code{taxaID}, and \code{sampleSum}.
+These keywords are utilized for specific functionalities and methods within the \code{mgnet} package.
+Using these names as column identifiers in your data may lead to unexpected behavior or errors.
+}
+
 \examples{
 # Creating an empty mgnet object
-empty_mgnet <- new("mgnet")
+empty_mgnet <- mgnet()
 
 }
 \seealso{
