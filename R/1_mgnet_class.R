@@ -25,7 +25,7 @@ setOldClass("communities")
 #'        providing a flexible structure for storing diverse metadata related to taxa.
 #' @slot network An `igraph` object representing a network of taxa interactions,
 #'        capturing the complex relationships between microbial taxa within the community.
-#' @slot communities An object storing community detection results, typically obtained
+#' @slot community An object storing community detection results, typically obtained
 #'        from network analysis, facilitating the exploration of microbial community structure.
 #'
 #' @section Reserved Keywords:
@@ -43,6 +43,8 @@ setOldClass("communities")
 #' # Creating an empty mgnet object
 #' empty_mgnet <- mgnet()
 #'
+#' @name mgnet-class
+#' @rdname mgnet-class
 #' @exportClass mgnet
 setClass("mgnet",
          
@@ -53,7 +55,7 @@ setClass("mgnet",
     lineage = "ANY",
     info_taxa = "ANY",
     network = "ANY",
-    communities = "ANY"  
+    community = "ANY"  
   ),
   
   prototype = prototype(
@@ -63,7 +65,7 @@ setClass("mgnet",
     lineage = matrix(character(0), nrow=0, ncol=0),
     info_taxa = data.frame(),
     network = igraph::make_empty_graph(0),
-    communities = igraph::cluster_fast_greedy(
+    community = igraph::cluster_fast_greedy(
       igraph::make_empty_graph(0,directed=F))
   )
 )
@@ -94,7 +96,7 @@ setClass("mgnet",
 #'        to a taxa. Defaults to an empty data frame.
 #' @param network an `igraph` object representing a network of taxa interactions. Defaults to an
 #'        empty graph.
-#' @param communities an object storing community detection results from `network`. Defaults
+#' @param community an object storing community detection results from `network`. Defaults
 #'        to the result of a fast greedy clustering on an empty graph.
 #'
 #' @return Returns an `mgnet` object encapsulating the provided metagenomic data.
@@ -116,7 +118,7 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
                   lineage=matrix(nrow=0,ncol=0),
                   info_taxa=data.frame(),
                   network=make_empty_graph(n=0, directed=FALSE),
-                  communities=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
+                  community=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
 ){
   # Attempt to create a new mgnet object within a tryCatch block
   tryCatch({
@@ -124,8 +126,8 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
                         abundance = abundance, log_abundance=log_abundance,
                         info_sample = info_sample,
                         lineage = lineage, info_taxa=info_taxa,
-                        network = network, communities = communities
-                        )
+                        network = network, community = community
+    )
     
     if(length(abundance)!=0 & length(info_sample)==0){
       info_sample <- data.frame("sample_sum"=rowSums(abundance))
@@ -151,3 +153,66 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
 ################################################################################
 # END CONSTRUCTOR MGNET
 ################################################################################
+
+
+# ################################################################################
+# # SHOW MGNET
+# ################################################################################
+# setMethod("show", "mgnet", function(object) {
+#   cat("==== mgnet Object Summary ====\n")
+#   
+#   # General information
+#   cat("General Info:\n")
+#   cat(sprintf("  Samples: %d\n", nrow(object@abundance)))
+#   cat(sprintf("  Taxa: %d\n", ncol(object@abundance)))
+#   zeroPercentage <- sum(object@abundance == 0) / (nrow(object@abundance) * ncol(object@abundance))
+#   cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+#   
+#   # Sample metadata
+#   if(!is.null(object@info_sample) && ncol(object@info_sample) > 0) {
+#     colNamesSample <- names(object@info_sample)
+#     sampleInfo <- paste0("  Sample Meta Info: ", toString(head(colNamesSample, 4)))
+#     if(length(colNamesSample) > 4) sampleInfo <- paste(sampleInfo, ", etc...")
+#     cat(sampleInfo, "\n")
+#   } else {
+#     cat("  No sample metadata available.\n")
+#   }
+#   
+#   # Taxonomic lineage
+#   if(!is.null(object@lineage) && ncol(object@lineage) > 0) {
+#     lineageInfo <- paste("  Taxonomic Ranks:", toString(colnames(object@lineage)))
+#     cat(lineageInfo, "\n")
+#   } else {
+#     cat("  No taxonomic lineage information available.\n")
+#   }
+#   
+#   # Taxa metadata
+#   if(!is.null(object@info_taxa) && ncol(object@info_taxa) > 0) {
+#     colNamesTaxa <- names(object@info_taxa)
+#     taxaMetaInfo <- paste0("  Taxa Meta Info: ", toString(head(colNamesTaxa, 4)))
+#     if(length(colNamesTaxa) > 4) taxaMetaInfo <- paste(taxaMetaInfo, ", etc...")
+#     cat(taxaMetaInfo, "\n")
+#   } else {
+#     cat("  No taxa metadata available.\n")
+#   }
+#   
+#   # Network information
+#   if(!is.null(object@network) && igraph::vcount(object@network) > 0) {
+#     cat(sprintf("  Network: %d nodes, %d edges\n", igraph::vcount(object@network), igraph::ecount(object@network)))
+#     density <- igraph::edge_density(object@network)
+#     cat(sprintf("  Edge Density: %.4f\n", density))
+#   } else {
+#     cat("  No network data available.\n")
+#   }
+#   
+#   # Community information
+#   if(!is.null(object@community) && length(object@community) > 0) {
+#     cat(sprintf("  Detected Communities: %d\n", max(igraph::membership(object@community))))
+#     sizes <- toString(igraph::sizes(object@community))
+#     cat(sprintf("  Community Sizes: %s\n", sizes))
+#   } else {
+#     cat("  No community detection results available.\n")
+#   }
+#   
+#   cat("==== End of mgnet Object Summary ====\n")
+# })

@@ -184,7 +184,7 @@
 }
 
 #------------------------------------------------------------------------------#
-#' Internal: Assert Communities Class Membership
+#' Internal: Assert community Class Membership
 #'
 #' Validates that the given object is an instance of the `communities` class.
 #' This function ensures that community detection results are stored in an appropriate
@@ -447,14 +447,14 @@
 }
 
 #------------------------------------------------------------------------------#
-#' Internal: Assert Consistency Between Network and Communities
+#' Internal: Assert Consistency Between Network and Community
 #'
-#' Validates the consistency between the network and its associated communities within an S4 object. 
+#' Validates the consistency between the network and its associated community within an S4 object. 
 #' This function checks that a network is present and that the number of vertices in the network 
 #' matches the number of community assignments. This is essential for ensuring that community 
 #' detection results accurately reflect the structure of the network.
 #'
-#' @param obj An S4 object containing `network` and `communities` slots.
+#' @param obj An S4 object containing `network` and `community` slots.
 #' @param errors A character vector that accumulates error messages from various validation checks. 
 #'        New errors identified by this function are appended to this vector.
 #'
@@ -465,7 +465,7 @@
 #' @details The function performs two main checks: first, it verifies that the `network` slot 
 #'          is not empty, indicating that a network structure exists. Second, it compares the 
 #'          number of vertices in the network (using `vcount`) with the length of the community 
-#'          assignments in the `communities$membership` vector. These validations ensure that 
+#'          assignments in the `community$membership` vector. These validations ensure that 
 #'          community data is aligned with the network's topology.
 #'
 #' @importFrom igraph vcount
@@ -475,9 +475,9 @@
   
   # Correcting 'object' to 'obj' based on the parameter name
   if(length(slot(obj, "network")) == 0){
-    errors <- c(errors, "communities cannot exist without the associated network.")
-  } else if (length(slot(obj, "communities")$membership) != vcount(slot(obj, "network"))){
-    errors <- c(errors, "network and communities slots must have the same number of vertices.")
+    errors <- c(errors, "community cannot exist without the associated network.")
+  } else if (length(slot(obj, "community")$membership) != vcount(slot(obj, "network"))){
+    errors <- c(errors, "network and community slots must have the same number of vertices.")
   }
   
   return(errors)
@@ -564,11 +564,11 @@ setValidity("mgnet", function(object) {
     errors$network <- .assertNamedIgraph(object@network, errors$network)
   }
   
-  # CHECK COMMUNITIES
+  # CHECK community
   #-------------------------------------#
-  errors$communities <- character()
-  if(length(object@communities)!=0){
-    errors$communities <- .assertNamedIgraph(object@communities, errors$communities)
+  errors$community <- character()
+  if(length(object@community)!=0){
+    errors$community <- .assertNamedIgraph(object@community, errors$community)
   }
   
   # CHECK RECIPROCAL PROPERTIES
@@ -611,7 +611,7 @@ setValidity("mgnet", function(object) {
       errors$reciprocal <- .assertMatchingNamesVertices(object, "info_taxa", "rows", errors$reciprocal)}
   }
   
-  if(length(object@communities)!=0 && length(errors$communities)==0){
+  if(length(object@community)!=0 && length(errors$community)==0){
     errors$reciprocal <- .assertMatchingCommunitiesNetwork(object, errors$reciprocal)
   }
 
