@@ -48,6 +48,33 @@ ensure_mgnetList <- function(object) {
   invisible(TRUE)
 }
 
+
+#' Check list in assign methods for mgnetList
+#' 
+#' @description Internal function to check if the list provided as a value in assign methods
+#' is coherent with the mgnetList object.
+#' @param object mgnetList object.
+#' @param value List intended to be assigned to the mgnetList.
+#' @keywords internal
+are_list_assign <- function(object, value) {
+  objectName <- deparse(substitute(object))
+  valueName <- deparse(substitute(value))
+  
+  # Check if both inputs are lists and value is named
+  if (!is.list(value)) stop(sprintf("%s must be a list.", valueName))
+  if (!inherits(object, "mgnetList")) stop(sprintf("%s must be an mgnetList.", objectName))
+  if (length(object@mgnets) != length(value)) stop(sprintf("Lengths of %s and %s lists must be equal.", objectName, valueName))
+  if (is.null(names(value))) stop(sprintf("%s list must have named elements.", valueName))
+  
+  # Check names alignment if both have names
+  if (!is.null(names(object@mgnets)) && any(names(object@mgnets) != names(value))) {
+    stop(sprintf("Elements of %s and %s must have the same names in the same order.", objectName, valueName))
+  }
+  
+  TRUE
+}
+
+
 # UPDATE SAMPLE SUM (Information Necessary To Calculates The Relative Abundances)
 #------------------------------------------------------------------------------#
 #' Update Sample Sum in `mgnet` Objects

@@ -129,11 +129,12 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
                         network = network, community = community
     )
     
-    if(length(abundance)!=0 & length(info_sample)==0){
+    if(length(abundance)!=0 && length(info_sample)==0){
       info_sample <- data.frame("sample_sum"=rowSums(abundance))
     } else if( length(info_sample)!=0 & !("sample_sum"%in%colnames(info_sample))){
       info_sample$sample_sum <- rowSums(abundance)
     }
+    mgnet_object@info_sample <- info_sample
     return(mgnet_object)
   }, error = function(e) {
     
