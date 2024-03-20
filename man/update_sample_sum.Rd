@@ -6,7 +6,7 @@
 \alias{update_sample_sum,mgnetList-method}
 \title{Update Sample Sum in \code{mgnet} Objects}
 \usage{
-update_sample_sum(object)
+update_sample_sum(object, sampleSums)
 }
 \arguments{
 \item{object}{An object of class \code{mgnet} or a list of \code{mgnet} objects contained within an \code{mgnetList}.}
@@ -17,9 +17,7 @@ The modified \code{mgnet} or \code{mgnetList} object with updated \code{sample_s
 \description{
 This function updates the \code{sample_sum} field in the \code{info_sample} slot of an \code{mgnet} object
 or each \code{mgnet} object within an \code{mgnetList}. The \code{sample_sum} represents the total count/abundance
-for each sample, which is crucial for calculating relative abundances. Note that \code{sample_sum},
-along with \code{taxa_id} and \code{sample_id}, is a reserved keyword within the \code{mgnet} class and should
-not be used as a column name in the \code{info_sample} or any other slot externally.
+for each sample, which is crucial for calculating relative abundances.
 }
 \details{
 For \code{mgnet} objects, the function calculates the row sums of the \code{abundance} slot, storing

@@ -40,8 +40,8 @@ from network analysis, facilitating the exploration of microbial community struc
 
 \section{Reserved Keywords}{
 
-The \code{mgnet} class reserves three keywords for internal use, which should not be used
-as column names in the provided matrices or data.frames: \code{sampleID}, \code{taxaID}, and \code{sampleSum}.
+The \code{mgnet} class reserves two keywords for internal use, which should not be used
+as column names in the provided matrices or data.frames: \code{sample_id}, \code{taxa_id}.
 These keywords are utilized for specific functionalities and methods within the \code{mgnet} package.
 Using these names as column identifiers in your data may lead to unexpected behavior or errors.
 }

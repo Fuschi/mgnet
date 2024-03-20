@@ -53,7 +53,7 @@
 #' @keywords internal
 .assertNoReservedKeywords <- function(obj, errors) {
   # Define the list of reserved keywords
-  reservedKeywords <- c("sample_id", "taxa_id", "sample_sum")
+  reservedKeywords <- c("taxa_id", "sample_sum")
   
   # Check if obj has column names to avoid unnecessary warnings
   if (!is.null(colnames(obj))) {
@@ -63,7 +63,6 @@
         message <- switch(keyword,
                           "sample_id" = "column name 'sample_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
                           "taxa_id" = "column name 'taxa_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "sample_sum" = "column name 'sample_sum' is a reserved keyword and cannot be used. This information is created at the creation of the object and is used to calculate the relative abundances. See ?mgnet-class for details."
         )
         errors <- c(errors, message)
       }

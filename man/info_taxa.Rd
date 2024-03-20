@@ -18,10 +18,10 @@ are moved into a new column named \code{sample_id}, aligning with the reserved k
 \code{mgnet}.}
 }
 \value{
-The content of the \code{info_sample} slot for \code{mgnet} or a list of such contents for \code{mgnetList}.
+The content of the \code{info_taxa} slot for \code{mgnet} or a list of such contents for \code{mgnetList}.
 }
 \description{
-Retrieves the taxa information stored in the \code{info_sample} slot of an \code{mgnet} object
+Retrieves the taxa information stored in the \code{info_taxa} slot of an \code{mgnet} object
 or each \code{mgnet} object within an \code{mgnetList}, with the option to format the output as
 data.frame or tibble.
 }

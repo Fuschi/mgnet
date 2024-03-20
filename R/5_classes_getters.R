@@ -329,8 +329,8 @@ setMethod("lineage", "mgnetList", function(object, .fmt = "character") {
 # INFO_TAXA
 #------------------------------------------------------------------------------#
 #' Get Taxa Information
-#'
-#' Retrieves the taxa information stored in the `info_sample` slot of an `mgnet` object
+#' 
+#' Retrieves the taxa information stored in the `info_taxa` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`, with the option to format the output as
 #' data.frame or tibble.
 #'
@@ -340,7 +340,7 @@ setMethod("lineage", "mgnetList", function(object, .fmt = "character") {
 #'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
 #'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
 #'        `mgnet`.
-#' @return The content of the `info_sample` slot for `mgnet` or a list of such contents for `mgnetList`.
+#' @return The content of the `info_taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' @export
 #' @name info_taxa
 #' @aliases info_taxa,mgnet-method info_taxa,mgnetList-method

@@ -56,19 +56,29 @@ ensure_mgnetList <- function(object) {
 #' @param object mgnetList object.
 #' @param value List intended to be assigned to the mgnetList.
 #' @keywords internal
+#' @export
 are_list_assign <- function(object, value) {
+  
   objectName <- deparse(substitute(object))
   valueName <- deparse(substitute(value))
+  errors <- character()
   
   # Check if both inputs are lists and value is named
-  if (!is.list(value)) stop(sprintf("%s must be a list.", valueName))
-  if (!inherits(object, "mgnetList")) stop(sprintf("%s must be an mgnetList.", objectName))
-  if (length(object@mgnets) != length(value)) stop(sprintf("Lengths of %s and %s lists must be equal.", objectName, valueName))
-  if (is.null(names(value))) stop(sprintf("%s list must have named elements.", valueName))
+  if (!is.list(value)) errors <- c(errors,sprintf("%s must be a list.", valueName))
+  if (!inherits(object, "mgnetList")) errors <- c(errors, sprintf("%s must be an mgnetList.", objectName))
+  if (length(object@mgnets) != length(value)) errors <- c(errors, sprintf("Lengths of %s and %s lists must be equal.", objectName, valueName))
+  if (is.null(names(value))) errors <- c(errors, sprintf("%s list must have named elements.", valueName))
   
   # Check names alignment if both have names
   if (!is.null(names(object@mgnets)) && any(names(object@mgnets) != names(value))) {
-    stop(sprintf("Elements of %s and %s must have the same names in the same order.", objectName, valueName))
+    errors <- c(errors, sprintf("Elements of %s and %s must have the same names in the same order.", objectName, valueName))
+  }
+  
+  if(length(errors)!=0){
+    errors <- paste("- ", errors, "\n", sep="")
+    errors <- paste(errors, collapse="")
+    errors <- paste("\nDEBUGGER of assign in",objectName,":\n", errors, sep="")
+    stop(errors)
   }
   
   TRUE
@@ -81,9 +91,7 @@ are_list_assign <- function(object, value) {
 #'
 #' This function updates the `sample_sum` field in the `info_sample` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`. The `sample_sum` represents the total count/abundance
-#' for each sample, which is crucial for calculating relative abundances. Note that `sample_sum`,
-#' along with `taxa_id` and `sample_id`, is a reserved keyword within the `mgnet` class and should
-#' not be used as a column name in the `info_sample` or any other slot externally.
+#' for each sample, which is crucial for calculating relative abundances.
 #'
 #' @param object An object of class `mgnet` or a list of `mgnet` objects contained within an `mgnetList`.
 #'
@@ -95,11 +103,12 @@ are_list_assign <- function(object, value) {
 #' @return The modified `mgnet` or `mgnetList` object with updated `sample_sum` in the `info_sample` slot.
 #'
 #' @export
+#' @importFrom methods validObject
 #' @name update_sample_sum
 #' @aliases update_sample_sum,mgnet-method update_sample_sum,mgnetList-method
-setGeneric("update_sample_sum", function(object) standardGeneric("update_sample_sum"))
+setGeneric("update_sample_sum", function(object, sampleSums) standardGeneric("update_sample_sum"))
 
-setMethod("update_sample_sum", "mgnet", function(object) {
+setMethod("update_sample_sum", c("mgnet","missing"), function(object) {
   if(length(object@abundance) == 0) stop("abundance slot cannot be empty.")
   
   # Calculate sample sums and update or create the 'sample_sum' column
@@ -107,23 +116,50 @@ setMethod("update_sample_sum", "mgnet", function(object) {
   
   if(length(object@info_sample)==0){
     info_sample <- data.frame("sample_sum"=sampleSums)
-  } else if( length(info_sample)!=0 & !("sample_sum"%in%colnames(info_sample))){
+    rownames(info_sample) <- rownames(object@abundance)
+  } else if( length(info_sample)!=0 && "sample_sum"%in%colnames(info_sample) ){
+    message("The `sample_sum` column in `info_sample` slot has been updated.")
+    info_sample$sample_sum <- sampleSums
+  } else {
     info_sample$sample_sum <- sampleSums
   }
   
-  message("The 'sample_sum' column in 'info_sample' slot has been updated.")
+  validObject(object)
   return(object)
 })
 
-setMethod("update_sample_sum", "mgnetList", function(object) {
-  # Ensure the object contains mgnet objects
-  if(!all(sapply(object@mgnetObjects, is_mgnet))) {
-    stop("All elements in the list must be 'mgnet' objects.")
+
+setMethod("update_sample_sum", c("mgnet","ANY"), function(object, sampleSums) {
+  
+  if(length(object@abundance)==0) stop("abundance slot cannot be empty.")
+  if(!is.vector(sampleSums) || !is.numeric(sampleSums)) stop("sampleSums must be a numeric vector.")
+  if(any(sampleSums<=0)) stop("sampleSums elements must be all > 0.")
+  if(length(sampleSums)!=nrow(object@abundance)) stop("sampleSums length not match the number of samples (rows) of abundance.")
+  
+  if(length(object@info_sample)==0){
+    info_sample <- data.frame("sample_sum"=sampleSums)
+    rownames(info_sample) <- rownames(object@abundance)
+  } else if( length(info_sample)!=0 && "sample_sum"%in%colnames(info_sample) ){
+    message("The `sample_sum` column in `info_sample` slot has been updated.")
+    info_sample$sample_sum <- sampleSums
+  } else {
+    info_sample$sample_sum <- sampleSums
   }
   
-  # Apply update_sample_sum to each mgnet object in the list
-  object@mgnetObjects <- lapply(object@mgnetObjects, update_sample_sum)
-  
+  validObject(object)
+  return(object)
+})
+
+setMethod("update_sample_sum", c("mgnetList","missing"), function(object) {
+  object@mgnets <- sapply(object@mgnets, update_sample_sum, simplify = F, USE.NAMES = T)
+  validObject(object)
+  return(object)
+})
+
+setMethod("update_sample_sum", c("mgnetList","list"), function(object, sampleSums) {
+  are_list_assign(object, sampleSums)
+  object@mgnets <- sapply(object@mgnets, update_sample_sum, simplify = F, USE.NAMES = T)
+  validObject(object)
   return(object)
 })
 # END UPDATE SAMPLE SUM
