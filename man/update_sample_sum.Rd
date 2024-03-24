@@ -4,12 +4,31 @@
 \alias{update_sample_sum}
 \alias{update_sample_sum,mgnet-method}
 \alias{update_sample_sum,mgnetList-method}
+\alias{update_sample_sum,mgnet,missing-method}
+\alias{update_sample_sum,mgnet,ANY-method}
+\alias{update_sample_sum,mgnetList,missing-method}
+\alias{update_sample_sum,mgnetList,list-method}
 \title{Update Sample Sum in \code{mgnet} Objects}
 \usage{
 update_sample_sum(object, sampleSums)
+
+\S4method{update_sample_sum}{mgnet,missing}(object)
+
+\S4method{update_sample_sum}{mgnet,ANY}(object, sampleSums)
+
+\S4method{update_sample_sum}{mgnetList,missing}(object)
+
+\S4method{update_sample_sum}{mgnetList,list}(object, sampleSums)
 }
 \arguments{
-\item{object}{An object of class \code{mgnet} or a list of \code{mgnet} objects contained within an \code{mgnetList}.}
+\item{object}{An \code{mgnet} or \code{mgnetList} object, or a list of \code{mgnet} objects. When the object is
+of class \code{mgnet}, \code{sampleSums} can optionally be provided to manually set the sample sums.
+For \code{mgnetList} objects and when \code{sampleSums} is missing, sample sums are automatically
+calculated based on the abundance data.}
+
+\item{sampleSums}{A numeric vector of sample sums to be explicitly set for an \code{mgnet} object.
+This parameter is ignored for \code{mgnetList} objects and when calculating sample sums
+automatically. Optional for \code{mgnet} objects.}
 }
 \value{
 The modified \code{mgnet} or \code{mgnetList} object with updated \code{sample_sum} in the \code{info_sample} slot.
@@ -17,11 +36,12 @@ The modified \code{mgnet} or \code{mgnetList} object with updated \code{sample_s
 \description{
 This function updates the \code{sample_sum} field in the \code{info_sample} slot of an \code{mgnet} object
 or each \code{mgnet} object within an \code{mgnetList}. The \code{sample_sum} represents the total count/abundance
-for each sample, which is crucial for calculating relative abundances.
+for each sample, crucial for calculating relative abundances. For \code{mgnetList} objects, the function
+iteratively applies this process to each contained \code{mgnet} object.
 }
 \details{
-For \code{mgnet} objects, the function calculates the row sums of the \code{abundance} slot, storing
-these sums in the \code{info_sample} slot under the column \code{sample_sum}. If \code{info_sample} does not exist,
-it initializes this slot as a data.frame with the \code{sample_sum} column. For \code{mgnetList} objects,
-it iteratively applies this process to each contained \code{mgnet} object.
+For \code{mgnet} objects, if \code{sampleSums} is provided, these values are used to update the
+\code{sample_sum} in the \code{info_sample} slot. Otherwise, sample sums are automatically calculated
+from the abundance data. For \code{mgnetList} objects, sample sums are always automatically
+calculated for each contained \code{mgnet} object based on their abundance data.
 }

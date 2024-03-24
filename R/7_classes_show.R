@@ -79,8 +79,9 @@ setMethod("show", "mgnetList", function(object) {
   cat(sprintf("Contains %d mgnet objects:\n", length(object@mgnets)))
   
   # Iterate through each mgnet object and provide a summary
+  names <- names(object@mgnets)
   for (i in seq_along(object@mgnets)) {
-    cat(sprintf("\n  -- mgnet Object %d --\n", i))
+    cat(sprintf("\n  -- mgnet Object `%s` --\n", names[i]))
     mgnetObj <- object@mgnets[[i]]
     cat(sprintf("  Samples: %d\n", nsample(mgnetObj)))
     cat(sprintf("  Taxa: %d\n", ntaxa(mgnetObj)))
@@ -105,5 +106,6 @@ setMethod("show", "mgnetList", function(object) {
     }
   }
   
+  cat("\n")
   cat("==== End of mgnetList Object Summary ====\n")
 })

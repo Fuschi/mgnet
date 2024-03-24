@@ -91,23 +91,30 @@ are_list_assign <- function(object, value) {
 #'
 #' This function updates the `sample_sum` field in the `info_sample` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`. The `sample_sum` represents the total count/abundance
-#' for each sample, which is crucial for calculating relative abundances.
+#' for each sample, crucial for calculating relative abundances. For `mgnetList` objects, the function
+#' iteratively applies this process to each contained `mgnet` object.
 #'
-#' @param object An object of class `mgnet` or a list of `mgnet` objects contained within an `mgnetList`.
+#' @param object An `mgnet` or `mgnetList` object, or a list of `mgnet` objects. When the object is
+#'        of class `mgnet`, `sampleSums` can optionally be provided to manually set the sample sums.
+#'        For `mgnetList` objects and when `sampleSums` is missing, sample sums are automatically
+#'        calculated based on the abundance data.
+#' @param sampleSums A numeric vector of sample sums to be explicitly set for an `mgnet` object.
+#'        This parameter is ignored for `mgnetList` objects and when calculating sample sums
+#'        automatically. Optional for `mgnet` objects.
 #'
-#' @details For `mgnet` objects, the function calculates the row sums of the `abundance` slot, storing
-#' these sums in the `info_sample` slot under the column `sample_sum`. If `info_sample` does not exist,
-#' it initializes this slot as a data.frame with the `sample_sum` column. For `mgnetList` objects,
-#' it iteratively applies this process to each contained `mgnet` object.
+#' @details For `mgnet` objects, if `sampleSums` is provided, these values are used to update the
+#'          `sample_sum` in the `info_sample` slot. Otherwise, sample sums are automatically calculated
+#'          from the abundance data. For `mgnetList` objects, sample sums are always automatically
+#'          calculated for each contained `mgnet` object based on their abundance data.
 #'
 #' @return The modified `mgnet` or `mgnetList` object with updated `sample_sum` in the `info_sample` slot.
 #'
 #' @export
-#' @importFrom methods validObject
 #' @name update_sample_sum
 #' @aliases update_sample_sum,mgnet-method update_sample_sum,mgnetList-method
 setGeneric("update_sample_sum", function(object, sampleSums) standardGeneric("update_sample_sum"))
 
+#' @rdname update_sample_sum
 setMethod("update_sample_sum", c("mgnet","missing"), function(object) {
   if(length(object@abundance) == 0) stop("abundance slot cannot be empty.")
   
@@ -128,7 +135,7 @@ setMethod("update_sample_sum", c("mgnet","missing"), function(object) {
   return(object)
 })
 
-
+#' @rdname update_sample_sum
 setMethod("update_sample_sum", c("mgnet","ANY"), function(object, sampleSums) {
   
   if(length(object@abundance)==0) stop("abundance slot cannot be empty.")
@@ -150,12 +157,14 @@ setMethod("update_sample_sum", c("mgnet","ANY"), function(object, sampleSums) {
   return(object)
 })
 
+#' @rdname update_sample_sum
 setMethod("update_sample_sum", c("mgnetList","missing"), function(object) {
   object@mgnets <- sapply(object@mgnets, update_sample_sum, simplify = F, USE.NAMES = T)
   validObject(object)
   return(object)
 })
 
+#' @rdname update_sample_sum
 setMethod("update_sample_sum", c("mgnetList","list"), function(object, sampleSums) {
   are_list_assign(object, sampleSums)
   object@mgnets <- sapply(object@mgnets, update_sample_sum, simplify = F, USE.NAMES = T)
