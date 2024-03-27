@@ -22,7 +22,7 @@ setMethod("nsample", "mgnet", function(object) {
 })
 
 setMethod("nsample", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, nsample, simplify=T, USE.NAMES=T)
+  sapply(object@mgnets, nsample, simplify = TRUE, USE.NAMES = TRUE)
 })
 
 
@@ -53,7 +53,7 @@ setMethod("ntaxa", "mgnet", function(object) {
 })
 
 setMethod("ntaxa", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, ntaxa, simplify=T, USE.NAMES=T)
+  sapply(object@mgnets, ntaxa, simplify = TRUE, USE.NAMES = TRUE)
 })
 
 
@@ -81,7 +81,7 @@ setMethod("sample_id", "mgnet", function(object) {
 })
 
 setMethod("sample_id", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, sample_id, simplify=F, USE.NAMES=T)
+  sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -104,16 +104,16 @@ setMethod("sample_id", "mgnetList", function(object) {
 setGeneric("taxa_id", function(object) standardGeneric("taxa_id"))
 
 setMethod("taxa_id", "mgnet", function(object) {
-  if(length(object@data!=0)) return(colnames(object@data))
-  else if(length(object@taxa!=0)) return(rownames(object@taxa))
-  else if(length(object@meta_taxa)!=0) return(rownames(object@meta_taxa))
-  else if(length(object@log_data)!=0) return(colnames(object@log_data))
-  else if(length(object@netw)!=0) return(V(object@netw)$name)
+  if(length(object@abundance!=0)) return(colnames(object@abundance))
+  else if(length(object@lineage!=0)) return(rownames(object@lineage))
+  else if(length(object@info_taxa)!=0) return(rownames(object@info_taxa))
+  else if(length(object@log_abundance)!=0) return(colnames(object@log_abundance))
+  else if(length(object@network)!=0) return(V(object@network)$name)
   else return(NULL)
 })
 
 setMethod("taxa_id", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, taxa_id, simplify=F, USE.NAMES=T)
+  sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -140,7 +140,13 @@ setMethod("ranks", "mgnet", function(object) {
 })
 
 setMethod("ranks", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, ranks, simplify=T, USE.NAMES=T)
+  ranks <- sapply(object@mgnets, ranks, simplify = FALSE, USE.NAMES = TRUE)
+  
+  if(length(unique(ranks)) == 1){
+    ranks <- unique(ranks)[[1]]
+  }
+  
+  return(ranks)
 })
 
 
@@ -165,7 +171,14 @@ setMethod("info_sample_vars", "mgnet", function(object) {
 })
 
 setMethod("info_sample_vars", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, info_sample_vars, simplify=F, USE.NAMES=T)
+  
+  vars <- sapply(object@mgnets, info_sample_vars, simplify=F, USE.NAMES=T)
+  
+  if(length(unique(vars)) == 1){
+    vars <- unique(vars)[[1]]
+  }
+  
+  return(vars)
 })
 
 
@@ -190,7 +203,14 @@ setMethod("info_taxa_vars", "mgnet", function(object) {
 })
 
 setMethod("info_taxa_vars", "mgnetList", function(object) {
-  sapply(object@mgnetObjects, info_taxa_vars, simplify=F, USE.NAMES=T)
+  
+  vars <- sapply(object@mgnets, info_taxa_vars, simplify=F, USE.NAMES=T)
+  
+  if(length(unique(vars)) == 1){
+    vars <- unique(vars)[[1]]
+  }
+  
+  return(vars)
 })
 
 
@@ -235,10 +255,42 @@ setMethod("taxa_name", signature(object = "mgnet", rank = "character"), function
 
 #' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnetList", rank = "missing"), function(object) {
-  sapply(object@mgnetObjects, function(x) taxa_name(x), simplify=F, USE.NAMES=T)
+  sapply(object@mgnets, function(x) taxa_name(x), simplify=F, USE.NAMES=T)
 })
 
 #' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), function(object, rank) {
-  sapply(object@mgnetObjects, function(x) taxa_name(x, rank), simplify=F, USE.NAMES=T)
+  sapply(object@mgnets, function(x) taxa_name(x, rank), simplify=F, USE.NAMES=T)
+})
+
+
+# MGNETS
+#------------------------------------------------------------------------------#
+#' Retrieve mgnet Objects from an mgnetList
+#'
+#' This method extracts and returns the list of `mgnet` objects contained within an `mgnetList` object,
+#' offering direct access to the individual `mgnet` objects for further analysis or manipulation. It functions
+#' similarly to the \code{\link{as.list}} method for `mgnetList` objects, both providing a way to access 
+#' the contained `mgnet` objects.
+#'
+#' @param object An `mgnetList` object from which `mgnet` objects are to be retrieved.
+#' 
+#' @return A list of `mgnet` objects, where each element is an individual `mgnet` object. The elements
+#'         are named, corresponding to the names of the `mgnet` objects within the `mgnetList`, allowing
+#'         for easy identification and access. This facilitates individual or batch processing of 
+#'         metagenomic network data.
+#'
+#' @seealso
+#' \code{\link[=mgnet]{mgnet}} for details on the `mgnet` class and functionalities.
+#' \code{\link[=mgnetList]{mgnetList}} for guidance on creating and managing `mgnetList` objects.
+#' \code{\link{as.list}} for a similar method that converts an `mgnetList` into a list of `mgnet` objects,
+#' serving the same purpose as `mgnets`.
+#'
+#' @export
+#' @name mgnets
+#' @aliases mgnets,mgnetList-method
+setGeneric("mgnets", function(object) standardGeneric("mgnets"))
+
+setMethod("mgnets", "mgnetList", function(object) {
+  object@mgnets
 })

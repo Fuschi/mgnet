@@ -121,14 +121,6 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
                   community=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
 ){
   
-  # if("sample_sum" %in% colnames(info_sample)) {
-  #   stop(
-  #     "The 'sample_sum' column should not be manually provided in 'info_sample'. ",
-  #     "This column is essential for calculating relative abundances and is automatically calculated based on the provided 'abundance' data and it is generated during object construction.",
-  #     "Alternatively, you can explicitly update 'sample_sum' using the 'update_sample_sum()' function, ",
-  #   )
-  # }
-  # Attempt to create a new mgnet object within a tryCatch block
   tryCatch({
     mgnet_object <- new("mgnet", 
                         abundance = abundance, log_abundance=log_abundance,
@@ -161,4 +153,4 @@ mgnet <- function(abundance=matrix(nrow=0,ncol=0),
 }
 ################################################################################
 # END CONSTRUCTOR MGNET
-###############################################################################
+################################################################################

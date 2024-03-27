@@ -53,7 +53,7 @@
 #' @keywords internal
 .assertNoReservedKeywords <- function(obj, errors) {
   # Define the list of reserved keywords
-  reservedKeywords <- c("taxa_id", "sample_sum")
+  reservedKeywords <- c("sample_id", "taxa_id")
   
   # Check if obj has column names to avoid unnecessary warnings
   if (!is.null(colnames(obj))) {
@@ -482,6 +482,49 @@
   return(errors)
 }
 
+
+#------------------------------------------------------------------------------#
+#' Internal: Validate Sample Sum in info_sample
+#'
+#' This internal function performs validation checks on the `sample_sum` column within the `info_sample` slot
+#' of an `mgnet` object. It ensures that if `sample_sum` is provided, it adheres to several conditions:
+#' - The `abundance` slot must be present and contain data.
+#' - The length of `sample_sum` must match the number of rows in `abundance`, representing the total number of samples.
+#' - All values in `sample_sum` must be positive, reflecting the non-negativity constraint of abundance measures.
+#' - Each value in `sample_sum` must be greater than or equal to the corresponding row sum of the `abundance` matrix, ensuring accuracy in representing total sample abundance.
+#'
+#' @param object The `mgnet` object being validated.
+#' @param errors A character vector accumulating any error messages identified during the validation process.
+#'               This vector is updated in-place with messages pertaining to the `sample_sum` validations.
+#'
+#' @return A possibly updated character vector containing accumulated validation error messages. If new errors
+#'         related to the `sample_sum` column are identified, they are appended to the vector.
+#'
+#' @details This function is part of the validation process for `mgnet` objects, called within the class's
+#'          set validity method. It focuses specifically on the integrity and logical consistency of the
+#'          `sample_sum` column when provided. As an internal function, it is not intended for direct use
+#'          outside of the `mgnet` object validation context.
+#'
+#' @keywords internal
+.assertSampleSumValidity <- function(object, errors) {
+  
+  if("sample_sum" %in% colnames(object@info_sample)) {
+
+    # Check positive values and correctness against row sums of abundance
+    if(any(object@info_sample$sample_sum <= 0)) {
+      errors <- c(errors, "all elements of 'sample_sum' in 'info_sample' must be positive.")
+    }
+      
+    calculatedRowSums <- rowSums(object@abundance, na.rm = TRUE)
+    if(any(object@info_sample$sample_sum < calculatedRowSums)) {
+      errors <- c(errors, "each element of 'sample_sum' in 'info_sample' must be greater than or equal to the corresponding row sum of 'abundance'.")
+    }
+  }
+  
+  return(errors)
+}
+
+
 #------------------------------------------------------------------------------#
 # SET VALIDITY FUNCTION
 #------------------------------------------------------------------------------#
@@ -529,6 +572,7 @@ setValidity("mgnet", function(object) {
     if ( length(errors$info_sample)==0 ){
       errors$info_sample <- .assertUniqueRowColNames(object@info_sample, errors$info_sample)
       errors$info_sample <- .assertNoReservedKeywords(object@info_sample, errors$info_sample)
+      errors$info_sample <- .assertSampleSumValidity(object, errors$info_sample)
     }
   } 
   
@@ -612,6 +656,27 @@ setValidity("mgnet", function(object) {
   
   if(length(object@community)!=0 && length(errors$community)==0){
     errors$reciprocal <- .assertMatchingCommunitiesNetwork(object, errors$reciprocal)
+  }
+  
+  # Consolidate column names from slots they are unique!!
+  all_column_names <- character()
+  
+  if (length(object@info_taxa) > 0) all_column_names <- c(all_column_names, colnames(object@info_taxa))
+  if (length(object@info_sample)) all_column_names <- c(all_column_names, colnames(object@info_sample))
+  if (length(object@lineage) > 0) all_column_names <- c(all_column_names, colnames(object@lineage))
+  
+  if (length(object@abundance) > 0) {
+    all_column_names <- c(all_column_names, colnames(object@abundance))
+  } else if (length(object@log_abundance) > 0) {
+    all_column_names <- c(all_column_names, colnames(object@log_abundance))
+  }
+  
+
+  # Add error for duplicated names, if any
+  duplicated_names <- names(which(duplicated(all_column_names)))
+  if(length(duplicated_names) > 0) {
+    dup_names_str <- paste(duplicated_names, collapse = ", ")
+    errors <- c(errors, sprintf("Duplicated column names found across slots: %s. Each column name must be unique across info_taxa, info_sample, lineage, abundance-log_abundance.", dup_names_str))
   }
 
   # FORMAT ERROR OUTPUT

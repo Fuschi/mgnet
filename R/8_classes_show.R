@@ -10,7 +10,7 @@ setMethod("show", "mgnet", function(object) {
   cat(sprintf("  Samples: %d\n", nsample(object)))
   cat(sprintf("  Taxa: %d\n", ntaxa(object)))
   
-  if(length(object@abundance)!=0){
+  if( length(object@abundance) > 0){
     zeroPercentage <- sum(object@abundance == 0) / (nrow(object@abundance) * ncol(object@abundance))
     cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
   } else {
@@ -19,7 +19,7 @@ setMethod("show", "mgnet", function(object) {
   
 
   # Sample metadata
-  if(!is.null(object@info_sample) && ncol(object@info_sample) > 0) {
+  if( length(object@info_sample) > 0) {
     colNamesSample <- names(object@info_sample)
     sampleInfo <- paste0("  Sample Meta Info: ", toString(head(colNamesSample, 4)))
     if(length(colNamesSample) > 4) sampleInfo <- paste(sampleInfo, ", etc...")
@@ -29,7 +29,7 @@ setMethod("show", "mgnet", function(object) {
   }
 
   # Taxonomic lineage
-  if(!is.null(object@lineage) && ncol(object@lineage) > 0) {
+  if( length(object@lineage) > 0) {
     lineageInfo <- paste("  Taxonomic Ranks:", toString(colnames(object@lineage)))
     cat(lineageInfo, "\n")
   } else {
@@ -37,7 +37,7 @@ setMethod("show", "mgnet", function(object) {
   }
 
   # Taxa metadata
-  if(!is.null(object@info_taxa) && ncol(object@info_taxa) > 0) {
+  if( length(object@info_taxa) > 0) {
     colNamesTaxa <- names(object@info_taxa)
     taxaMetaInfo <- paste0("  Taxa Meta Info: ", toString(head(colNamesTaxa, 4)))
     if(length(colNamesTaxa) > 4) taxaMetaInfo <- paste(taxaMetaInfo, ", etc...")
@@ -47,7 +47,7 @@ setMethod("show", "mgnet", function(object) {
   }
 
   # Network information
-  if(!is.null(object@network) && igraph::vcount(object@network) > 0) {
+  if( length(object@network) > 0) {
     cat(sprintf("  Network: %d nodes, %d edges\n", igraph::vcount(object@network), igraph::ecount(object@network)))
     density <- igraph::edge_density(object@network)
     cat(sprintf("  Edge Density: %.4f\n", density))
@@ -56,7 +56,7 @@ setMethod("show", "mgnet", function(object) {
   }
 
   # Community information
-  if(!is.null(object@community) && length(object@community) > 0) {
+  if( length(object@community) > 0) {
     cat(sprintf("  Detected Communities: %d\n", max(igraph::membership(object@community))))
     sizes <- toString(igraph::sizes(object@community))
     cat(sprintf("  Community Sizes: %s\n", sizes))

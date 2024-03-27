@@ -3,18 +3,46 @@
 \docType{class}
 \name{mgnetList-class}
 \alias{mgnetList-class}
-\title{MetaGenomic NETwork List Class (mgnetList)}
+\title{MetaGenomic NETwork List (mgnetList) Class}
 \description{
-An S4 class designed to hold a list of \code{mgnet} objects. This class ensures that all elements
-within the list are instances of the \code{mgnet} class, providing a structured and type-safe way
-to manage collections of metagenomic network data.
+mgnetList is an S4 class designed to hold and manage a collection of mgnet objects,
+providing a structured way to handle multiple metagenomic networks. It ensures that all
+elements within the list adhere to the mgnet class structure, making it useful for
+analyses involving multiple metagenomic datasets. This class allows for consistent and
+type-safe manipulation of multiple mgnet objects.
+
+mgnetList is an S4 class designed to hold and manage a collection of mgnet objects,
+providing a structured way to handle multiple metagenomic networks. It ensures that all
+elements within the list adhere to the mgnet class structure, making it useful for
+analyses involving multiple metagenomic datasets. This class allows for consistent and
+type-safe manipulation of multiple mgnet objects.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{mgnets}}{A list where each element is an instance of the \code{mgnet} class.}
+\item{\code{mgnets}}{A list where each element is an instance of the mgnet class.
+If the list is not empty, each mgnet object within the list must be named to facilitate
+easy access and management.}
+
+\item{\code{mgnets}}{A list where each element is an instance of the mgnet class.
+If the list is not empty, each mgnet object within the list must be named to facilitate
+easy access and management.}
 }}
 
+\section{Validity Checks}{
+
+The class includes validity checks to ensure that, if not empty, all elements within the
+mgnets slot are instances of the mgnet class and are named. These checks help maintain
+integrity and usability, preventing errors during downstream analyses.
+
+
+The class includes validity checks to ensure that, if not empty, all elements within the
+mgnets slot are instances of the mgnet class and are named. These checks help maintain
+integrity and usability, preventing errors during downstream analyses.
+}
+
 \seealso{
-\code{\link{mgnet}} for details on the \code{mgnet} class.
+\code{\link[=mgnet]{mgnet}} for details on the mgnet class and its functionalities.
+
+\code{\link[=mgnet]{mgnet}} for details on the mgnet class and its functionalities.
 }

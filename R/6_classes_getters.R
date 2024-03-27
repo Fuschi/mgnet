@@ -25,7 +25,7 @@
 #' @export
 #' @importFrom dplyr %>% select left_join group_by summarise
 #' @importFrom rlang sym
-#' @importFrom tibble as_tibble rownames_to_column
+#' @importFrom tibble as_tibble rownames_to_column tibble
 #' @importFrom tidyr pivot_longer pivot_wider
 #' @name abundance
 #' @aliases abundance,mgnet-method abundance,mgnetList-method
@@ -34,17 +34,22 @@ setGeneric("abundance", function(object, rank = "missing", .fmt = "mat") standar
 setMethod("abundance", "mgnet", function(object, rank, .fmt) {
   
   # Checks
-  if (missing(rank))rank <- "missing"
+  if (missing(rank)) rank <- "missing"
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  if(rank=="missing"){
+  if( length(object@abundance) == 0 ){
+    switch(.fmt,
+           mat = {return(matrix(nrow=0, ncol=0))},
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
+  } else if(rank=="missing") {
     switch(.fmt,
            mat = {return(object@abundance)},
            df  = {return(as.data.frame(object@abundance))},
            tbl = {return(tibble::as_tibble(object@abundance, rownames="sample_id"))})
-  } else {
-    if(length(object@abundance) == 0 || !rank %in% colnames(object@lineage)) {
-      stop("abundance and specified rank must be present in the object. Available ranks are: ",
+  }  else {
+    if(!rank %in% colnames(object@lineage)) {
+      stop("rank must be present in the object. Available ranks are: ",
            paste(toString(colnames(object@lineage)), collapse=", "))}
     
     data_frame <- object@abundance %>% tibble::as_tibble(rownames="sample_id") %>%
@@ -121,18 +126,31 @@ setGeneric("relative", function(object, rank = "missing", .fmt = "mat") standard
 setMethod("relative", "mgnet", function(object, rank, .fmt) {
   
   # Checks
-  if (missing(rank))rank <- "missing"
+  if (missing(rank)) rank <- "missing"
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
+  # Ensure 'sample_sum' is present in 'info_sample'
+  if (!"sample_sum" %in% colnames(object@info_sample)) {
+    stop("The 'sample_sum' column is missing in 'info_sample'. ",
+         "Please ensure 'sample_sum' is calculated and included. ",
+         "This can be done automatically by creating or updating the mgnet object ",
+         "with valid abundance data, or through the 'update_sample_sum()' function.",
+         "\nSee '?update_sample_sum' for more information.")
+  }
   
-  if(rank=="missing"){
+  if( length(object@abundance) == 0 ){
+    switch(.fmt,
+           mat = {return(matrix(nrow=0, ncol=0))},
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
+  } else if(rank=="missing"){
     result <- object@abundance / object@info_sample$sample_sum
     switch(.fmt,
            mat = {return(result)},
            df  = {return(as.data.frame(result))},
            tbl = {return(tibble::as_tibble(result, rownames="sample_id"))})
   } else {
-    if(length(object@abundance) == 0 || !rank %in% colnames(object@lineage)) {
-      stop("abundance and specified rank must be present in the object. Available ranks are: ",
+    if(!rank %in% colnames(object@lineage)) {
+      stop("rank must be present in the object. Available ranks are: ",
            paste(toString(colnames(object@lineage)), collapse=", "))}
     
     data_frame <- object@abundance %>% tibble::as_tibble(rownames="sample_id") %>%
@@ -211,15 +229,25 @@ setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
   if (missing(rank))rank <- "missing"
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  if(rank=="missing"){
+  if( length(object@log_abundance) == 0 ){
+    
+    switch(.fmt,
+           mat = {return(matrix(nrow=0, ncol=0))},
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
+    
+  } else if(rank=="missing"){
+    
     result <- object@log_abundance
     switch(.fmt,
            mat = {return(result)},
            df  = {return(as.data.frame(result))},
            tbl = {return(tibble::as_tibble(result, rownames="sample_id"))})
+    
   } else {
-    if(length(object@log_abundance) == 0 || !rank %in% colnames(object@lineage)) {
-      stop("log_abundance and specified rank must be present in the object. Available ranks are: ",
+    
+    if( !rank %in% colnames(object@lineage) ) {
+      stop("specified rank must be present in the object. Available ranks are: ",
            paste(toString(colnames(object@lineage)), collapse=", "))}
     
     data_frame <- object@log_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
@@ -275,7 +303,7 @@ setMethod("log_abundance", "mgnetList", function(object, rank = "missing", .fmt 
 #' @aliases info_sample,mgnet-method info_sample,mgnetList-method
 setGeneric("info_sample", function(object, .fmt = "df") standardGeneric("info_sample"))
 
-setMethod("info_sample", "mgnet", function(object, .fmt = "character") {
+setMethod("info_sample", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
   switch(.fmt,
          df  = {return(object@info_sample)},
@@ -283,7 +311,7 @@ setMethod("info_sample", "mgnet", function(object, .fmt = "character") {
   )
 })
 
-setMethod("info_sample", "mgnetList", function(object, .fmt = "character") {
+setMethod("info_sample", "mgnetList", function(object, .fmt = "df") {
   sapply(object@mgnets, function(x) info_sample(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })
@@ -309,16 +337,23 @@ setMethod("info_sample", "mgnetList", function(object, .fmt = "character") {
 #' @aliases lineage,mgnet-method lineage,mgnetList-method
 setGeneric("lineage", function(object, .fmt = "mat") standardGeneric("lineage"))
 
-setMethod("lineage", "mgnet", function(object, .fmt = "character") {
+setMethod("lineage", "mgnet", function(object, .fmt = "mat") {
+  
   .fmt <- match.arg(.fmt, c("mat","df", "tbl"))
-  switch(.fmt,
-         mat = {return(object@lineage)},
-         df  = {return(as.data.frame(object@lineage))},
-         tbl = {return(tibble::as_tibble(object@lineage, rownames="sample_id"))}
-  )
+  
+  if(length(object@lineage) > 0){
+    switch(.fmt,
+           mat = {return(object@lineage)},
+           df  = {return(as.data.frame(object@lineage))},
+           tbl = {return(tibble::as_tibble(object@lineage, rownames="taxa_id"))}
+    )
+  } else {
+    object@lineage
+  }
+  
 })
 
-setMethod("lineage", "mgnetList", function(object, .fmt = "character") {
+setMethod("lineage", "mgnetList", function(object, .fmt = "mat") {
   .fmt <- match.arg(.fmt, c("mat","df", "tbl"))
   sapply(object@mgnets, function(x, .fmt) lineage(x,.fmt),
          simplify = FALSE, USE.NAMES = TRUE)
@@ -346,15 +381,21 @@ setMethod("lineage", "mgnetList", function(object, .fmt = "character") {
 #' @aliases info_taxa,mgnet-method info_taxa,mgnetList-method
 setGeneric("info_taxa", function(object, .fmt = "df") standardGeneric("info_taxa"))
 
-setMethod("info_taxa", "mgnet", function(object, .fmt = "character") {
+setMethod("info_taxa", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  switch(.fmt,
-         df  = {return(object@info_taxa)},
-         tbl = {return(tibble::as_tibble(object@info_taxa, rownames="sample_id"))}
-  )
+  
+  if (length(object@info_taxa) > 0){
+    switch(.fmt,
+           df  = {return(object@info_taxa)},
+           tbl = {return(tibble::as_tibble(object@info_taxa, rownames="taxa_id"))}
+    )
+  } else {
+    object@info_taxa
+  }
+  
 })
 
-setMethod("info_taxa", "mgnetList", function(object, .fmt = "character") {
+setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
   sapply(object@mgnets, function(x) info_taxa(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })

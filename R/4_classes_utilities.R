@@ -85,6 +85,76 @@ are_list_assign <- function(object, value) {
 }
 
 
+#' Convert an mgnetList Object to a List
+#'
+#' This method allows for the conversion of an `mgnetList` object into a list, 
+#' facilitating the application of list-based operations and functions. Each element 
+#' of the list represents an `mgnet` object contained within the `mgnetList`.
+#'
+#' @param x An `mgnetList` object.
+#' @param ... Additional arguments affecting the conversion (currently unused).
+#'
+#' @return A list where each element is an `mgnet` object previously contained 
+#'         within the `mgnetList`. The names of the list elements correspond to 
+#'         the names of the `mgnet` objects in the `mgnetList`, if they are named.
+#'
+#' @importFrom methods slot
+#' @export
+#' @seealso \link{mgnetList}, for details on the `mgnetList` class.
+#' @name as.list-mgnetList
+#' @aliases as.list,mgnetList-method
+setMethod("as.list", "mgnetList", function(x, ...){
+  
+  slot(x, "mgnets")
+})
+
+
+#' Length of an mgnetList
+#'
+#' @description
+#' Returns the number of `mgnet` objects contained within an `mgnetList` object.
+#'
+#' @param x An `mgnetList` object.
+#' @return Integer value representing the number of `mgnet` objects in the `mgnetList`.
+#' @export
+setMethod("length", "mgnetList", function(x) {
+  length(x@mgnets)
+})
+
+
+#' Names of mgnet Objects in an mgnetList
+#'
+#' @description
+#' Retrieves the names of `mgnet` objects contained within an `mgnetList`.
+#' Names provide a convenient way to reference and manage individual `mgnet` objects.
+#'
+#' @param x An `mgnetList` object.
+#' @return A character vector of names of the `mgnet` objects.
+#'         
+#' @export
+setMethod("names", "mgnetList", function(x) {
+  names(x@mgnets)
+})
+
+#' Set Names of mgnet Objects in an mgnetList
+#'
+#' @description
+#' Sets the names of `mgnet` objects contained within an `mgnetList`.
+#' Names provide a convenient way to reference and manage individual `mgnet` objects.
+#'
+#' @param x An `mgnetList` object.
+#' @param value A character vector representing the new names to be assigned to the `mgnet` objects.
+#' @return The modified `mgnetList` object with updated names.
+#'         
+#' @importFrom methods validObject
+#' @export
+setMethod("names<-", "mgnetList", function(x, value) {
+  names(x@mgnets) <- value
+  validObject(x)
+  x
+})
+
+
 # UPDATE SAMPLE SUM (Information Necessary To Calculates The Relative Abundances)
 #------------------------------------------------------------------------------#
 #' Update Sample Sum in `mgnet` Objects
@@ -122,15 +192,18 @@ setMethod("update_sample_sum", c("mgnet","missing"), function(object) {
   sampleSums <- rowSums(object@abundance, na.rm = TRUE)
   
   if(length(object@info_sample)==0){
-    info_sample <- data.frame("sample_sum"=sampleSums)
-    rownames(info_sample) <- rownames(object@abundance)
+    info_sample_new <- data.frame("sample_sum"=sampleSums)
+    rownames(info_sample_new) <- rownames(object@abundance)
   } else if( length(info_sample)!=0 && "sample_sum"%in%colnames(info_sample) ){
     message("The `sample_sum` column in `info_sample` slot has been updated.")
-    info_sample$sample_sum <- sampleSums
+    info_sample_new <- object@info_sample
+    info_sample_new$sample_sum <- sampleSums
   } else {
-    info_sample$sample_sum <- sampleSums
+    info_sample_new <- object@info_sample
+    info_sample_new$sample_sum <- sampleSums
   }
   
+  object@info_sample <- info_sample_new
   validObject(object)
   return(object)
 })
@@ -144,15 +217,18 @@ setMethod("update_sample_sum", c("mgnet","ANY"), function(object, sampleSums) {
   if(length(sampleSums)!=nrow(object@abundance)) stop("sampleSums length not match the number of samples (rows) of abundance.")
   
   if(length(object@info_sample)==0){
-    info_sample <- data.frame("sample_sum"=sampleSums)
-    rownames(info_sample) <- rownames(object@abundance)
+    info_sample_new <- data.frame("sample_sum"=sampleSums)
+    rownames(info_sample_new) <- rownames(object@abundance)
   } else if( length(info_sample)!=0 && "sample_sum"%in%colnames(info_sample) ){
     message("The `sample_sum` column in `info_sample` slot has been updated.")
-    info_sample$sample_sum <- sampleSums
+    info_sample_new <- object@info_sample
+    info_sample_new$sample_sum <- sampleSums
   } else {
-    info_sample$sample_sum <- sampleSums
+    info_sample_new <- object@info_sample
+    info_sample_new$sample_sum <- sampleSums
   }
   
+  object@info_sample <- info_sample_new
   validObject(object)
   return(object)
 })

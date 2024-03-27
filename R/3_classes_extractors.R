@@ -75,104 +75,101 @@ setMethod(f="[", signature="mgnet",function(x,i,j){
   }
 })
 
-
-
-#' Extract Subsets from mgnetList
+#' Access mgnet Objects by Name
 #'
-#' This method enables the extraction of sub-lists or individual `mgnet` objects from an `mgnetList`
-#' container by specifying numeric indices or names. Use `[` to extract sub-lists or individual
-#' objects and maintain the `mgnetList` structure.
+#' This method allows for easy access to individual `mgnet` objects within an `mgnetList` by their names.
 #'
 #' @param x An `mgnetList` object.
-#' @param i Numeric indices or character vector of names specifying the `mgnet` objects to extract.
-#'          If missing, the entire `mgnetList` is returned.
-#' @param j Ignored in this method, included for compatibility with the generic method.
-#' @param drop Ignored in this method, included for compatibility with the generic method.
-#' @param ... Additional arguments, currently ignored.
-#'
-#' @return Depending on the type and number of indices or names provided in `i`:
-#'         - A single `mgnet` object if a single index or name is provided.
-#'         - An `mgnetList` containing the selected `mgnet` objects if multiple indices or names are provided.
-#'         - The full `mgnetList` if `i` is missing.
-#'
-#' @seealso \code{\link[base]{Extract}} for base R extraction operations.
+#' @param name The name of the `mgnet` object to access.
+#' @return The `mgnet` object with the specified name.
+#' 
+#' @importFrom methods slot
 #' @export
-setMethod(f="[", signature="mgnetList", function(x, i, j, ...) {
-  
-  if(!missing(j)) stop("wrong dimension number")
-  
-  if(missing(i)) {
-    
-    return(x)
-    
-  } else {
-    
-    if(is.numeric(i)) {
-      if(any(i > length(x@mgnets)) || i < 1) {
-        stop("Index out of bounds.")
-      }
-      return(mgnetList(x@mgnets[i]))
-      
-    } else if(is.character(i)) {
-      
-      if(!all(i %in% names(x@mgnets))) {
-        stop("No mgnet object with such a name in the list.")
-      }
-      return(mgnetList(x@mgnets[i]))
-      
-    } else {
-      stop("Index must be either numeric or a character vector of names.")
-    }
-  }
+setMethod("$", "mgnetList", function(x, name) {
+  slot(x, "mgnets")[[name]]
 })
 
 
-#' Extract mgnet Objects from mgnetList
+#' Subset mgnetList
 #'
-#' This method extracts one or more `mgnet` objects from an `mgnetList` using either numeric indices
-#' or names. When a single index or name is provided, a single `mgnet` object is extracted. When multiple
-#' indices or names are provided, a simple list of `mgnet` objects is returned.
-#'
-#' Use `[[` when you need to work directly with the extracted `mgnet` object(s). This method allows
-#' for flexibility in extracting and working with individual or multiple `mgnet` objects outside
-#' of an `mgnetList` structure.
+#' This method subsets an `mgnetList` object, returning a new `mgnetList` containing only the selected `mgnet` objects.
 #'
 #' @param x An `mgnetList` object.
-#' @param i Numeric index, vector of numeric indices, name, or vector of names specifying
-#'          the `mgnet` object(s) to extract. If missing, an error is thrown.
-#' @param j Ignored in this method, included for compatibility with the generic method.
-#' @param ... Additional arguments, currently ignored.
-#'
-#' @return Depending on the input `i`:
-#'         - A single `mgnet` object if `i` specifies a single index or name.
-#'         - A simple list of `mgnet` objects if `i` specifies multiple indices or names.
-#' @seealso \code{\link[base]{Extract}} for base R extraction operations.
+#' @param i Indices or names specifying the `mgnet` objects to retain.
+#' @param j Not used.
+#' @param ... Additional arguments (currently unused).
+#' @param drop Not used.
+#' @return A new `mgnetList` object containing the selected `mgnet` objects.
+#' 
+#' @importFrom methods slot
 #' @export
-setMethod(f="[[", signature="mgnetList", function(x, i, j, ...) {
+setMethod("[", "mgnetList", function(x, i, j, ..., drop = FALSE) {
   
-  if(!missing(j)) stop("wrong dimension number")
-  
-  if(missing(i)) {
-    
-    return(x@mgnets)
-    
-  } else {
-    
-    if(is.numeric(i)) {
-      if(any(i > length(x@mgnets)) || i < 1) {
-        stop("Index out of bounds.")
-      }
-      return(x@mgnets[i])
-      
-    } else if(is.character(i)) {
-      
-      if(!all(i %in% names(x@mgnets))) {
-        stop("No mgnet object with such a name in the list.")
-      }
-      return(x@mgnets[i])
-      
-    } else {
-      stop("Index must be either numeric or a character vector of names.")
-    }
+  if (!missing(...)) {
+    stop("Only the 'i' argument is supported for extracting from mgnetList objects with `[`.")
   }
+  
+  if (!missing(j)) {
+    stop("The 'j' argument is not supported for mgnetList objects.")
+  }
+  if (!isFALSE(drop)) {
+    stop("The 'drop' argument is not supported for mgnetList objects. mgnetList does not support dropping dimensions.")
+  }
+  
+  new_mgnets <- slot(x, "mgnets")[i]
+  new("mgnetList", mgnets=new_mgnets)
+})
+
+
+#' Extract a Single mgnet Object
+#'
+#' This method extracts a single `mgnet` object from an `mgnetList` by index or name.
+#'
+#' @param x An `mgnetList` object.
+#' @param i Index or name specifying the `mgnet` object to extract.
+#' @param ... Additional arguments (currently unused).
+#' @param exact Logical indicating if exact matching is required (default is `TRUE`).
+#' @return The extracted `mgnet` object.
+#' 
+#' @importFrom methods slot
+#' @export
+setMethod("[[", "mgnetList", function(x, i, ..., exact = TRUE) {
+  
+  if (!missing(...) || !isTRUE(exact)) {
+    stop("Only the 'i' argument is supported for extracting from mgnetList objects with `[[`. 'exact' must be TRUE.")
+  }
+  
+  slot(x, "mgnets")[[i, exact = exact]]
+})
+
+
+#' Replace a Single mgnet Object
+#'
+#' This method replaces a single `mgnet` object within an `mgnetList` by index or name.
+#'
+#' @param x An `mgnetList` object.
+#' @param i Index or name specifying which `mgnet` object to replace.
+#' @param value The new `mgnet` object to be inserted into the list.
+#' @return The `mgnetList` object with the specified `mgnet` object replaced.
+#' 
+#' @importFrom methods slot<-
+#' @export
+setMethod("[[<-", "mgnetList", function(x, i, value) {
+  if (!inherits(value, "mgnet")) {
+    stop("The 'value' must be an instance of the 'mgnet' class.")
+  }
+  
+  # Extract the current list of mgnet objects
+  mgnets <- slot(x, "mgnets")
+  
+  # Replace the specified mgnet object
+  mgnets[[i]] <- value
+  
+  # Update the slot with the modified list
+  slot(x, "mgnets") <- mgnets
+  
+  # Validate the modified mgnetList
+  validObject(x)
+  
+  return(x)
 })

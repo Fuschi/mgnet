@@ -4,16 +4,21 @@
 \alias{mgnetList}
 \title{Create an mgnetList Object}
 \usage{
-mgnetList(mgnets = list())
+mgnetList(...)
 }
 \arguments{
-\item{mgnets}{An optional list of \code{mgnet} objects to initialize the \code{mgnetList}.
-Defaults to an empty list. Each element must be an instance of the \code{mgnet} class.}
+\item{...}{Optional mgnet objects to be included in the mgnetList.
+Providing named mgnet objects enhances manageability and clarity. The list can be
+initialized as empty.}
 }
 \value{
-An \code{mgnets} object.
+An mgnetList object containing any provided mgnet objects. If not empty,
+each mgnet object must be named, ensuring structured and accessible management
+of multiple metagenomic networks.
 }
 \description{
-This function constructs an \code{mgnetList} object, which is designed to encapsulate and manage
-a collection of \code{mgnet} objects in a structured list.
+Constructs an mgnetList object to encapsulate and manage a collection of mgnet objects.
+This function ensures that all provided mgnet objects are validated and organized into a
+structured list, facilitating easy access to multiple metagenomic networks. The constructor
+supports the initialization of an empty list or a list populated with mgnet objects.
 }
