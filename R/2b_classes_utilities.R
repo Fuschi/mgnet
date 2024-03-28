@@ -249,3 +249,54 @@ setMethod("update_sample_sum", c("mgnetList","list"), function(object, sampleSum
 })
 # END UPDATE SAMPLE SUM
 #------------------------------------------------------------------------------#
+
+
+# CHECK PRESENCE OF SAMPLE SUM
+#------------------------------------------------------------------------------#
+#' Check for Presence of Sample Sum in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether the `sample_sum` column is present in the
+#' `info_sample` slot of an `mgnet` object, or each `mgnet` object within
+#' a `mgnetList`. It is crucial for analyses that rely on relative abundance
+#' calculations.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#'
+#' @return For an `mgnet` object, returns a logical value (`TRUE` or `FALSE`)
+#' indicating the presence of the `sample_sum` column. For an `mgnetList` object,
+#' returns a named logical vector with each element indicating the presence
+#' of `sample_sum` for the corresponding `mgnet` object in the list.
+#'
+#' @details The `sample_sum` column in the `info_sample` slot represents the total
+#' abundance count for each sample, which is essential for calculating relative
+#' abundances. This function allows users to quickly verify the inclusion of
+#' this crucial piece of data in their metagenomic datasets.
+#' 
+#' @export
+#' @name check_sample_sum
+#' @aliases check_sample_sum,mgnet-method check_sample_sum,mgnetList-method
+setGeneric("check_sample_sum", function(object) standardGeneric("check_sample_sum"))
+
+setMethod("check_sample_sum", "mgnet", function(object){
+  
+  if(length(object@info_sample) == 0){
+    return(FALSE)
+  } else if ("sample_sum" %in% colnames(object@info_sample)){
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+  
+})
+
+setMethod("check_sample_sum", "mgnetList", function(object){
+  
+  sapply(object@mgnets, check_sample_sum, USE.NAMES = TRUE, simplify = TRUE)
+  
+})
+
+
+
+
+
+
