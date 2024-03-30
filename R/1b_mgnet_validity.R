@@ -628,7 +628,7 @@ setValidity("mgnet", function(object) {
     if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
       errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "info_taxa", errors$reciprocal)}
     if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "rows", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "columns", errors$reciprocal)}
   }
   
   if(length(object@log_abundance)!=0 && length(errors$log_abundance)==0){
@@ -639,7 +639,7 @@ setValidity("mgnet", function(object) {
     if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
       errors$reciprocal <- .assertMatchingColsRowsNames(object, "log_abundance", "info_taxa", errors$reciprocal)}
     if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "log_abundance", "rows", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "log_abundance", "columns", errors$reciprocal)}
   }
   
   if(length(object@lineage)!=0 && length(errors$lineage)==0){

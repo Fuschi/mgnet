@@ -1,0 +1,286 @@
+# NSAMPLE
+#------------------------------------------------------------------------------#
+#' Get Number of Samples
+#'
+#' Returns an integer indicating the number of samples in an `mgnet` object
+#' or a list of integers for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, an integer representing the number of samples.
+#'         For an `mgnetList` object, a list of integers, each representing the number
+#'         of samples in the corresponding `mgnet` objects.
+#' @export
+#' @name nsample
+#' @aliases nsample,mgnet-method nsample,mgnetList-method
+setGeneric("nsample", function(object) standardGeneric("nsample"))
+
+setMethod("nsample", "mgnet", function(object) {
+  if(length(object@abundance!=0)) return(nrow(object@abundance))
+  else if(length(object@abundance!=0)) return(nrow(object@abundance))
+  else if(length(object@info_sample!=0)) return(nrow(object@info_sample))
+  else return(0)
+})
+
+setMethod("nsample", "mgnetList", function(object) {
+  sapply(object@mgnets, nsample, simplify = TRUE, USE.NAMES = TRUE)
+})
+
+
+# NTAXA
+#------------------------------------------------------------------------------#
+#' Get Number of Taxa
+#'
+#' Returns an integer indicating the number of taxa in an `mgnet` object
+#' or a list of integers for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, an integer representing the number of taxa.
+#'         For an `mgnetList` object, a list of integers, each representing the number
+#'         of taxa in the corresponding `mgnet` objects.
+#' @export
+#' @importFrom igraph vcount
+#' @name ntaxa
+#' @aliases ntaxa,mgnet-method ntaxa,mgnetList-method
+setGeneric("ntaxa", function(object) standardGeneric("ntaxa"))
+
+setMethod("ntaxa", "mgnet", function(object) {
+  if(length(object@abundance)!=0) return(ncol(object@abundance))
+  else if(length(object@lineage)!=0) return(nrow(object@lineage))
+  else if(length(object@info_taxa)!=0) return(nrow(object@info_taxa))
+  else if(length(object@log_abundance)!=0) return(ncol(object@log_abundance))
+  else if(length(object@network)!=0) return(vcount(object@network))
+  else return(0)
+})
+
+setMethod("ntaxa", "mgnetList", function(object) {
+  sapply(object@mgnets, ntaxa, simplify = TRUE, USE.NAMES = TRUE)
+})
+
+
+# SAMPLE_ID
+#------------------------------------------------------------------------------#
+#' Get Sample IDs
+#'
+#' Returns the names of samples as a character vector from an `mgnet` object
+#' or lists of sample IDs for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, a character vector representing the IDs of samples.
+#'         For an `mgnetList` object, a list of character vectors, each representing the sample IDs
+#'         in the corresponding `mgnet` objects.
+#' @export
+#' @name sample_id
+#' @aliases sample_id,mgnet-method sample_id,mgnetList-method
+setGeneric("sample_id", function(object) standardGeneric("sample_id"))
+
+setMethod("sample_id", "mgnet", function(object) {
+  if(length(object@abundance!=0)) return(rownames(object@abundance))
+  else if(length(object@info_sample!=0)) return(rownames(object@info_sample))
+  else if(length(object@log_abundance!=0)) return(rownames(object@log_abundance))
+  else return(character(length=0))
+})
+
+setMethod("sample_id", "mgnetList", function(object) {
+  sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# TAXA_ID
+#------------------------------------------------------------------------------#
+#' Get Taxa IDs
+#'
+#' Retrieves the IDs of taxa from an `mgnet` object or lists of taxa IDs for each 
+#' `mgnet` object within an `mgnetList`. Taxa IDs represent unique identifiers 
+#' for the taxa present in the dataset.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, a character vector representing the IDs of taxa.
+#'         For an `mgnetList` object, a list of character vectors, each representing 
+#'         the taxa IDs in the corresponding `mgnet` objects.
+#' @export
+#' @importFrom igraph V
+#' @name taxa_id
+#' @aliases taxa_id,mgnet-method taxa_id,mgnetList-method
+setGeneric("taxa_id", function(object) standardGeneric("taxa_id"))
+
+setMethod("taxa_id", "mgnet", function(object) {
+  if(length(object@abundance!=0)) return(colnames(object@abundance))
+  else if(length(object@lineage!=0)) return(rownames(object@lineage))
+  else if(length(object@info_taxa)!=0) return(rownames(object@info_taxa))
+  else if(length(object@log_abundance)!=0) return(colnames(object@log_abundance))
+  else if(length(object@network)!=0) return(V(object@network)$name)
+  else return(character(length=0))
+})
+
+setMethod("taxa_id", "mgnetList", function(object) {
+  sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# RANKS
+#------------------------------------------------------------------------------#
+#' Get Taxonomic Ranks
+#'
+#' Retrieves the taxonomic classification ranks from an `mgnet` object or lists 
+#' of taxonomic ranks for each `mgnet` object within an `mgnetList`. 
+#' Taxonomic ranks are derived from the column names of the `lineage` slot, 
+#' representing different levels of taxonomic classification.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, a character vector of taxonomic ranks.
+#'         For an `mgnetList` object, a list of character vectors, each representing 
+#'         the taxonomic ranks in the corresponding `mgnet` objects.
+#' @export
+#' @name ranks
+#' @aliases ranks,mgnet-method ranks,mgnetList-method
+setGeneric("ranks", function(object) standardGeneric("ranks"))
+
+setMethod("ranks", "mgnet", function(object) {
+  
+  if(length(lineage)!=0) return(colnames(object@lineage))
+  else return(character(length=0))
+  
+})
+
+setMethod("ranks", "mgnetList", function(object) {
+  sapply(object@mgnets, ranks, simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# INFO_SAMPLE_VARS
+#------------------------------------------------------------------------------#
+#' Get Sample Metadata Variables
+#'
+#' Retrieves the names of metadata variables available in the `info_sample` slot of an `mgnet` object,
+#' or for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, a character vector of metadata variable names.
+#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
+#'         the metadata variable names in the corresponding `mgnet` objects.
+#' @export
+#' @name info_sample_vars
+#' @aliases info_sample_vars,mgnet-method info_sample_vars,mgnetList-method
+setGeneric("info_sample_vars", function(object) standardGeneric("info_sample_vars"))
+
+setMethod("info_sample_vars", "mgnet", function(object) {
+  if(length(info_sample)!=0) return(colnames(object@info_sample))
+  else return(character(length=0))
+})
+
+setMethod("info_sample_vars", "mgnetList", function(object) {
+  sapply(object@mgnets, ranks, simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# INFO_TAXA_VARS
+#------------------------------------------------------------------------------#
+#' Get Taxa Metadata Variables
+#'
+#' Retrieves the names of metadata variables available in the `info_taxa` slot of an `mgnet` object,
+#' or for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return For an `mgnet` object, a character vector of metadata variable names.
+#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
+#'         the metadata variable names in the corresponding `mgnet` objects.
+#' @export
+#' @name info_taxa_vars
+#' @aliases info_taxa_vars,mgnet-method info_taxa_vars,mgnetList-method
+setGeneric("info_taxa_vars", function(object) standardGeneric("info_taxa_vars"))
+
+setMethod("info_taxa_vars", "mgnet", function(object) {
+  if(length(info_taxa)!=0) return(colnames(object@info_taxa))
+  else return(character(length=0))
+})
+
+setMethod("info_taxa_vars", "mgnetList", function(object) {
+  sapply(object@mgnets, info_taxa_vars, simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# TAXA_NAME
+#------------------------------------------------------------------------------#
+#' Retrieve Taxa Names at Specified Rank
+#'
+#' Extracts the names of taxa at the specified taxonomic rank from an `mgnet` object,
+#' or for each `mgnet` object within an `mgnetList`. Unlike `taxa_id` which returns
+#' identifiers associated with the row/column names of the input matrix/data.frame
+#' (often reflecting the finest classification, such as OTUs, where IDs and names may coincide),
+#' `taxa_name` delves into the `lineage` matrix to fetch descriptive names for the entities at the
+#' chosen rank. This provides more characteristic names of the entities.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param rank The taxonomic rank for which names are to be retrieved. If not specified,
+#'        the function returns names at the finest available taxonomic rank. For `mgnet` objects,
+#'        this is derived from the column names of the `lineage` matrix. For `mgnetList` objects,
+#'        it iterates over each contained `mgnet` object to perform the extraction.
+#' @return For an `mgnet` object, a character vector of taxa names at the specified rank.
+#'         For an `mgnetList` object, a list where each element is a character vector
+#'         of taxa names at the specified rank from each `mgnet` object within the list.
+#' @export
+#' @exportMethod taxa_name
+#' @name taxa_name
+#' @aliases taxa_name,mgnet-method taxa_name,mgnetList-method
+setGeneric("taxa_name", function(object, rank = "missing") standardGeneric("taxa_name"))
+
+#' @rdname taxa_name
+setMethod("taxa_name", signature(object = "mgnet", rank = "missing"), function(object) {
+  
+  if(length(object@lineage) == 0 ) return(character(length = 0))
+  return(object@lineage[, ncol(lineage)])
+  
+})
+
+#' @rdname taxa_name
+setMethod("taxa_name", signature(object = "mgnet", rank = "character"), function(object, rank) {
+  
+  if(length(object@lineage)==0) return(character(length = 0))
+  
+  if(!(rank %in% colnames(object@lineage))) {
+    stop("Specified rank is not available. Available ranks are: ", toString(colnames(object@lineage)))
+  }
+  object@lineage[, rank]
+})
+
+#' @rdname taxa_name
+setMethod("taxa_name", signature(object = "mgnetList", rank = "missing"), function(object) {
+  sapply(object@mgnets, function(x) taxa_name(x), simplify=F, USE.NAMES=T)
+})
+
+#' @rdname taxa_name
+setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), function(object, rank) {
+  sapply(object@mgnets, function(x) taxa_name(x, rank), simplify=F, USE.NAMES=T)
+})
+
+
+# MGNETS
+#------------------------------------------------------------------------------#
+#' Retrieve mgnet Objects from an mgnetList
+#'
+#' This method extracts and returns the list of `mgnet` objects contained within an `mgnetList` object,
+#' offering direct access to the individual `mgnet` objects for further analysis or manipulation. It functions
+#' similarly to the \code{\link{as.list}} method for `mgnetList` objects, both providing a way to access 
+#' the contained `mgnet` objects.
+#'
+#' @param object An `mgnetList` object from which `mgnet` objects are to be retrieved.
+#' 
+#' @return A list of `mgnet` objects, where each element is an individual `mgnet` object. The elements
+#'         are named, corresponding to the names of the `mgnet` objects within the `mgnetList`, allowing
+#'         for easy identification and access. This facilitates individual or batch processing of 
+#'         metagenomic network data.
+#'
+#' @seealso
+#' \code{\link[=mgnet]{mgnet}} for details on the `mgnet` class and functionalities.
+#' \code{\link[=mgnetList]{mgnetList}} for guidance on creating and managing `mgnetList` objects.
+#' \code{\link{as.list}} for a similar method that converts an `mgnetList` into a list of `mgnet` objects,
+#' serving the same purpose as `mgnets`.
+#'
+#' @export
+#' @name mgnets
+#' @aliases mgnets,mgnetList-method
+setGeneric("mgnets", function(object) standardGeneric("mgnets"))
+
+setMethod("mgnets", "mgnetList", function(object) {
+  object@mgnets
+})

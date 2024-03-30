@@ -305,13 +305,23 @@ setGeneric("info_sample", function(object, .fmt = "df") standardGeneric("info_sa
 
 setMethod("info_sample", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  switch(.fmt,
-         df  = {return(object@info_sample)},
-         tbl = {return(tibble::as_tibble(object@info_sample, rownames="sample_id"))}
-  )
+  
+  if( length(object@info_sample) == 0 ){
+    
+    switch(.fmt,
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
+  } else {
+    
+    switch(.fmt,
+           df  = {return(object@info_sample)},
+           tbl = {return(tibble::as_tibble(object@info_sample, rownames="sample_id"))})
+    
+  }
 })
 
 setMethod("info_sample", "mgnetList", function(object, .fmt = "df") {
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
   sapply(object@mgnets, function(x) info_sample(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })
@@ -341,14 +351,19 @@ setMethod("lineage", "mgnet", function(object, .fmt = "mat") {
   
   .fmt <- match.arg(.fmt, c("mat","df", "tbl"))
   
-  if(length(object@lineage) > 0){
+  if( length(object@lineage) == 0 ){
+    
     switch(.fmt,
-           mat = {return(object@lineage)},
-           df  = {return(as.data.frame(object@lineage))},
-           tbl = {return(tibble::as_tibble(object@lineage, rownames="taxa_id"))}
-    )
+           mat = {return(matrix(character(0),nrow=0,ncol=0))},
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
   } else {
-    object@lineage
+    
+    switch(.fmt,
+           mat  = {return(object@lineage)},
+           df  = {return(data.frame(object@lineage))},
+           tbl = {return(tibble::as_tibble(object@lineage, rownames="taxa_id"))})
+    
   }
   
 })
@@ -384,18 +399,22 @@ setGeneric("info_taxa", function(object, .fmt = "df") standardGeneric("info_taxa
 setMethod("info_taxa", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
   
-  if (length(object@info_taxa) > 0){
+  if( length(object@info_taxa) == 0 ){
+    
+    switch(.fmt,
+           df  = {return(data.frame())},
+           tbl = {return(tibble::tibble())})
+  } else {
+    
     switch(.fmt,
            df  = {return(object@info_taxa)},
-           tbl = {return(tibble::as_tibble(object@info_taxa, rownames="taxa_id"))}
-    )
-  } else {
-    object@info_taxa
+           tbl = {return(tibble::as_tibble(object@info_taxa, rownames="taxa_id"))})
+    
   }
-  
 })
 
 setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
   sapply(object@mgnets, function(x) info_taxa(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })

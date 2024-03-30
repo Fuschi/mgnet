@@ -36,6 +36,11 @@ setGeneric("filter_info_sample", function(object, ...) {
 })
 
 setMethod("filter_info_sample", "mgnet", function(object, ...) {
+  
+  if(length(object@info_sample)==0){
+    return(object[numeric(0),])
+  }
+  
   # Capture the filtering conditions as quosures
   conditions <- rlang::enquos(...)
   
@@ -44,14 +49,14 @@ setMethod("filter_info_sample", "mgnet", function(object, ...) {
   
   # Check if the filtered result is empty
   if(nrow(filtered_info_sample) == 0) {
-    stop("No samples meet the specified filtering conditions. Please revise your criteria.")
+    return(object[integer(0),])
   }
   
   # Extract the sample_id of the filtered samples
   filtered_sample_ids <- filtered_info_sample$sample_id
   
   # Subset the object using the mgnet extractor method based on filtered sample IDs
-  subsetted_object <- object[filtered_sample_ids,]
+  subsetted_object <- object[filtered_sample_ids, ]
   
   return(subsetted_object)
 })
@@ -64,12 +69,16 @@ setMethod("filter_info_sample", "mgnetList", function(object, ...) {
   # Apply the filter_samples method to each mgnet object within the mgnetList
   object@mgnets <- sapply(object@mgnets, function(mgnet_obj) {
     
+    if(length(mgnet_obj@info_sample)==0){
+      return(mgnet_obj[numeric(0),])
+    }
+    
     # Filter the info_sample data frame based on the conditions
     filtered_info_sample <- dplyr::filter(info_sample(mgnet_obj, .fmt = "tbl"), !!!conditions)
     
     # Check if the filtered result is empty and throw an error if so
     if(length(filtered_info_sample) == 0) {
-      stop("No samples meet the specified filtering conditions in one or more mgnet objects. Please revise your criteria.")
+      return(object[integer(0),])
     }
     
     # Extract the sample_id of the filtered samples
@@ -124,7 +133,7 @@ setGeneric("filter_info_taxa", function(object, ...) {standardGeneric("filter_in
 setMethod("filter_info_taxa", "mgnet", function(object, ...) {
   
   if(length(object@info_taxa)==0 & length(object@lineage)==0){
-    stop("slots info_taxa and lineage missing")
+    return(object[,numeric(0)])
   }
   
   # Capture filtering conditions as quosures
@@ -153,7 +162,7 @@ setMethod("filter_info_taxa", "mgnet", function(object, ...) {
   
   # Check if the filtered result is empty
   if(nrow(filtered_taxa) == 0) {
-    stop("No taxa meet the specified filtering conditions. Please revise your criteria.")
+    return(object[,integer(0)])
   }
   
   # Extract taxa IDs that meet the filtering conditions
@@ -175,7 +184,7 @@ setMethod("filter_info_taxa", "mgnetList", function(object, ...) {
     
     # Check if the filtered result is empty and throw an error if so
     if(length(filtered_taxa_obj) == 0) { # Adjust this condition as needed based on actual implementation
-      stop("No taxa meet the specified filtering conditions in one or more mgnet objects. Please revise your criteria.")
+      return(object[,integer(0)])
     }
     
     return(filtered_taxa_obj)

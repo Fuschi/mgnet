@@ -44,16 +44,7 @@ setMethod("filter_criteria_sample", "mgnet",
           function(object, abundance_criteria = NULL, relative_criteria = NULL, log_abundance_criteria = NULL, condition = "AND") {
             
             # Checks
-            if(!is.null(abundance_criteria) && length(object@abundance)==0) stop("cannot set abundace_criteria without the abundance matrix")
-            if(!is.null(relative_criteria) && !("sample_sum"%in%info_sample_vars(object))) {
-              stop("The 'sample_sum' column is missing in 'info_sample'. ",
-                   "Please ensure 'sample_sum' is calculated and included. ",
-                   "This can be done automatically by creating or updating the mgnet object ",
-                   "with valid abundance data, or through the 'update_sample_sum()' function.",
-                   "\nSee '?update_sample_sum' for more information.")
-            }
-            if(!is.null(log_abundance_criteria) && length(object@log_abundance)==0) stop("cannot set log_abundace_criteria without the log_abundance matrix")
-            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(log_abundance_criteria)) stop("cannot missing all criteria")
+            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(log_abundance_criteria)) return(object)
             
             # Check if all criteria are list, function, or NULL
             check_criteria <- function(crit) {
@@ -74,6 +65,7 @@ setMethod("filter_criteria_sample", "mgnet",
             
             apply_criteria <- function(data, criteria, condition){
               
+              if(length(data)==0) return(data)
               if (is.null(criteria)) return(rep(TRUE,nrow(data)))
               
               result_mat <- matrix(FALSE, nrow=nrow(data), ncol=length(criteria))
@@ -102,11 +94,11 @@ setMethod("filter_criteria_sample", "mgnet",
             } else {
               rep(TRUE, nsample(object))
             }
-            relative_pass <- if(length(relative(object))!=0){
-              apply_criteria(relative(object), relative_criteria, condition)
-            } else {
-              rep(TRUE, nsample(object))
-            }
+            # relative_pass <- if(length(relative(object))!=0){
+            #   apply_criteria(relative(object), relative_criteria, condition)
+            # } else {
+            #   rep(TRUE, nsample(object))
+            # }
             log_abundance_pass <- if(length(log_abundance(object))!=0){
               apply_criteria(log_abundance(object), log_abundance_criteria, condition)
             } else {
@@ -119,12 +111,7 @@ setMethod("filter_criteria_sample", "mgnet",
               abundance_pass | relative_pass | log_abundance_pass
             }
             
-            # Filter samples based on the combined criteria
-            if (!any(final_pass)) {
-              stop("No samples meet the specified criteria.")
-            }
-            
-            subsetted_object <- object[final_pass, , drop = FALSE]
+            subsetted_object <- object[final_pass, ]
             return(subsetted_object)
           })
 
@@ -187,21 +174,11 @@ setMethod("filter_criteria_taxa", "mgnet",
                    condition = "AND", trim = "yes", exclude_absent_taxa = TRUE) {
             
             # Checks
-            if(!is.null(abundance_criteria) && length(object@abundance)==0) stop("cannot set abundace_criteria without the abundance matrix")
-            if(!is.null(relative_criteria) && !("sample_sum"%in%info_sample_vars(object))) {
-              stop("The 'sample_sum' column is missing in 'info_sample'. ",
-                   "Please ensure 'sample_sum' is calculated and included. ",
-                   "This can be done automatically by creating or updating the mgnet object ",
-                   "with valid abundance data, or through the 'update_sample_sum()' function.",
-                   "\nSee '?update_sample_sum' for more information.")
-            }
-            if(!is.null(log_abundance_criteria) && length(object@log_abundance)==0) stop("cannot set log_abundace_criteria without the log_abundance matrix")
-            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(log_abundance_criteria)) stop("cannot missing all criteria")
+            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(log_abundance_criteria)) return(object)
             
             # Automatically remove taxa that are always equal to zero across all samples
             if(exclude_absent_taxa && length(abundance) != 0) {
               zero_taxa <- colSums(abundance(object)) != 0
-              if(all(zero_taxa==0)) stop("all elements in abundance cannot be equal to zero")
               object <- object[, zero_taxa]
             }
             
@@ -223,6 +200,8 @@ setMethod("filter_criteria_taxa", "mgnet",
             log_abundance_criteria <- to_list(log_abundance_criteria)
             
             apply_criteria <- function(data, criteria, condition){
+              
+              if(length(data)==0) return(data)
               
               if (is.null(criteria)) return(rep(TRUE,ncol(data)))
               
@@ -268,44 +247,12 @@ setMethod("filter_criteria_taxa", "mgnet",
               abundance_pass | relative_pass | log_abundance_pass
             }
             
-            # Filter samples based on the combined criteria
-            if (!any(final_pass)) {
-              stop("No samples meet the specified criteria.")
-            }
-            
             
             # yes
             #-----------------------------------------#
             if(trim=="yes"){
               
-              ifelse(length(object@abundance)!=0, abundance.new<-object@abundance[,final_pass,drop=F], abundance.new<-object@abundance)
-              ifelse(length(object@lineage)!=0, lineage.new<-object@lineage[final_pass,,drop=F], lineage.new<-object@lineage)
-              ifelse(length(object@info_taxa)!=0, info_lineage.new<-object@info_taxa[final_pass,,drop=F], info_lineage.new<-object@info_taxa)
-              ifelse(length(object@log_abundance)!=0, log_abundance.new<-object@log_abundance[,final_pass,drop=F], log_abundance.new<-object@log_abundance)
-              
-              if(length(object@network)!=0){
-                network.new<-igraph::subgraph(object@network,final_pass)
-              } else {
-                network.new<-object@network
-              }
-              
-              if(length(object@community)!=0){
-                community.new <- object@community
-                if(is.character(final_pass)) final_pass <- which(taxa_id(object)%in%final_pass)
-                community.new$membership <- object@community$membership[final_pass]
-                community.new$vcount <- length(community.new$membership)
-                community.new$modularity <- NA
-              } else {
-                community.new <- object@community
-              }
-              
-              return(mgnet(abundance=abundance.new,
-                           info_sample=object@info_sample,
-                           lineage=lineage.new,
-                           info_taxa=info_lineage.new,
-                           log_abundance=log_abundance.new,
-                           network=network.new,
-                           community=community.new))
+              return(object[ ,final_pass])
               
               # no
               #-----------------------------------------#

@@ -104,6 +104,7 @@ setMethod("refine_sample", "mgnetList",
             
             # Update the mgnetList with the filtered mgnet objects
             object@mgnets <- updated_mgnets
+            validObject(object)
             
             return(object)
           }
@@ -199,34 +200,7 @@ setMethod("refine_taxa", "mgnet",
             #-----------------------------------------#
             if(trim=="yes"){
               
-              ifelse(length(object@abundance)!=0, abundance.new<-object@abundance[,IDX,drop=F], abundance.new<-object@abundance)
-              ifelse(length(object@lineage)!=0, lineage.new<-object@lineage[IDX,,drop=F], lineage.new<-object@lineage)
-              ifelse(length(object@info_taxa)!=0, info_lineage.new<-object@info_taxa[IDX,,drop=F], info_lineage.new<-object@info_taxa)
-              ifelse(length(object@log_abundance)!=0, log_abundance.new<-object@log_abundance[,IDX,drop=F], log_abundance.new<-object@log_abundance)
-              
-              if(length(object@network)!=0){
-                network.new<-igraph::subgraph(object@network,IDX)
-              } else {
-                network.new<-object@network
-              }
-              
-              if(length(object@community)!=0){
-                community.new <- object@community
-                if(is.character(IDX)) IDX <- which(taxa_id(object)%in%IDX)
-                community.new$membership <- object@community$membership[IDX]
-                community.new$vcount <- length(community.new$membership)
-                community.new$modularity <- NA
-              } else {
-                community.new <- object@community
-              }
-              
-              return(mgnet(abundance=abundance.new,
-                           info_sample=object@info_sample,
-                           lineage=lineage.new,
-                           info_taxa=info_lineage.new,
-                           log_abundance=log_abundance.new,
-                           network=network.new,
-                           community=community.new))
+              return(object[,IDX])
               
               # no
               #-----------------------------------------#

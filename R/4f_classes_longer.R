@@ -55,50 +55,87 @@ setMethod("mgnet_longer", "mgnet", function(object,
   if( is.null(info_taxa) & length(object@info_taxa) != 0) info_taxa <- TRUE else info_taxa <- FALSE
 
   # reshape to longer format
+  #----------------------------------------------------------------------------#
+  
+  # empty
   if( nsample(object)==0 & ntaxa(object)==0 ) return(tibble::tibble())
-  if( nsample(object)!=0 & ntaxa(object)==0 ) stop("no samples found")
-  if( nsample(object)==0 & ntaxa(object)!=0 ) stop("no taxa found")
 
-  long_mgnet <- tidyr::expand_grid(sample_id = sample_id(object),
+  # sample>0 and taxa>0
+  if( nsample(object)!=0 & ntaxa(object)!=0) {
+    
+    long_mgnet <- tidyr::expand_grid(sample_id = sample_id(object),
                                      taxa_id = taxa_id(object))
-
-  if(abundance) {
-    long_mgnet <- long_mgnet %>% left_join(
-      abundance(object, .fmt="tbl") %>%
-        tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "abundance"),
-      by=c("sample_id","taxa_id"))
+    
+    if(abundance) {
+      long_mgnet <- long_mgnet %>% left_join(
+        abundance(object, .fmt="tbl") %>%
+          tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "abundance"),
+        by=c("sample_id","taxa_id"))
+    }
+    
+    if(relative) {
+      long_mgnet <- long_mgnet %>% left_join(
+        relative(object, .fmt="tbl") %>%
+          tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "relative"),
+        by=c("sample_id","taxa_id"))
+    }
+    
+    if(log_abundance) {
+      long_mgnet <- long_mgnet %>% left_join(
+        log_abundance(object, .fmt="tbl") %>%
+          tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "log_abundance"),
+        by=c("sample_id","taxa_id"))
+    }
+    
+    if(info_sample) {
+      long_mgnet <- long_mgnet %>% left_join(
+        info_sample(object, .fmt="tbl"), by="sample_id"
+      )}
+    
+    if(lineage) {
+      long_mgnet <- long_mgnet %>% left_join(
+        lineage(object, .fmt="tbl"), by="taxa_id"
+      )}
+    
+    if(info_taxa) {
+      long_mgnet <- long_mgnet %>% left_join(
+        info_taxa(object, .fmt="tbl"), by="taxa_id"
+      )}
+    
+    return(long_mgnet)
+    
   }
-
-  if(relative) {
-    long_mgnet <- long_mgnet %>% left_join(
-      relative(object, .fmt="tbl") %>%
-        tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "relative"),
-      by=c("sample_id","taxa_id"))
+  
+  # sample==0 taxa>0
+  if( nsample(object)==0 & ntaxa(object)!=0) {
+    
+    long_mgnet <- tibble(taxa_id = taxa_id(object))
+    
+    if(lineage) {
+      long_mgnet <- long_mgnet %>% left_join(
+        lineage(object, .fmt="tbl"), by="taxa_id"
+      )}
+    
+    if(info_taxa) {
+      long_mgnet <- long_mgnet %>% left_join(
+        info_taxa(object, .fmt="tbl"), by="taxa_id"
+      )}
+    
+    return(long_mgnet)
+    
   }
+  
+  # sample>0 taxa==0
+  if( nsample(object)!=0 & ntaxa(object)==0) {
+    
+    long_mgnet <- tibble(taxa_id = sample_id(object))
 
-  if(log_abundance) {
-    long_mgnet <- long_mgnet %>% left_join(
-      log_abundance(object, .fmt="tbl") %>%
-        tidyr::pivot_longer(-sample_id, names_to = "taxa_id", values_to = "log_abundance"),
-      by=c("sample_id","taxa_id"))
+    long_mgnet <- info_sample(object, "tbl")
+    
+    return(long_mgnet)
+    
   }
-
-  if(info_sample) {
-    long_mgnet <- long_mgnet %>% left_join(
-      info_sample(object, .fmt="tbl"), by="sample_id"
-    )}
-
-  if(lineage) {
-    long_mgnet <- long_mgnet %>% left_join(
-      lineage(object, .fmt="tbl"), by="taxa_id"
-    )}
-
-  if(info_taxa) {
-    long_mgnet <- long_mgnet %>% left_join(
-      info_taxa(object, .fmt="tbl"), by="taxa_id"
-    )}
-
-  return(long_mgnet)
+  
 })
 
 setMethod("mgnet_longer", "mgnetList", function(object,

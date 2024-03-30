@@ -17,4 +17,5 @@ Depends:
   tidyr (>= 1.2.0),
   tibble (>= 3.1.0),
   rlang (>= 1.0.0),
-  psych (>= 2.0)
+  psych (>= 2.0),
+  stringr (>= 1.4)
