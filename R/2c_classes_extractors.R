@@ -38,10 +38,11 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
     
     new_mgnet <- x
     new_mgnet@abundance <- matrix(nrow=0, ncol=0)
-    new_mgnet@log_abundance <- matrix(nrow=0, ncol=0)
+    new_mgnet@rel_abundance <- matrix(nrow=0, ncol=0)
+    new_mgnet@norm_abundance <- matrix(nrow=0, ncol=0)
     new_mgnet@info_sample <- data.frame()
-    new_mgnet@lineage <- x@lineage
-    new_mgnet@info_taxa <- x@info_taxa
+    new_mgnet@lineage <- x@lineage[j,]
+    new_mgnet@info_taxa <- x@info_taxa[j,]
     new_mgnet@network <- igraph::make_empty_graph(0)
     new_mgnet@community = igraph::cluster_fast_greedy(igraph::make_empty_graph(0,directed=F))
     validObject(new_mgnet)
@@ -51,8 +52,9 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
     
     new_mgnet <- x
     new_mgnet@abundance <- matrix(numeric(0), nrow=0, ncol=0)
-    new_mgnet@log_abundance <- matrix(numeric(0), nrow=0, ncol=0)
-    new_mgnet@info_sample <- x@info_sample
+    new_mgnet@rel_abundance <- matrix(numeric(0), nrow=0, ncol=0)
+    new_mgnet@norm_abundance <- matrix(numeric(0), nrow=0, ncol=0)
+    new_mgnet@info_sample <- x@info_sample[i,]
     new_mgnet@lineage <- matrix(character(0), nrow=0, ncol=0)
     new_mgnet@info_taxa <- data.frame()
     new_mgnet@network <- igraph::make_empty_graph(0)
@@ -64,7 +66,8 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
     # CASE I AND J PRESENT
     
     if(length(x@abundance) != 0) abundance.new <- x@abundance[i,j,drop=F] else abundance.new <- x@abundance
-    if(length(x@log_abundance) != 0) log_abundance.new <- x@log_abundance[i,j,drop=F] else log_abundance.new <- x@log_abundance
+    if(length(x@rel_abundance) != 0) rel_abundance.new <- x@rel_abundance[i,j,drop=F] else rel_abundance.new <- x@rel_abundance
+    if(length(x@norm_abundance) != 0) norm_abundance.new <- x@norm_abundance[i,j,drop=F] else norm_abundance.new <- x@norm_abundance
     if(length(x@info_sample) != 0) info_sample.new <- x@info_sample[i, ,drop=F] else info_sample.new <- x@info_sample
     if(length(x@lineage) != 0) lineage.new <- x@lineage[j, ,drop=F] else lineage.new <- x@lineage
     if(length(x@info_taxa) != 0) info_taxa.new <- x@info_taxa[j, ,drop=F] else info_taxa.new <- x@info_taxa
@@ -72,9 +75,9 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
     if(length(x@network) == 0){
       # SUBCASE NETWORK MISSING
       
-      
       return(mgnet(abundance = abundance.new,
-                   log_abundance = log_abundance.new,
+                   rel_abundance = rel_abundance.new,
+                   norm_abundance = norm_abundance.new,
                    info_sample = info_sample.new,
                    lineage = lineage.new,
                    info_taxa = info_taxa.new))
@@ -95,26 +98,28 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
       }
       
       return(mgnet(abundance = abundance.new,
-                   log_abundance = log_abundance.new,
+                   rel_abundance = rel_abundance.new,
+                   norm_abundance = norm_abundance.new,
                    info_sample = info_sample.new,
                    lineage = lineage.new,
                    info_taxa = info_taxa.new,
                    network = network.new,
                    community = community.new))
       
-    } else if (length(x@network)!=0 && missing(i)) {
+    } else if (length(x@network)!=0 && !missing(i)) {
       # SUBCASE NETWORK PRESENT AND I PRESENT
       
       warning("Subsetting by samples removes 'network' and 'community' slots")
       return(mgnet(abundance = abundance.new,
-                   log_abundance = log_abundance.new,
+                   rel_abundance = rel_abundance.new,
+                   norm_abundance = norm_abundance.new,
                    info_sample = info_sample.new,
                    lineage = lineage.new,
                    info_taxa = info_taxa.new))
     
     } else {
       
-      stop("why are you here?")
+      stop("why are you here? only for suffering? (semicit. Kaz). Beyond the joke, you really shouldn't get here is a bug in the code, please let me know")
       
     }
     

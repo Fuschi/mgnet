@@ -48,9 +48,8 @@ setMethod("show", "mgnet", function(object) {
 
   # Network information
   if( length(object@network) > 0) {
-    cat(sprintf("  Network: %d nodes, %d edges\n", igraph::vcount(object@network), igraph::ecount(object@network)))
-    density <- igraph::edge_density(object@network)
-    cat(sprintf("  Edge Density: %.4f\n", density))
+    cat(sprintf("  Network: %d edges, ~%.2f density\n", igraph::ecount(object@network), 
+                                                        igraph::edge_density(object@network) ))
   } else {
     cat("  No network data available.\n")
   }
@@ -58,8 +57,12 @@ setMethod("show", "mgnet", function(object) {
   # Community information
   if( length(object@community) > 0) {
     cat(sprintf("  Detected Communities: %d\n", max(igraph::membership(object@community))))
-    sizes <- toString(igraph::sizes(object@community))
-    cat(sprintf("  Community Sizes: %s\n", sizes))
+    
+    sizes <- igraph::sizes(object@community)
+    sizes_msg <- paste0("  Community Sizes:", toString(head(sizes, 6)))
+    if(length(sizes) > 6) sizes_msg <- paste(sizes_msg, ", etc...")
+    cat(sizes_msg, "\n")
+
   } else {
     cat("  No community detection results available.\n")
   }
@@ -88,14 +91,15 @@ setMethod("show", "mgnetList", function(object) {
     
     if(length(mgnetObj@abundance)!=0){
       zeroPercentage <- sum(mgnetObj@abundance == 0) / (nrow(mgnetObj@abundance) * ncol(mgnetObj@abundance))
-      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", zeroPercentage))
     } else {
       cat("  No abundance available.\n")
     }
     
     # Display a simplified network and community info if available
     if (!is.null(mgnetObj@network) && igraph::vcount(mgnetObj@network) > 0) {
-      cat(sprintf("  Network: %d nodes, %d edges\n", igraph::vcount(mgnetObj@network), igraph::ecount(mgnetObj@network)))
+      cat(sprintf("  Network: %d edges, ~%.2f density\n", igraph::ecount(mgnetObj@network), 
+                                                          igraph::edge_density(mgnetObj@network)))
     } else {
       cat("  No network data available.\n")
     }

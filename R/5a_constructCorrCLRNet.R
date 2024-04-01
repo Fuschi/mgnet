@@ -17,7 +17,7 @@
 #' Options are "unif" for replacing zeros with values from a uniform distribution and "const" 
 #' for a constant value replacement. Default is "unif".
 #' @param clr_method Specifies the CLR transformation method: "clr" for standard CLR, "iclr" for 
-#' interquartile CLR, or "none" to bypass CLR transformation and use precomputed log_abundance data. Default is "clr".
+#' interquartile CLR, or "none" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".
 #' @param cor_method Correlation method ("pearson", "spearman", "kendall") used for computing 
 #' pairwise correlations between taxa after CLR transformation. Default is "pearson".
 #' @param thresh_method Method for thresholding the correlation matrix to construct the adjacency 
@@ -60,7 +60,7 @@
 #' \code{\link[mgnet]{zero_dealing}} for details on zero replacement strategies.
 #'
 #' @export
-#' @importFrom igraph graph_from_adjacency_matrix
+#' @importFrom igraph graph_from_adjacency_matrix make_empty_graph
 #' @importFrom methods validObject
 #' @name constructCorrCLRNet
 #' 
@@ -82,20 +82,20 @@ setMethod("constructCorrCLRNet", "mgnet",
             padj_method <- match.arg(padj_method, c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"))
             if(thresh_method != "p-value" && padj_method != "none") stop("adjust different from 'none' can be set only for thresh_method equal to p-value")
             if(!is.numeric(thresh_value) | thresh_value<0 | thresh_value>1) stop("thresh_value must number in range [0,1]")
-            if( clr_method != "none" && length(object@log_abundance)!=0 ) stop("log_abundance matrix is not empty. Please set clr_method to 'none' or remove from the object.")
+            if( clr_method != "none" && length(object@norm_abundance)!=0 ) stop("norm_abundance matrix is not empty. Please set clr_method to 'none' or remove from the object.")
             if( clr_method != "none" && length(object@abundance)==0 ) stop("abundance matrix missing and i cannot calculate the clr") 
 
-            if( clr_method != "none" && length(object@log_abundance)==0 ){
+            if( clr_method != "none" && length(object@norm_abundance)==0 ){
               
-              log_abundance <- if(clr_method == "clr") {
+              norm_abundance <- if(clr_method == "clr") {
                   mgnet::clr(zero_dealing(object@abundance, method = zero_strategy))
                 } else {
                   mgnet::iclr(zero_dealing(object@abundance, method = zero_strategy))
                 }
               
-            } else if ( clr_method == "none" && length(object@log_abundance)!=0 ){
+            } else if ( clr_method == "none" && length(object@norm_abundance)!=0 ){
               
-              log_abundance <- object@log_abundance
+              norm_abundance <- object@norm_abundance
               
             } else {
               
@@ -105,26 +105,31 @@ setMethod("constructCorrCLRNet", "mgnet",
             
             if(thresh_method=="absolute"){
               
-              adj <- cor(log_abundance, method=cor_method)
+              adj <- cor(norm_abundance, method=cor_method)
               adj <- adj * (abs(adj) >= thresh_value)
               diag(adj) <- 0
               
             } else if(thresh_method=="density"){
               
-              adj <- mgnet::adjacency_edge_density(x = log_abundance, method = cor_method, th = thresh_value)
+              adj <- mgnet::adjacency_edge_density(x = norm_abundance, method = cor_method, th = thresh_value)
               
             } else if(thresh_method=="p-value"){
               
-              adj <- mgnet::adjacency_p_adjust(x = log_abundance, method = cor_method, adjust = padj_method, alpha = thresh_value)
+              adj <- mgnet::adjacency_p_adjust(x = norm_abundance, method = cor_method, adjust = padj_method, alpha = thresh_value)
               
             }
             
-            network <- igraph::graph_from_adjacency_matrix(adjmatrix = adj, 
-                                                       mode = "undirected", 
-                                                       weighted = TRUE, 
-                                                       diag = FALSE)
+            diag(adj) <- 0
+            if(all(adj)==0){
+              network <- make_empty_graph( n = ntaxa(object))
+            } else {
+              network <- igraph::graph_from_adjacency_matrix(adjmatrix = adj, 
+                                                             mode = "undirected", 
+                                                             weighted = TRUE, 
+                                                             diag = FALSE)
+            }
             
-            object@log_abundance <- log_abundance
+            object@norm_abundance <- norm_abundance
             object@network <- network
             validObject(object)
             return(object)
@@ -135,7 +140,7 @@ setMethod("constructCorrCLRNet", "mgnetList",
           function(object, zero_strategy = "unif", clr_method ="clr",
                    cor_method = "pearson", thresh_method, thresh_value, padj_method="none"){
             
-            object <- sapply(object, function(x){
+            object@mgnets <- sapply(object@mgnets, function(x){
               constructCorrCLRNet(x,
                                   zero_strategy = "unif", clr_method ="clr",
                                   cor_method = "pearson", thresh_method, thresh_value, padj_method="none")},

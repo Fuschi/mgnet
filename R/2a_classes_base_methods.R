@@ -16,7 +16,8 @@ setGeneric("nsample", function(object) standardGeneric("nsample"))
 
 setMethod("nsample", "mgnet", function(object) {
   if(length(object@abundance!=0)) return(nrow(object@abundance))
-  else if(length(object@abundance!=0)) return(nrow(object@abundance))
+  else if(length(object@rel_abundance!=0)) return(nrow(object@rel_abundance))
+  else if(length(object@norm_abundance!=0)) return(nrow(object@norm_abundance))
   else if(length(object@info_sample!=0)) return(nrow(object@info_sample))
   else return(0)
 })
@@ -47,7 +48,8 @@ setMethod("ntaxa", "mgnet", function(object) {
   if(length(object@abundance)!=0) return(ncol(object@abundance))
   else if(length(object@lineage)!=0) return(nrow(object@lineage))
   else if(length(object@info_taxa)!=0) return(nrow(object@info_taxa))
-  else if(length(object@log_abundance)!=0) return(ncol(object@log_abundance))
+  else if(length(object@rel_abundance)!=0) return(ncol(object@rel_abundance))
+  else if(length(object@norm_abundance)!=0) return(ncol(object@norm_abundance))
   else if(length(object@network)!=0) return(vcount(object@network))
   else return(0)
 })
@@ -76,7 +78,8 @@ setGeneric("sample_id", function(object) standardGeneric("sample_id"))
 setMethod("sample_id", "mgnet", function(object) {
   if(length(object@abundance!=0)) return(rownames(object@abundance))
   else if(length(object@info_sample!=0)) return(rownames(object@info_sample))
-  else if(length(object@log_abundance!=0)) return(rownames(object@log_abundance))
+  else if(length(object@norm_abundance!=0)) return(rownames(object@norm_abundance))
+  else if(length(object@rel_abundance!=0)) return(rownames(object@rel_abundance))
   else return(character(length=0))
 })
 
@@ -107,7 +110,8 @@ setMethod("taxa_id", "mgnet", function(object) {
   if(length(object@abundance!=0)) return(colnames(object@abundance))
   else if(length(object@lineage!=0)) return(rownames(object@lineage))
   else if(length(object@info_taxa)!=0) return(rownames(object@info_taxa))
-  else if(length(object@log_abundance)!=0) return(colnames(object@log_abundance))
+  else if(length(object@rel_abundance)!=0) return(colnames(object@rel_abundance))
+  else if(length(object@norm_abundance)!=0) return(colnames(object@norm_abundance))
   else if(length(object@network)!=0) return(V(object@network)$name)
   else return(character(length=0))
 })
@@ -251,6 +255,77 @@ setMethod("taxa_name", signature(object = "mgnetList", rank = "missing"), functi
 #' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), function(object, rank) {
   sapply(object@mgnets, function(x) taxa_name(x, rank), simplify=F, USE.NAMES=T)
+})
+
+
+# community_id
+#------------------------------------------------------------------------------#
+#' Retrieve Community Memberships for Network Vertices
+#'
+#' This function fetches the community membership IDs for each vertex in a network or a list of networks. 
+#' It supports `mgnet` objects, representing single networks, and `mgnetList` objects, representing collections of networks. 
+#' The function can return the results in various formats, including lists, data frames, or tibbles, depending on user preference.
+#'
+#' @param object An object of class `mgnet` or `mgnetList`. For `mgnet`, the function returns the community membership IDs 
+#' of all vertices in the network. For `mgnetList`, the function operates on each network in the list and compiles the results.
+#' @param .fmt A character string indicating the desired output format for the community membership IDs when the input 
+#' object is an `mgnetList`. Options include "list" for a list of vectors, "df" for a data frame, and "tbl" for a tibble. 
+#' The default is "list". This parameter is ignored if the input is an `mgnet` object.
+#'
+#' @return Depending on the input object and the `.fmt` parameter:
+#' \itemize{
+#'   \item For an `mgnet` object, returns a named vector where each name is a vertex ID and each value is the corresponding community membership ID.
+#'   \item For an `mgnetList` object with `.fmt` set to "list", returns a list of named vectors, each corresponding to one network in the list.
+#'   \item For an `mgnetList` object with `.fmt` set to "df", returns a data frame where each row corresponds to a vertex (across all networks) and each column corresponds to one network.
+#'   \item For an `mgnetList` object with `.fmt` set to "tbl", returns a tibble similar to the data frame format, but with `taxa_id` as the first column.
+#' }
+#'
+#' @importFrom igraph membership
+#' @importFrom stats setNames
+#' @importFrom tibble rownames_to_column
+#' @aliases community_members,mgnet-method community_members,mgnetList-method
+#' @export
+#'
+#' @details The function leverages the `membership` function from the `igraph` package to determine the community membership of vertices.
+#' For `mgnetList` objects, the function applies the operation to each network in the list and organizes the results according to the specified format.
+#' When dealing with `mgnetList` objects and choosing "df" or "tbl" for `.fmt`, the function uniquely identifies each vertex across all networks to compile the community memberships coherently.
+#' 
+setGeneric("community_members", function(object, .fmt = "list") standardGeneric("community_members"))
+
+setMethod("community_members", "mgnet", function(object){
+  
+  if(length(object@community) != 0){
+    return(setNames(as.character(membership(object@community)), taxa_id(object)))
+  } else {
+    return(character(0))
+  }
+  
+})
+
+setMethod("community_members", "mgnetList", function(object, .fmt = "list"){
+  .fmt <- match.arg(.fmt, choices = c("list", "df", "tbl"))
+  
+  if(.fmt == "list"){
+    return(sapply(object@mgnets, function(x) community_members(x), 
+                  simplify = FALSE, USE.NAMES = TRUE))
+  } else {
+    taxa.merge <- unique(unlist(lapply(object, taxa_id)))
+    res <- matrix(NA_character_, nrow = length(taxa.merge), ncol = length(object),
+                  dimnames = list(taxa.merge, names(object)))
+    
+    for(n in names(object)){
+      res[taxa_id(object[[n]]), n] <- community_members(object[[n]])
+    }
+    
+    if(.fmt == "df"){
+      return(data.frame(res, stringsAsFactors = FALSE))
+    } else if(.fmt == "tbl"){
+      # Convert to tibble with taxa_id as the first column
+      res_df <- data.frame(res, stringsAsFactors = FALSE)
+      res_tbl <- tibble::rownames_to_column(res_df, var = "taxa_id")
+      return(res_tbl)
+    }
+  }
 })
 
 

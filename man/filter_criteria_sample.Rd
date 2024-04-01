@@ -10,7 +10,7 @@ filter_criteria_sample(
   object,
   abundance_criteria = NULL,
   relative_criteria = NULL,
-  log_abundance_criteria = NULL,
+  normalized_criteria = NULL,
   condition = "AND"
 )
 }
@@ -25,7 +25,7 @@ value indicating whether the sample meets the specified criteria. Default is \co
 Each function should take a single row of relative abundance data as input and return
 a logical value. Default is \code{NULL}.}
 
-\item{log_abundance_criteria}{A list of functions to be applied to the log-transformed abundance data
+\item{normalized_criteria}{A list of functions to be applied to the log-transformed abundance data
 matrix. Each function should take a single row of log-transformed abundance data as input
 and return a logical value. Default is \code{NULL}.}
 

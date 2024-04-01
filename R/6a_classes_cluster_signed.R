@@ -40,7 +40,7 @@
 #' \code{\link[igraph]{communities}}, for information on handling community objects in `igraph`.
 #'
 #' @export
-#' @importFrom igraph graph_from_adjacency_matrix write_graph make_clusters is.weighted is.directed as_adjacency_matrix make_clusters sizes is_named
+#' @importFrom igraph graph_from_adjacency_matrix write_graph make_clusters is_weighted is_directed as_adjacency_matrix make_clusters sizes is_named
 #' @importFrom stringr str_split
 #' @name cluster_signed
 #' @aliases cluster_signed,igraph-method cluster_signed,mgnet-method cluster_signed,mgnetList-method
@@ -49,7 +49,7 @@ setGeneric("cluster_signed",
 
 
 setMethod("cluster_signed", "igraph", 
-          function(object,resistance=0, penalty=1, add.names=FALSE){
+          function(object, resistance=0, penalty=1, add.names=FALSE){
   
   # Automatically detect the operating system
   detectedOS <- Sys.info()["sysname"]
@@ -57,23 +57,22 @@ setMethod("cluster_signed", "igraph",
     OS <- "Windows"
   } else if (detectedOS == "Darwin") {  # Sys.info() returns 'Darwin' for macOS
     OS <- "Mac"
-  } else if (detectedOS == "Windows") {
+  } else if (detectedOS == "Linux") {
     # Assuming Linux for all non-Windows and non-Mac systems
     OS <- "Linux"
   } else {
     stop("What operating system are you using??")
   }
   
-  graph <- object
   #Check Graph
-  if(!is.weighted(graph) |! is.directed(graph)) stop("graph must be weighted unidrected graph")
+  if( !(is_weighted(object) && !is_directed(object)) ) stop("graph must be weighted unidrected graph")
   if(file.exists("graph.net")) file.remove("graph.net")
   if(!is.numeric(resistance)) stop("resistance must be numeric")
   if(!is.numeric(penalty)) stop("penalty must be a number >= 0")
   if(penalty<0) stop("penalty must be a number >= 0")
   if(add.names & !igraph::is_named(object)) stop("graph has not vertices names attribute")
   
-  adj <- as_adjacency_matrix(graph, attr="weight", sparse=FALSE)
+  adj <- as_adjacency_matrix(object, attr="weight", sparse=FALSE)
   #End Checks
   
   #get path of executable Communities_Detection.exe
@@ -137,7 +136,7 @@ setMethod("cluster_signed", "igraph",
   file.remove(path.graph)
   file.remove(path.result)
   
-  res <- make_clusters(graph=graph,
+  res <- make_clusters(graph=object,
                        membership=comm,
                        algorithm="signed weights louvain",
                        modularity=modularity)
@@ -145,7 +144,7 @@ setMethod("cluster_signed", "igraph",
   isolated.membership <- which(sizes(res)==1)
   res$membership[res$membership %in% isolated.membership] <- 0
   
-  if(add.names) names(res$membership) <- V(graph)$name
+  if(add.names) names(res$membership) <- V(object)$name
   
   #return the results as communities structure of igraph package
   return(res)
@@ -166,7 +165,7 @@ setMethod("cluster_signed", "mgnet",
 setMethod("cluster_signed", "mgnetList",
           function(object, resistance=0, penalty=1, add.names=FALSE){
             
-           object <- sapply(object, function(x) cluster_signed(x, 
+           object@mgnets <- sapply(object@mgnets, function(x) cluster_signed(x, 
                                                                resistance=resistance, penalty=penalty, 
                                                                add.names=add.names), 
                             simplify = FALSE, USE.NAMES = TRUE)

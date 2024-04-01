@@ -6,7 +6,7 @@
 \title{MetaGenomic NETwork (mgnet) Class}
 \description{
 An S4 class for comprehensive management and analysis of metagenomic networks.
-It encapsulates various types of metagenomic data, including abundance matrices,
+It encapsulates various types of microbial data, including abundance matrices,
 sample metadata, taxonomic information, and network analysis results.
 This class serves as a robust framework for analyzing microbial communities
 and their interactions, supporting advanced analysis workflows for metagenomics research.
@@ -14,34 +14,35 @@ and their interactions, supporting advanced analysis workflows for metagenomics 
 \section{Slots}{
 
 \describe{
-\item{\code{abundance}}{A numeric matrix representing next-generation sequencing (NGS)
-data, where rows correspond to samples and columns to taxa, with values indicating
-the abundance of each taxa in each sample.}
+\item{\code{abundance}}{A numeric matrix representing the raw abundance data from
+next-generation sequencing (NGS), where rows correspond to samples and columns
+to taxa. Each entry indicates the abundance of a taxon in a sample.}
 
-\item{\code{log_abundance}}{A numeric matrix of log-ratio transformed abundance data,
-facilitating compositional data analysis, mirroring the structure of \code{abundance}.}
+\item{\code{rel_abundance}}{A numeric matrix representing the relative abundance of each taxon
+within each sample, mirroring the structure of \code{abundance}. This is calculated as
+the proportion of each taxon's abundance relative to the total abundance in the sample.}
 
-\item{\code{info_sample}}{A data.frame containing metadata for samples, indexed by sample IDs,
-with each row corresponding to a sample and each column to an experimental variable.}
+\item{\code{norm_abundance}}{A numeric matrix of normalized abundance data, facilitating various
+types of analyses. While the default normalization applied is log-ratio transformation
+to address compositional data issues, this slot is versatile and can hold other types
+of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.}
 
-\item{\code{lineage}}{A character matrix with taxonomic classification for each taxa,
-where each row corresponds to a taxa and columns to taxonomic ranks such as phylum,
-class, order, family, genus, and species.}
+\item{\code{info_sample}}{A data.frame containing metadata for samples, indexed by sample IDs.}
 
-\item{\code{info_taxa}}{A data.frame with additional information on taxa, indexed by taxa IDs,
-providing a flexible structure for storing diverse metadata related to taxa.}
+\item{\code{lineage}}{A character matrix providing taxonomic classification for each taxon.}
 
-\item{\code{network}}{An \code{igraph} object representing a network of taxa interactions,
-capturing the complex relationships between microbial taxa within the community.}
+\item{\code{info_taxa}}{A data.frame with additional taxa information, indexed by taxa IDs.}
 
-\item{\code{community}}{An object storing community detection results, typically obtained
-from network analysis, facilitating the exploration of microbial community structure.}
+\item{\code{network}}{An \code{igraph} object representing the network of taxa interactions.}
+
+\item{\code{community}}{An object storing community detection results from network analysis.}
 }}
 
 \section{Reserved Keywords}{
 
-The \code{mgnet} class reserves two keywords for internal use, which should not be used
-as column names in the provided matrices or data.frames: \code{sample_id}, \code{taxa_id}.
+The \code{mgnet} class reserves keywords for internal use, which should not be used
+as column names in the provided matrices or data.frames: \code{sample_id}, \code{taxa_id},
+\code{abundance},\code{rel_abundance}, \code{norm_abundance}.
 These keywords are utilized for specific functionalities and methods within the \code{mgnet} package.
 Using these names as column identifiers in your data may lead to unexpected behavior or errors.
 }

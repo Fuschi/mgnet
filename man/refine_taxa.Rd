@@ -6,7 +6,13 @@
 \alias{refine_taxa,mgnetList-method}
 \title{Refines Taxa Selection in \code{mgnet} or \code{mgnetList} Objects}
 \usage{
-refine_taxa(object, ..., condition = "AND", trim = "yes")
+refine_taxa(
+  object,
+  ...,
+  condition = "AND",
+  trim = "yes",
+  aggregate_to = "aggregate"
+)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
@@ -17,8 +23,12 @@ or functions returning such indices. These criteria determine which taxa are ret
 \item{condition}{Logical condition to combine multiple criteria: "AND" (default) or "OR".
 "AND" requires all criteria to be met, "OR" requires any criterion to be met.}
 
-\item{trim}{A parameter to handle taxa not meeting criteria: "yes" to remove them,
-"no" to set their abundance to zero, or "aggregate" to combine them into a 'merged' category.}
+\item{trim}{How to handle taxa not meeting criteria: "yes" to remove them,
+"no" to set their abundance to zero (min sample value for norm_abundance),
+or "aggregate" to combine them into a single category.}
+
+\item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.
+Defaults to "aggregate".}
 }
 \value{
 A modified \code{mgnet} object with only the selected taxa, or an \code{mgnetList} with

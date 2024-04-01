@@ -84,7 +84,7 @@ setMethod("abundance", "mgnetList", function(object, rank = "missing", .fmt = "m
 })
 
 
-# RELATIVE
+# REL_ABUNDANCE
 #------------------------------------------------------------------------------#
 #' Retrieve Relative Abundance Data at Specified Taxonomic Rank
 #'
@@ -119,42 +119,33 @@ setMethod("abundance", "mgnetList", function(object, rank = "missing", .fmt = "m
 #' @importFrom rlang sym
 #' @importFrom tibble as_tibble rownames_to_column
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @name relative
-#' @aliases relative,mgnet-method relative,mgnetList-method
-setGeneric("relative", function(object, rank = "missing", .fmt = "mat") standardGeneric("relative"))
+#' @name rel_abundance
+#' @aliases rel_abundance,mgnet-method rel_abundance,mgnetList-method
+setGeneric("rel_abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("rel_abundance"))
 
-setMethod("relative", "mgnet", function(object, rank, .fmt) {
+setMethod("rel_abundance", "mgnet", function(object, rank, .fmt) {
   
   # Checks
   if (missing(rank)) rank <- "missing"
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  # Ensure 'sample_sum' is present in 'info_sample'
-  if (!"sample_sum" %in% colnames(object@info_sample)) {
-    stop("The 'sample_sum' column is missing in 'info_sample'. ",
-         "Please ensure 'sample_sum' is calculated and included. ",
-         "This can be done automatically by creating or updating the mgnet object ",
-         "with valid abundance data, or through the 'update_sample_sum()' function.",
-         "\nSee '?update_sample_sum' for more information.")
-  }
   
-  if( length(object@abundance) == 0 ){
+  if( length(object@rel_abundance) == 0 ){
     switch(.fmt,
            mat = {return(matrix(nrow=0, ncol=0))},
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
   } else if(rank=="missing"){
-    result <- object@abundance / object@info_sample$sample_sum
     switch(.fmt,
-           mat = {return(result)},
-           df  = {return(as.data.frame(result))},
-           tbl = {return(tibble::as_tibble(result, rownames="sample_id"))})
+           mat = {return(object@rel_abundance)},
+           df  = {return(as.data.frame(object@rel_abundance))},
+           tbl = {return(tibble::as_tibble(object@rel_abundance, rownames="sample_id"))})
   } else {
     if(!rank %in% colnames(object@lineage)) {
       stop("rank must be present in the object. Available ranks are: ",
            paste(toString(colnames(object@lineage)), collapse=", "))}
     
-    data_frame <- object@abundance %>% tibble::as_tibble(rownames="sample_id") %>%
-      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="abundance")
+    data_frame <- object@rel_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
+      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="rel_abundance")
     
     lineage_info <- object@lineage %>%
       tibble::as_tibble(rownames="taxa_id") %>%
@@ -163,13 +154,12 @@ setMethod("relative", "mgnet", function(object, rank, .fmt) {
     aggregated_data <- data_frame %>%
       dplyr::left_join(lineage_info, by = "taxa_id") %>%
       dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
-      dplyr::summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = abundance)
+      dplyr::summarise(rel_abundance = sum(rel_abundance, na.rm = TRUE), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = rel_abundance)
     
     result <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
       as.matrix()
-    result <- result / object@info_sample$sample_sum
     
     switch(.fmt,
            mat = {return(result)},
@@ -179,14 +169,14 @@ setMethod("relative", "mgnet", function(object, rank, .fmt) {
   }
 })
 
-setMethod("relative", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
+setMethod("rel_abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- lapply(object@mgnets, function(x) relative(x, rank, .fmt))
+  result <- lapply(object@mgnets, function(x) rel_abundance(x, rank, .fmt))
   return(result)
 })
 
 
-# LOG_ABUNDANCE
+# NORM_ABUNDANCE
 #------------------------------------------------------------------------------#
 #' Retrieve Log_Abundance Data at Specified Taxonomic Rank
 #'
@@ -219,17 +209,17 @@ setMethod("relative", "mgnetList", function(object, rank = "missing", .fmt = "ma
 #' @importFrom rlang sym
 #' @importFrom tibble as_tibble rownames_to_column
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @name log_abundance
-#' @aliases log_abundance,mgnet-method log_abundance,mgnetList-method
-setGeneric("log_abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("log_abundance"))
+#' @name norm_abundance
+#' @aliases norm_abundance,mgnet-method norm_abundance,mgnetList-method
+setGeneric("norm_abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("norm_abundance"))
 
-setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
+setMethod("norm_abundance", "mgnet", function(object, rank, .fmt) {
   
   # Checks
   if (missing(rank))rank <- "missing"
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  if( length(object@log_abundance) == 0 ){
+  if( length(object@norm_abundance) == 0 ){
     
     switch(.fmt,
            mat = {return(matrix(nrow=0, ncol=0))},
@@ -238,7 +228,7 @@ setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
     
   } else if(rank=="missing"){
     
-    result <- object@log_abundance
+    result <- object@norm_abundance
     switch(.fmt,
            mat = {return(result)},
            df  = {return(as.data.frame(result))},
@@ -250,8 +240,8 @@ setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
       stop("specified rank must be present in the object. Available ranks are: ",
            paste(toString(colnames(object@lineage)), collapse=", "))}
     
-    data_frame <- object@log_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
-      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="log_abundance")
+    data_frame <- object@norm_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
+      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="norm_abundance")
     
     lineage_info <- object@lineage %>%
       tibble::as_tibble(rownames="taxa_id") %>%
@@ -260,8 +250,8 @@ setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
     aggregated_data <- data_frame %>%
       dplyr::left_join(lineage_info, by = "taxa_id") %>%
       dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
-      dplyr::summarise(log_abundance = sum(log_abundance, na.rm = TRUE), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = log_abundance)
+      dplyr::summarise(norm_abundance = sum(norm_abundance, na.rm = TRUE), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = norm_abundance)
     
     result <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
@@ -275,9 +265,9 @@ setMethod("log_abundance", "mgnet", function(object, rank, .fmt) {
   }
 })
 
-setMethod("log_abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
+setMethod("norm_abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- lapply(object@mgnets, function(x) log_abundance(x, rank, .fmt))
+  result <- lapply(object@mgnets, function(x) norm_abundance(x, rank, .fmt))
   return(result)
 })
 
@@ -485,7 +475,7 @@ setMethod("community", "mgnetList", function(object) {
 #' @details
 #' The getter functions cover a range of data types within the `mgnet` objects, including:
 #' 
-#' - **Abundance Data**: Retrieve raw, relative, or log-transformed abundance data with options
+#' - **Abundance Data**: Retrieve raw, relative, or normalized abundance data with options
 #'   for taxonomic rank-specific aggregation and output formatting.
 #' - **Sample and Taxa Information**: Access metadata related to samples and taxa, such as sample
 #'   IDs, taxa IDs, taxonomic classification, and metadata variables.
@@ -499,8 +489,8 @@ setMethod("community", "mgnetList", function(object) {
 #'
 #' @section Available Getter Functions:
 #' - `abundance(object, rank, .fmt)`: Retrieves abundance data.
-#' - `relative(object, rank, .fmt)`: Retrieves relative abundance data.
-#' - `log_abundance(object, rank, .fmt)`: Retrieves log-transformed abundance data.
+#' - `rel_abundance(object, rank, .fmt)`: Retrieves relative abundance data.
+#' - `norm_abundance(object, rank, .fmt)`: Retrieves normalized abundance data.
 #' - `sample_id(object)`: Retrieves sample IDs.
 #' - `taxa_id(object)`: Retrieves taxa IDs.
 #' - `info_sample(object, .fmt)`: Retrieves sample metadata.

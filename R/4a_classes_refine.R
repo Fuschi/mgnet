@@ -126,8 +126,11 @@ setMethod("refine_sample", "mgnetList",
 #'        or functions returning such indices. These criteria determine which taxa are retained.
 #' @param condition Logical condition to combine multiple criteria: "AND" (default) or "OR".
 #'        "AND" requires all criteria to be met, "OR" requires any criterion to be met.
-#' @param trim A parameter to handle taxa not meeting criteria: "yes" to remove them,
-#'        "no" to set their abundance to zero, or "aggregate" to combine them into a 'merged' category.
+#' @param trim How to handle taxa not meeting criteria: "yes" to remove them,
+#'        "no" to set their abundance to zero (min sample value for norm_abundance), 
+#'        or "aggregate" to combine them into a single category.
+#' @param aggregate_to Name for the aggregated taxa category when using `trim = "aggregate"`.
+#'        Defaults to "aggregate".        
 #'
 #' @return A modified `mgnet` object with only the selected taxa, or an `mgnetList` with
 #'         each contained `mgnet` object filtered accordingly.
@@ -142,13 +145,17 @@ setMethod("refine_sample", "mgnetList",
 #' @aliases refine_taxa,mgnet-method  refine_taxa,mgnetList-method
 #' @importFrom igraph subgraph add_vertices subgraph.edges E
 #' @seealso \link{mgnet}, \link{mgnetList}
-setGeneric("refine_taxa", function(object, ..., condition = "AND", trim = "yes") standardGeneric("refine_taxa"))
+setGeneric("refine_taxa", function(object, ..., condition = "AND", 
+                                   trim = "yes", aggregate_to = "aggregate") standardGeneric("refine_taxa"))
 
 setMethod("refine_taxa", "mgnet",
-          function(object,...,condition="AND",trim="yes"){
+          function(object, ..., condition = "AND",
+                   trim = "yes", aggregate_to = "aggregate"){
             
             condition <- match.arg(condition, c("AND","OR"))
             trim <- match.arg(trim, c("yes","no","aggregate"))
+            aggregate_to <- if( is.character(aggregate_to) || length(aggregate_to)==0 ) stop("aggregate_to must be a non empty character string")
+            
             
             IDX <- list(...)
             for(i in 1:length(IDX)){
@@ -213,12 +220,23 @@ setMethod("refine_taxa", "mgnet",
                 abundance.new <- object@abundance
               }
               
-              if(length(object@log_abundance)!=0){
-                log_abundance.new <- object@log_abundance
-                sample_min <- apply(object@log_abundance, 1, min)
-                log_abundance.new[,!IDX] <- sample_min # This could be an error (see later)
+              if(length(object@rel_abundance)!=0){
+                rel_abundance.new <- object@rel_abundance
+                rel_abundance.new[,!IDX] <- 0
               } else {
-                log_abundance.new <- object@log_abundance
+                rel_abundance.new <- object@rel_abundance
+              }
+              
+              if(length(object@norm_abundance)!=0){
+                norm_abundance.new <- object@norm_abundance
+                sample_min <- apply(object@norm_abundance, 1, min)
+                
+                norm_abundance.new <- for(sample in seq_along(norm_abundance.new)){
+                  norm_abundance.new[,!IDX] <- sample_min[sample]
+                }
+                
+              } else {
+                norm_abundance.new <- object@norm_abundance
               }
               
               if(length(object@network)!=0){
@@ -240,32 +258,55 @@ setMethod("refine_taxa", "mgnet",
               }
               
               return(mgnet(abundance=abundance.new,
+                           rel_abundance=rel_abundance.new,
+                           norm_abundance=norm_abundance.new,
                            info_sample=object@info_sample,
                            lineage=object@lineage,
                            info_taxa=object@info_taxa,
-                           log_abundance=log_abundance.new,
                            network=network.new,
                            community=community.new))
               # aggregate
               #-----------------------------------------#  
             } else if (trim=="aggregate") {
               
-              # data
+              # abundance
               if(length(object@abundance)!=0){
                 abundance.new<-object@abundance[,IDX,drop=F]
-                if("merged"%in%colnames(abundance.new)){
-                  abundance.new[,"merged"] <- abundance.new[,"merged"] + rowSums(object@abundance[,!IDX,drop=F])
+                if(aggregate_to%in%colnames(abundance.new)){
+                  abundance.new[,aggregate_to] <- abundance.new[,aggregate_to] + rowSums(object@abundance[,!IDX,drop=F])
                 } else {
-                  abundance.new <- cbind(abundance.new, "merged"=rowSums(object@abundance[,!IDX,drop=F]))
+                  abundance.new <- cbind(abundance.new, aggregate_to=rowSums(object@abundance[,!IDX,drop=F]))
                 }
               } else {
                 abundance.new<-object@abundance
               }
-              # taxa
+              # rel_abundance
+              if(length(object@rel_abundance)!=0){
+                rel_abundance.new<-object@rel_abundance[,IDX,drop=F]
+                if(aggregate_to%in%colnames(rel_abundance.new)){
+                  rel_abundance.new[,aggregate_to] <- rel_abundance.new[,aggregate_to] + rowSums(object@rel_abundance[,!IDX,drop=F])
+                } else {
+                  rel_abundance.new <- cbind(rel_abundance.new, aggregate_to=rowSums(object@rel_abundance[,!IDX,drop=F]))
+                }
+              } else {
+                rel_abundance.new <- object@rel_abundance
+              }
+              # norm_abundance
+              if(length(object@norm_abundance)!=0){
+                norm_abundance.new<-object@norm_abundance[,IDX,drop=F]
+                if(aggregate_to%in%colnames(norm_abundance.new)){
+                  norm_abundance.new[,aggregate_to] <- norm_abundance.new[,aggregate_to] + rowSums(object@norm_abundance[,!IDX,drop=F])
+                } else {
+                  norm_abundance.new <- cbind(norm_abundance.new, aggregate_to=rowSums(object@norm_abundance[,!IDX,drop=F]))
+                }
+              } else {
+                norm_abundance.new<-object@norm_abundance
+              }
+              # lineage
               if(length(object@lineage)!=0){
                 lineage.new<-object@lineage[IDX,,drop=F]
-                if(!("merged"%in%rownames(lineage.new))){
-                  lineage.new <- rbind(lineage.new,"merged"=rep("merged",length(ranks(object))))
+                if(!(aggregate_to%in%rownames(lineage.new))){
+                  lineage.new <- rbind(lineage.new,aggregate_to=rep(aggregate_to,length(ranks(object))))
                 }
               } else {
                 lineage.new<-object@lineage
@@ -273,28 +314,17 @@ setMethod("refine_taxa", "mgnet",
               # info_taxa
               if(length(object@info_taxa)!=0){
                 info_lineage.new<-object@info_taxa[IDX,,drop=F]
-                if(!("merged"%in%rownames(info_lineage.new))){
-                  info_lineage.new <- rbind(info_lineage.new,"merged"=rep("merged",ncol(object@info_taxa)))
+                if(!(aggregate_to%in%rownames(info_lineage.new))){
+                  info_lineage.new <- rbind(info_lineage.new,aggregate_to=rep(aggregate_to,ncol(object@info_taxa)))
                 }
               } else {
                 info_lineage.new<-object@info_taxa
               }
-              # log_data
-              if(length(object@log_abundance)!=0){
-                log_abundance.new<-object@log_abundance[,IDX,drop=F]
-                if("merged"%in%colnames(log_abundance.new)){
-                  log_abundance.new[,"merged"] <- log_abundance.new[,"merged"] + rowSums(object@log_abundance[,!IDX,drop=F])
-                } else {
-                  log_abundance.new <- cbind(log_abundance.new, "merged"=rowSums(object@log_abundance[,!IDX,drop=F]))
-                }
-              } else {
-                log_abundance.new<-object@log_abundance
-              }
               # netw
               if(length(object@network)!=0){
                 network.new<-igraph::subgraph(object@network,IDX)
-                if(!("merged"%in%taxa_id(object))){
-                  network.new <- igraph::add_vertices(network.new, nv=1, attr=list("name"="merged"))
+                if(!(aggregate_to%in%taxa_id(object))){
+                  network.new <- igraph::add_vertices(network.new, nv=1, attr=list("name"=aggregate_to))
                 }
               } else {
                 network.new<-object@network
@@ -304,8 +334,8 @@ setMethod("refine_taxa", "mgnet",
                 community.new <- object@community
                 if(is.character(IDX)) IDX <- which(taxa_id(object)%in%IDX)
                 community.new$membership <- object@community$membership[IDX]
-                if(!("merged"%in%taxa_id(object))){
-                  community.new$membership <- c(community.new$membership,"merged"=0)
+                if(!(aggregate_to%in%taxa_id(object))){
+                  community.new$membership <- c(community.new$membership,aggregate_to=0)
                 }
                 community.new$vcount <- length(community.new$membership)
                 community.new$modularity <- NA
@@ -314,10 +344,11 @@ setMethod("refine_taxa", "mgnet",
               }
               
               return(mgnet(abundance=abundance.new,
+                           rel_abundance=rel_abundance.new,
+                           norm_abundance=norm_abundance.new,
                            info_sample=object@info_sample,
                            lineage=lineage.new,
                            info_taxa=info_lineage.new,
-                           log_abundance=log_abundance.new,
                            network=network.new,
                            community=community.new))
             }
@@ -326,7 +357,8 @@ setMethod("refine_taxa", "mgnet",
 
 
 setMethod("refine_taxa", "mgnetList",
-          function(object, ..., condition="AND", trim="yes") {
+          function(object, ..., condition = "AND", 
+                   trim = "yes", aggregate_to = "aggregate") {
             condition <- match.arg(condition, c("AND", "OR"))
             trim <- match.arg(trim, c("yes", "no", "aggregate"))
             

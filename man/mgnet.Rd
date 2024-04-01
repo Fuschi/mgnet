@@ -6,7 +6,8 @@
 \usage{
 mgnet(
   abundance = matrix(nrow = 0, ncol = 0),
-  log_abundance = matrix(nrow = 0, ncol = 0),
+  rel_abundance = matrix(nrow = 0, ncol = 0),
+  norm_abundance = matrix(nrow = 0, ncol = 0),
   info_sample = data.frame(),
   lineage = matrix(nrow = 0, ncol = 0),
   info_taxa = data.frame(),
@@ -18,7 +19,9 @@ mgnet(
 \item{abundance}{numeric matrix with all elements >=0 representing the abundance data
 where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.}
 
-\item{log_abundance}{numeric matrix of log-transformed abundance data, structured like \code{abundance}.
+\item{rel_abundance}{...}
+
+\item{norm_abundance}{numeric matrix of log-transformed abundance data, structured like \code{abundance}.
 Defaults to an empty matrix.}
 
 \item{info_sample}{data.frame containing metadata for samples. Each row should correspond

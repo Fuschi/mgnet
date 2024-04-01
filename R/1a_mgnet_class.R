@@ -6,31 +6,32 @@ setOldClass("communities")
 #' MetaGenomic NETwork (mgnet) Class
 #'
 #' An S4 class for comprehensive management and analysis of metagenomic networks.
-#' It encapsulates various types of metagenomic data, including abundance matrices,
+#' It encapsulates various types of microbial data, including abundance matrices,
 #' sample metadata, taxonomic information, and network analysis results.
 #' This class serves as a robust framework for analyzing microbial communities
 #' and their interactions, supporting advanced analysis workflows for metagenomics research.
 #'
-#' @slot abundance A numeric matrix representing next-generation sequencing (NGS)
-#'        data, where rows correspond to samples and columns to taxa, with values indicating
-#'        the abundance of each taxa in each sample.
-#' @slot log_abundance A numeric matrix of log-ratio transformed abundance data,
-#'        facilitating compositional data analysis, mirroring the structure of `abundance`.
-#' @slot info_sample A data.frame containing metadata for samples, indexed by sample IDs,
-#'        with each row corresponding to a sample and each column to an experimental variable.
-#' @slot lineage A character matrix with taxonomic classification for each taxa,
-#'        where each row corresponds to a taxa and columns to taxonomic ranks such as phylum,
-#'        class, order, family, genus, and species.
-#' @slot info_taxa A data.frame with additional information on taxa, indexed by taxa IDs,
-#'        providing a flexible structure for storing diverse metadata related to taxa.
-#' @slot network An `igraph` object representing a network of taxa interactions,
-#'        capturing the complex relationships between microbial taxa within the community.
-#' @slot community An object storing community detection results, typically obtained
-#'        from network analysis, facilitating the exploration of microbial community structure.
+#' @slot abundance A numeric matrix representing the raw abundance data from
+#'        next-generation sequencing (NGS), where rows correspond to samples and columns
+#'        to taxa. Each entry indicates the abundance of a taxon in a sample.
+#' @slot rel_abundance A numeric matrix representing the relative abundance of each taxon
+#'        within each sample, mirroring the structure of `abundance`. This is calculated as
+#'        the proportion of each taxon's abundance relative to the total abundance in the sample.
+#' @slot norm_abundance A numeric matrix of normalized abundance data, facilitating various
+#'        types of analyses. While the default normalization applied is log-ratio transformation
+#'        to address compositional data issues, this slot is versatile and can hold other types
+#'        of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.
+#' @slot info_sample A data.frame containing metadata for samples, indexed by sample IDs.
+#' @slot lineage A character matrix providing taxonomic classification for each taxon.
+#' @slot info_taxa A data.frame with additional taxa information, indexed by taxa IDs.
+#' @slot network An `igraph` object representing the network of taxa interactions.
+#' @slot community An object storing community detection results from network analysis.
+#'
 #'
 #' @section Reserved Keywords:
-#' The `mgnet` class reserves two keywords for internal use, which should not be used
-#' as column names in the provided matrices or data.frames: `sample_id`, `taxa_id`.
+#' The `mgnet` class reserves keywords for internal use, which should not be used
+#' as column names in the provided matrices or data.frames: `sample_id`, `taxa_id`,
+#' `abundance`,`rel_abundance`, `norm_abundance`.
 #' These keywords are utilized for specific functionalities and methods within the `mgnet` package.
 #' Using these names as column identifiers in your data may lead to unexpected behavior or errors.
 #'
@@ -50,7 +51,8 @@ setClass("mgnet",
          
   slots = c(
     abundance = "ANY",
-    log_abundance = "ANY",
+    rel_abundance = "ANY",
+    norm_abundance = "ANY",
     info_sample = "ANY",
     lineage = "ANY",
     info_taxa = "ANY",
@@ -60,7 +62,8 @@ setClass("mgnet",
   
   prototype = prototype(
     abundance = matrix(numeric(0), nrow=0, ncol=0),
-    log_abundance = matrix(numeric(0), nrow=0, ncol=0),
+    rel_abundance = matrix(numeric(0), nrow=0, ncol=0),
+    norm_abundance = matrix(numeric(0), nrow=0, ncol=0),
     info_sample = data.frame(),
     lineage = matrix(character(0), nrow=0, ncol=0),
     info_taxa = data.frame(),
@@ -86,7 +89,8 @@ setClass("mgnet",
 #'
 #' @param abundance numeric matrix with all elements >=0 representing the abundance data 
 #'        where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.
-#' @param log_abundance numeric matrix of log-transformed abundance data, structured like `abundance`.
+#' @param rel_abundance ...
+#' @param norm_abundance numeric matrix of log-transformed abundance data, structured like `abundance`.
 #'        Defaults to an empty matrix.
 #' @param info_sample data.frame containing metadata for samples. Each row should correspond
 #'        to a sample and each column to an experimental variable. Defaults to an empty data frame.
@@ -112,30 +116,26 @@ setClass("mgnet",
 #'                    info_sample = info_sample_HMP2,
 #'                    lineage = lineage_HMP2)
 #' @export
-mgnet <- function(abundance=matrix(nrow=0,ncol=0),
-                  log_abundance=matrix(nrow=0, ncol=0),
-                  info_sample=data.frame(),
-                  lineage=matrix(nrow=0,ncol=0),
-                  info_taxa=data.frame(),
-                  network=make_empty_graph(n=0, directed=FALSE),
-                  community=cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
+mgnet <- function(abundance = matrix(nrow=0,ncol=0),
+                  rel_abundance = matrix(nrow=0,ncol=0),
+                  norm_abundance = matrix(nrow=0, ncol=0),
+                  info_sample = data.frame(),
+                  lineage = matrix(nrow=0,ncol=0),
+                  info_taxa = data.frame(),
+                  network = make_empty_graph(n=0, directed=FALSE),
+                  community = cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
 ){
   
   tryCatch({
     mgnet_object <- new("mgnet", 
-                        abundance = abundance, log_abundance=log_abundance,
+                        abundance = abundance, 
+                        rel_abundance = rel_abundance, norm_abundance = norm_abundance,
                         info_sample = info_sample,
-                        lineage = lineage, info_taxa=info_taxa,
+                        lineage = lineage, info_taxa = info_taxa,
                         network = network, community = community
     )
-    
-    if(length(abundance)!=0 && length(info_sample)==0){
-      info_sample <- data.frame("sample_sum"=rowSums(abundance))
-    } else if( length(info_sample)!=0 & !("sample_sum"%in%colnames(info_sample))){
-      info_sample$sample_sum <- rowSums(abundance)
-    }
-    mgnet_object@info_sample <- info_sample
     return(mgnet_object)
+    
   }, error = function(e) {
     
     # Extract and split the error message into lines

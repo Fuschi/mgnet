@@ -10,9 +10,10 @@ filter_criteria_taxa(
   object,
   abundance_criteria = NULL,
   relative_criteria = NULL,
-  log_abundance_criteria = NULL,
+  normalized_criteria = NULL,
   condition = "AND",
   trim = "yes",
+  aggregate_to = "aggregate",
   exclude_absent_taxa = TRUE
 )
 }
@@ -26,15 +27,19 @@ indicating whether the taxa meets the filtering criteria.}
 \item{relative_criteria}{A list of functions to be applied to the relative abundance data matrix column-wise.
 Each function takes a single column of relative abundance data as input and returns a logical value.}
 
-\item{log_abundance_criteria}{A list of functions to be applied to the log-transformed abundance data matrix column-wise.
+\item{normalized_criteria}{A list of functions to be applied to the log-transformed abundance data matrix column-wise.
 Each function takes a single column of log-transformed abundance data as input and returns a logical value.}
 
 \item{condition}{A character string specifying the logical condition to apply across
 the criteria. Options are "AND" (default) and "OR". "AND" requires a taxa to meet all specified
 criteria to be included, while "OR" requires a taxa to meet at least one criterion.}
 
-\item{trim}{A parameter to handle taxa not meeting criteria: "yes" to remove them,
-"no" to set their abundance to zero, or "aggregate" to combine them into a 'merged' category.}
+\item{trim}{How to handle taxa not meeting criteria: "yes" to remove them,
+"no" to set their abundance to zero (min sample value for norm_abundance),
+or "aggregate" to combine them into a single category.}
+
+\item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.
+Defaults to "aggregate".}
 
 \item{exclude_absent_taxa}{A logical value indicating whether to exclude taxa that are absent across all samples
 before applying the criteria. Defaults to TRUE.}

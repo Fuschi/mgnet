@@ -33,6 +33,41 @@ setMethod("abundance<-", c("mgnetList","ANY"), function(object, value){
 })
 
 
+# REL_ABUNDANCE
+#------------------------------------------------------------------------------#
+#' Set rel_abundance Data
+#'
+#' This setter function allows you to update the rel_abundance data for `mgnet` objects
+#' and each `mgnet` object within a `mgnetList`. The rel_abundance data must be a numeric matrix
+#' for `mgnet` objects. For `mgnetList` objects, the rel_abundance data should be a named list
+#' of numeric matrices corresponding to each `mgnet` object within the list.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param value The new rel_abundance data to be set.
+#' @return The `mgnet` or `mgnetList` object with updated abundance data.
+#' @export
+#' @importFrom methods validObject
+#' @name rel_abundance<-
+#' @aliases rel_abundance<-,mgnet-method rel_abundance<-,mgnetList-method
+setGeneric("rel_abundance<-", function(object, value) standardGeneric("rel_abundance<-"))
+
+setMethod("rel_abundance<-", c("mgnet","ANY"), function(object, value){
+  object@rel_abundance <- value
+  validObject(object)
+  object
+})
+
+setMethod("rel_abundance<-", c("mgnetList","ANY"), function(object, value){
+  are_list_assign(object, value)
+  for(i in 1:length(object)) {
+    object@mgnets[[i]]@rel_abundance <- value[[i]]
+    validObject(object@mgnets[[i]])
+  }
+  validObject(object)
+  object
+})
+
+
 # LOG_ABUNDANCE
 #------------------------------------------------------------------------------#
 #' Set Log-Transformed Abundance Data

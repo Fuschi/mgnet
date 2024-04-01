@@ -53,7 +53,8 @@
 #' @keywords internal
 .assertNoReservedKeywords <- function(obj, errors) {
   # Define the list of reserved keywords
-  reservedKeywords <- c("sample_id", "taxa_id")
+  reservedKeywords <- c("sample_id", "taxa_id", "abundance", 
+                        "rel_abundance", "norm_abundance")
   
   # Check if obj has column names to avoid unnecessary warnings
   if (!is.null(colnames(obj))) {
@@ -63,6 +64,9 @@
         message <- switch(keyword,
                           "sample_id" = "column name 'sample_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
                           "taxa_id" = "column name 'taxa_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
+                          "abundance" = "column name 'abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
+                          "rel_abundance" = "column name 'rel_abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
+                          "norm_abundance" = "norm_column name 'abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details."
         )
         errors <- c(errors, message)
       }
@@ -484,48 +488,6 @@
 
 
 #------------------------------------------------------------------------------#
-#' Internal: Validate Sample Sum in info_sample
-#'
-#' This internal function performs validation checks on the `sample_sum` column within the `info_sample` slot
-#' of an `mgnet` object. It ensures that if `sample_sum` is provided, it adheres to several conditions:
-#' - The `abundance` slot must be present and contain data.
-#' - The length of `sample_sum` must match the number of rows in `abundance`, representing the total number of samples.
-#' - All values in `sample_sum` must be positive, reflecting the non-negativity constraint of abundance measures.
-#' - Each value in `sample_sum` must be greater than or equal to the corresponding row sum of the `abundance` matrix, ensuring accuracy in representing total sample abundance.
-#'
-#' @param object The `mgnet` object being validated.
-#' @param errors A character vector accumulating any error messages identified during the validation process.
-#'               This vector is updated in-place with messages pertaining to the `sample_sum` validations.
-#'
-#' @return A possibly updated character vector containing accumulated validation error messages. If new errors
-#'         related to the `sample_sum` column are identified, they are appended to the vector.
-#'
-#' @details This function is part of the validation process for `mgnet` objects, called within the class's
-#'          set validity method. It focuses specifically on the integrity and logical consistency of the
-#'          `sample_sum` column when provided. As an internal function, it is not intended for direct use
-#'          outside of the `mgnet` object validation context.
-#'
-#' @keywords internal
-.assertSampleSumValidity <- function(object, errors) {
-  
-  if("sample_sum" %in% colnames(object@info_sample)) {
-
-    # Check positive values and correctness against row sums of abundance
-    if(any(object@info_sample$sample_sum <= 0)) {
-      errors <- c(errors, "all elements of 'sample_sum' in 'info_sample' must be positive.")
-    }
-      
-    calculatedRowSums <- rowSums(object@abundance, na.rm = TRUE)
-    if(any(object@info_sample$sample_sum < calculatedRowSums)) {
-      errors <- c(errors, "each element of 'sample_sum' in 'info_sample' must be greater than or equal to the corresponding row sum of 'abundance'.")
-    }
-  }
-  
-  return(errors)
-}
-
-
-#------------------------------------------------------------------------------#
 # SET VALIDITY FUNCTION
 #------------------------------------------------------------------------------#
 # Set validity method for the mgnet class
@@ -550,15 +512,28 @@ setValidity("mgnet", function(object) {
     }
   }
   
+  #CHECK RELATIVE
+  #-------------------------------------#
+  errors$rel_abundance <- character()
+  if( length(object@rel_abundance)!=0 ){
+    errors$rel_abundance <- .assertNumericMatrix(object@rel_abundance, errors$rel_abundance)
+    
+    if ( length(errors$rel_rel_abundance)==0 ){
+      errors$rel_abundance <- .assertUniqueRowColNames(object@rel_abundance, errors$rel_abundance)
+      errors$rel_abundance <- .assertAllPositive(object@rel_abundance, errors$rel_abundance)
+      errors$rel_abundance <- .assertNoReservedKeywords(object@rel_abundance, errors$rel_abundance)
+    }
+  }
+  
   #CHECK LOG-ABUNDANCE
   #-------------------------------------#
-  errors$log_abundance <- character()
-  if( length(object@log_abundance)!=0 ){
-    errors$log_abundance <- .assertNumericMatrix(object@log_abundance, errors$log_abundance)
+  errors$norm_abundance <- character()
+  if( length(object@norm_abundance)!=0 ){
+    errors$norm_abundance <- .assertNumericMatrix(object@norm_abundance, errors$norm_abundance)
     
-    if ( length(errors$log_abundance)==0 ){
-      errors$log_abundance <- .assertUniqueRowColNames(object@log_abundance, errors$log_abundance)
-      errors$log_abundance <- .assertNoReservedKeywords(object@log_abundance, errors$log_abundance)
+    if ( length(errors$norm_abundance)==0 ){
+      errors$norm_abundance <- .assertUniqueRowColNames(object@norm_abundance, errors$norm_abundance)
+      errors$norm_abundance <- .assertNoReservedKeywords(object@norm_abundance, errors$norm_abundance)
       
     }
   }
@@ -572,7 +547,6 @@ setValidity("mgnet", function(object) {
     if ( length(errors$info_sample)==0 ){
       errors$info_sample <- .assertUniqueRowColNames(object@info_sample, errors$info_sample)
       errors$info_sample <- .assertNoReservedKeywords(object@info_sample, errors$info_sample)
-      errors$info_sample <- .assertSampleSumValidity(object, errors$info_sample)
     }
   } 
   
@@ -611,7 +585,7 @@ setValidity("mgnet", function(object) {
   #-------------------------------------#
   errors$community <- character()
   if(length(object@community)!=0){
-    errors$community <- .assertNamedIgraph(object@community, errors$community)
+    errors$community <- .assertCommunitiesClass(object@community, errors$community)
   }
   
   # CHECK RECIPROCAL PROPERTIES
@@ -619,8 +593,10 @@ setValidity("mgnet", function(object) {
   errors$reciprocal <- character()
   
   if(length(object@abundance)!=0 && length(errors$abundance)==0){
-    if(length(object@log_abundance)!=0 && length(errors$log_abundance)==0){
-      errors$reciprocal <- .assertMatchingNames(object, "abundance", "log_abundance", errors$reciprocal)}
+    if(length(object@rel_abundance)!=0 && length(errors$rel_abundance)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "abundance", "rel_abundance", errors$reciprocal)}
+    if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "abundance", "norm_abundance", errors$reciprocal)}
     if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
       errors$reciprocal <- .assertMatchingRowNames(object, "abundance", "info_sample", errors$reciprocal)}
     if(length(object@lineage)!=0 && length(errors$lineage)==0){
@@ -631,15 +607,28 @@ setValidity("mgnet", function(object) {
       errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "columns", errors$reciprocal)}
   }
   
-  if(length(object@log_abundance)!=0 && length(errors$log_abundance)==0){
+  if(length(object@rel_abundance)!=0 && length(errors$rel_abundance)==0){
+    if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "abundance", "norm_abundance", errors$reciprocal)}
     if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "log_abundance", "info_sample", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingRowNames(object, "abundance", "info_sample", errors$reciprocal)}
     if(length(object@lineage)!=0 && length(errors$lineage)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "log_abundance", "lineage", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "lineage", errors$reciprocal)}
     if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "log_abundance", "info_taxa", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "info_taxa", errors$reciprocal)}
     if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "log_abundance", "columns", errors$reciprocal)}
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "columns", errors$reciprocal)}
+  }
+  
+  if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
+    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "norm_abundance", "info_sample", errors$reciprocal)}
+    if(length(object@lineage)!=0 && length(errors$lineage)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm_abundance", "lineage", errors$reciprocal)}
+    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm_abundance", "info_taxa", errors$reciprocal)}
+    if(length(object@network)!=0 && length(errors$network)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "norm_abundance", "columns", errors$reciprocal)}
   }
   
   if(length(object@lineage)!=0 && length(errors$lineage)==0){
@@ -654,7 +643,7 @@ setValidity("mgnet", function(object) {
       errors$reciprocal <- .assertMatchingNamesVertices(object, "info_taxa", "rows", errors$reciprocal)}
   }
   
-  if(length(object@community)!=0 && length(errors$community)==0){
+  if(length(object@community)!=0){
     errors$reciprocal <- .assertMatchingCommunitiesNetwork(object, errors$reciprocal)
   }
   
@@ -667,8 +656,10 @@ setValidity("mgnet", function(object) {
   
   if (length(object@abundance) > 0) {
     all_column_names <- c(all_column_names, colnames(object@abundance))
-  } else if (length(object@log_abundance) > 0) {
-    all_column_names <- c(all_column_names, colnames(object@log_abundance))
+  } else if (length(object@norm_abundance) > 0) {
+    all_column_names <- c(all_column_names, colnames(object@norm_abundance))
+  } else if (length(object@rel_abundance) > 0) {
+    all_column_names <- c(all_column_names, colnames(object@rel_abundance))
   }
   
 
@@ -676,7 +667,7 @@ setValidity("mgnet", function(object) {
   duplicated_names <- names(which(duplicated(all_column_names)))
   if(length(duplicated_names) > 0) {
     dup_names_str <- paste(duplicated_names, collapse = ", ")
-    errors <- c(errors, sprintf("Duplicated column names found across slots: %s. Each column name must be unique across info_taxa, info_sample, lineage, abundance-log_abundance.", dup_names_str))
+    errors <- c(errors, sprintf("Duplicated column names found across slots: %s. Each column name must be unique across info_taxa, info_sample, lineage, abundance-norm_abundance.", dup_names_str))
   }
 
   # FORMAT ERROR OUTPUT

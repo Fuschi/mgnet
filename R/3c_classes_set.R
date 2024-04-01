@@ -35,6 +35,43 @@ setMethod("set_abundance", "mgnetList", function(object, value) {
 })
 
 
+# SET REL_ABUNDANCE
+#------------------------------------------------------------------------------#
+#' Set `rel_abundance` Slot in `mgnet` Objects
+#'
+#' @description
+#' This function sets the rel_abundance data for an `mgnet` object or each `mgnet` object 
+#' within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param value The new rel_abundance data to be set, a numeric matrix for `mgnet` objects 
+#' or a list of numeric matrices for `mgnetList` objects.
+#' @return The modified `mgnet` or `mgnetList` object with the updated rel_abundance data.
+#' @export
+#' @name set_rel_abundance
+#' @aliases set_rel_abundance,mgnet-method set_rel_abundance,mgnetList-method
+#' @importFrom methods validObject
+setGeneric("set_rel_abundance", function(object, value) standardGeneric("set_rel_abundance"))
+
+setMethod("set_rel_abundance", "mgnet", function(object, value) {
+  object@rel_abundance <- value
+  validObject(object)
+  return(object)
+})
+
+setMethod("set_rel_abundance", "mgnetList", function(object, value) {
+  are_list_assign(object, value)
+  
+  for (i in seq_along(object@mgnets)) {
+    object@mgnets[[i]] <- set_rel_abundance(object@mgnets[[i]], value[[i]])
+    validObject(object@mgnets[[i]])
+  }
+  
+  validObject(object)
+  return(object)
+})
+
+
 # SET LOG_ABUNDANCE
 #------------------------------------------------------------------------------#
 #' Set `log_abundance` Slot in `mgnet` Objects
