@@ -32,7 +32,7 @@
 #'         For `mgnet` objects, returns a similar `tibble` without the source identification column.
 #'
 #' @export
-#' @aliases mgnet_longer,mgnetList-method
+#' @aliases mgnet_longer,mgnet-method mgnet_longer,mgnetList-method
 #'
 #' @importFrom tibble tibble enframe
 #' @importFrom tidyr pivot_longer

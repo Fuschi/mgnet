@@ -30,6 +30,8 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
   if(missing(i)) i <- seq_len(nsample(x))
   if(missing(j)) j <- seq_len(ntaxa(x))
   
+  if( all(i %in% seq_len(nsample(x))) || all(i %in% sample_id(x)) ) full_i <- TRUE else full_i <- FALSE
+  
   if ( length(i) == 0 && length(j) == 0 ){
     
     return(new("mgnet"))
@@ -82,10 +84,9 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
                    lineage = lineage.new,
                    info_taxa = info_taxa.new))
       
-    } else if (length(x@network)!=0 && missing(i)) {
-      # SUBCASE NETWORK PRESENT AND I MISSING
+    } else if (length(x@network)!=0 && full_i) {
       
-      if(length(x@network)!=0) network.new <- igraph::subgraph(x@network,j) else network.new <- x@network
+      network.new <- igraph::subgraph(x@network,j) 
       
       if(length(x@community) != 0){
         community.new <- x@community
@@ -106,10 +107,10 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
                    network = network.new,
                    community = community.new))
       
-    } else if (length(x@network)!=0 && !missing(i)) {
+    } else if (length(x@network)!=0 && !full_i) {
       # SUBCASE NETWORK PRESENT AND I PRESENT
       
-      warning("Subsetting by samples removes 'network' and 'community' slots")
+      warning("Subsetting by samples removes 'network' and 'community' slots.\n")
       return(mgnet(abundance = abundance.new,
                    rel_abundance = rel_abundance.new,
                    norm_abundance = norm_abundance.new,

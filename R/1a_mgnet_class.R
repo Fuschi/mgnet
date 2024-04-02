@@ -132,8 +132,12 @@ mgnet <- function(abundance = matrix(nrow=0,ncol=0),
                         rel_abundance = rel_abundance, norm_abundance = norm_abundance,
                         info_sample = info_sample,
                         lineage = lineage, info_taxa = info_taxa,
-                        network = network, community = community
-    )
+                        network = network, community = community)
+    
+    if(length(mgnet_object@abundance) != 0 && length(mgnet_object@rel_abundance)==0 ){
+      mgnet_object@rel_abundance <- mgnet_object@abundance / rowSums(mgnet_object@abundance)
+    }
+    
     return(mgnet_object)
     
   }, error = function(e) {

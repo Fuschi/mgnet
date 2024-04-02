@@ -329,6 +329,51 @@ setMethod("community_members", "mgnetList", function(object, .fmt = "list"){
 })
 
 
+# NCOMMUNITY
+#------------------------------------------------------------------------------#
+#' Get the Number of Communities
+#'
+#' Retrieves the number of communities present in the `comm` slot of an `mgnet` object or each `mgnet` object within an `mgnetList`.
+#'
+#' @description
+#' This function returns an integer indicating the number of communities detected in a network analysis represented by an `mgnet` object, 
+#' or a vector of integers for an `mgnetList` object, where each element corresponds to the number of communities in each respective `mgnet` object.
+#' For `mgnet` objects without any communities, the function returns 0. For `mgnetList` objects, it iteratively applies this logic to each contained `mgnet` object.
+#'
+#' @param object An object of class `mgnet` or `mgnetList`. For `mgnet`, it calculates the number of communities directly from the `comm` slot.
+#' For `mgnetList`, it applies the calculation to each `mgnet` object within the list and returns a vector of results.
+#'
+#' @return For an `mgnet` object, returns an integer representing the number of communities.
+#' For an `mgnetList` object, returns a numeric vector with each element representing the number of communities in each `mgnet` object within the list.
+#'
+#' @export
+#' @importFrom igraph sizes
+#' @aliases ncommunity,mgnet-method ncommunity,mgnetList-method
+#' @export
+setGeneric("ncommunity", function(object) standardGeneric("ncommunity"))
+
+setMethod("ncommunity", "mgnet", function(object){
+  
+  if(length(object@community)!=0){
+    
+    sizes <- names(igraph::sizes(object@ncommunity))
+    class(sizes) <- "numeric"
+    return(max(sizes))
+    
+  } else {
+    
+    return(numeric(0))
+    
+  }
+  
+})
+
+setMethod("ncommunity","mgnetList",
+          function(object){
+            sapply(object, ncommunity, simplify = TRUE, USE.NAMES = TRUE)
+          })
+
+
 # MGNETS
 #------------------------------------------------------------------------------#
 #' Retrieve mgnet Objects from an mgnetList

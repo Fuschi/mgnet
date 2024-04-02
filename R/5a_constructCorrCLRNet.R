@@ -1,8 +1,5 @@
-################################################################################
-################################################################################
 # CONSTRUCT CORRELATION CLR NETWORK
-################################################################################
-################################################################################
+#------------------------------------------------------------------------------#
 #' Construct Correlation Network from CLR-Transformed Data
 #'
 #' Constructs a correlation network from compositional data using centered log-ratio (CLR) 
@@ -120,8 +117,10 @@ setMethod("constructCorrCLRNet", "mgnet",
             }
             
             diag(adj) <- 0
-            if(all(adj)==0){
-              network <- make_empty_graph( n = ntaxa(object))
+            if(all(adj==0)){
+              network <- make_empty_graph( n = ntaxa(object), directed = FALSE)
+              V(network)$name <- taxa_id(object)
+              E(network)$weight <- numeric(0)
             } else {
               network <- igraph::graph_from_adjacency_matrix(adjmatrix = adj, 
                                                              mode = "undirected", 
