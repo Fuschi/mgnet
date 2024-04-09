@@ -309,12 +309,12 @@ setMethod("community_members", "mgnetList", function(object, .fmt = "list"){
     return(sapply(object@mgnets, function(x) community_members(x), 
                   simplify = FALSE, USE.NAMES = TRUE))
   } else {
-    taxa.merge <- unique(unlist(lapply(object, taxa_id)))
-    res <- matrix(NA_character_, nrow = length(taxa.merge), ncol = length(object),
-                  dimnames = list(taxa.merge, names(object)))
+    taxa.merge <- unique(unlist(lapply(object@mgnets, taxa_id)))
+    res <- matrix(NA_character_, nrow = length(taxa.merge), ncol = length(object@mgnets),
+                  dimnames = list(taxa.merge, names(object@mgnets)))
     
-    for(n in names(object)){
-      res[taxa_id(object[[n]]), n] <- community_members(object[[n]])
+    for(n in names(object@mgnets)){
+      res[taxa_id(object@mgnets[[n]]), n] <- community_members(object@mgnets[[n]])
     }
     
     if(.fmt == "df"){
