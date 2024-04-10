@@ -72,29 +72,29 @@ setMethod("set_rel_abundance", "mgnetList", function(object, value) {
 })
 
 
-# SET LOG_ABUNDANCE
+# SET norm_abundance
 #------------------------------------------------------------------------------#
-#' Set `log_abundance` Slot in `mgnet` Objects
+#' Set `norm_abundance` Slot in `mgnet` Objects
 #'
-#' This function allows setting the log_abundance data directly or calculating it
+#' This function allows setting the norm_abundance data directly or calculating it
 #' from the abundance data using specified methods ('clr' or 'iclr') after applying
 #' zero replacement strategies ('unif' or 'const'). The zero replacement is applied
 #' to the abundance data before the log-ratio transformation when 'method' is specified.
 #'
 #' @param object An `mgnet` object.
-#' @param value Optional. A numeric matrix to set as log_abundance data directly.
-#' @param clr_variant Optional. A string specifying the method to calculate log_abundance ('clr' or 'iclr').
+#' @param value Optional. A numeric matrix to set as norm_abundance data directly.
+#' @param clr_variant Optional. A string specifying the method to calculate norm_abundance ('clr' or 'iclr').
 #' @param zero_strategy A string specifying the zero replacement strategy applied before log-ratio transformation.
-#' @return The `mgnet` object with updated log_abundance data.
+#' @return The `mgnet` object with updated norm_abundance data.
 #' @export
 #' @seealso \code{\link{clr}}, \code{\link{iclr}}, \code{\link{zero_dealing}}
-#' @name set_log_abundance
-#' @aliases set_log_abundance,mgnet-method set_log_abundance,mgnetList-method
-setGeneric("set_log_abundance", function(object,
+#' @name set_norm_abundance
+#' @aliases set_norm_abundance,mgnet-method set_norm_abundance,mgnetList-method
+setGeneric("set_norm_abundance", function(object,
                                          value = NULL,
-                                         clr_variant = NULL, zero_strategy = "unif") standardGeneric("set_log_abundance"))
+                                         clr_variant = NULL, zero_strategy = "unif") standardGeneric("set_norm_abundance"))
 
-setMethod("set_log_abundance", "mgnet", function(object, value = NULL, clr_variant = NULL, zero_strategy = "unif") {
+setMethod("set_norm_abundance", "mgnet", function(object, value = NULL, clr_variant = NULL, zero_strategy = "unif") {
 
   if(is.null(value) && is.null(clr_variant)) {
     stop("Either 'value' or 'clr_variant' must be provided, not both.")
@@ -105,11 +105,9 @@ setMethod("set_log_abundance", "mgnet", function(object, value = NULL, clr_varia
   }
   
   if(!is.null(value)) {
-    
-    object@log_abundance <- value
+    object@norm_abundance <- value
     validObject(object)
     return(object)
-    
   }
   
   if(!is.null(clr_variant) && !is.character(clr_variant)) stop("`clr_variant` if setted it must be a string with possible choices 'clr' and 'iclr'")
@@ -120,9 +118,9 @@ setMethod("set_log_abundance", "mgnet", function(object, value = NULL, clr_varia
   abundance_nozero <- zero_dealing(object@abundance, method = zero_strategy)
   
   if(clr_variant == "clr") {
-    object@log_abundance <- clr(abundance_nozero)
+    object@norm_abundance <- clr(abundance_nozero)
   } else {
-    object@log_abundance <- iclr(abundance_nozero)
+    object@norm_abundance <- iclr(abundance_nozero)
   }
   
   validObject(object)
@@ -131,13 +129,13 @@ setMethod("set_log_abundance", "mgnet", function(object, value = NULL, clr_varia
 })
 
 
-setMethod("set_log_abundance", "mgnetList", function(object, value = NULL,
+setMethod("set_norm_abundance", "mgnetList", function(object, value = NULL,
                                                      clr_variant = NULL, zero_strategy = "unif") {
   
   if(!is.null(value)) are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_log_abundance(object@mgnets[[i]], value[[i]], clr_variant, zero_strategy)
+    object@mgnets[[i]] <- set_norm_abundance(object@mgnets[[i]], value[[i]], clr_variant, zero_strategy)
     validObject(object@mgnets[[i]])
   }
   
