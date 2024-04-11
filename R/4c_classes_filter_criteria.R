@@ -162,6 +162,10 @@ setMethod("filter_criteria_sample", "mgnetList",
 #'         specified criteria, or an `mgnetList` with each constituent `mgnet`
 #'         object filtered accordingly.
 #'
+#' @importFrom rlang !! :=
+#' @importFrom tidyr %>%
+#' @importFrom dplyr mutate
+#'
 #' @seealso \link{filter_criteria_sample} for sample-based criteria application.
 #' @export
 #' @name filter_criteria_taxa
@@ -175,7 +179,7 @@ setGeneric("filter_criteria_taxa",
 
 setMethod("filter_criteria_taxa", "mgnet",
           function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL,
-                   condition = "AND", trim = "yes", aggregate_to = "aggregate",
+                   condition = "AND", trim = "yes", aggregate_to,
                    exclude_absent_taxa = TRUE) {
             
             # Checks
@@ -197,6 +201,12 @@ setMethod("filter_criteria_taxa", "mgnet",
             if (!all(sapply(list(abundance_criteria, relative_criteria, normalized_criteria), check_criteria))) {
               stop("All criteria must be either a list of functions, a single function, or NULL.")
             }
+            
+            if(trim == "aggregate" && missing(aggregate_to)) stop("if you set trim as 'aggregate' the parameter aggregate_to must be set as character and indicate the new variable where the filtered taxa are aggregated")
+            if(!missing(aggregate_to)){
+              if(!is.character(aggregate_to)) stop("aggregate_to must to be a character")
+            }
+            if(!missing(aggregate_to) && trim != "aggregate"){warning("if the parameter trim is different from 'aggregate' the parameter aggregate to is ignored")}
             
             # Convert single function to list
             to_list <- function(x) if(is.function(x)) list(x) else x
@@ -307,22 +317,52 @@ setMethod("filter_criteria_taxa", "mgnet",
               #-----------------------------------------#  
             } else if (trim=="aggregate") {
               
-              # data
+              # abundance
               if(length(object@abundance)!=0){
                 abundance.new<-object@abundance[,final_pass,drop=F]
                 if(aggregate_to%in%colnames(abundance.new)){
                   abundance.new[,aggregate_to] <- abundance.new[,aggregate_to] + rowSums(object@abundance[,!final_pass,drop=F])
                 } else {
-                  abundance.new <- cbind(abundance.new, aggregate_to=rowSums(object@abundance[,!final_pass,drop=F]))
+                  abundance.new <- as.data.frame(abundance.new) %>%
+                    mutate(!!aggregate_to := rowSums(object@abundance[,!final_pass,drop=F]) ) %>%
+                    as.matrix
                 }
               } else {
                 abundance.new<-object@abundance
               }
-              # taxa
+              # rel_abundance
+              if(length(object@rel_abundance)!=0){
+                rel_abundance.new<-object@rel_abundance[,final_pass,drop=F]
+                if(aggregate_to%in%colnames(rel_abundance.new)){
+                  rel_abundance.new[,aggregate_to] <- rel_abundance.new[,aggregate_to] + rowSums(object@rel_abundance[,!final_pass,drop=F])
+                } else {
+                  rel_abundance.new <- as.data.frame(rel_abundance.new) %>%
+                    mutate(!!aggregate_to := rowSums(object@rel_abundance[,!final_pass,drop=F]) ) %>%
+                    as.matrix
+                }
+              } else {
+                rel_abundance.new<-object@rel_abundance
+              }
+              # norm_data
+              if(length(object@norm_abundance)!=0){
+                norm_abundance.new<-object@norm_abundance.new[,final_pass,drop=F]
+                if(aggregate_to%in%colnames(norm_abundance.new)){
+                  norm_abundance.new[,aggregate_to] <- norm_abundance.new[,aggregate_to] + rowSums(object@norm_abundance[,!final_pass,drop=F])
+                } else {
+                  norm_abundance.new <- as.data.frame(norm_abundance.new) %>%
+                    mutate(!!aggregate_to := rowSums(object@norm_abundance[,!final_pass,drop=F]) ) %>%
+                    as.matrix
+                }
+              } else {
+                norm_abundance.new<-object@norm_abundance
+              }
+              # lineage
               if(length(object@lineage)!=0){
                 lineage.new<-object@lineage[final_pass,,drop=F]
                 if(!(aggregate_to%in%rownames(lineage.new))){
-                  lineage.new <- rbind(lineage.new,aggregate_to=rep(aggregate_to,length(ranks(object))))
+                  lineage.new <- as.data.frame(lineage.new) %>%
+                    bind_rows(!!aggregate_to := setNames(rep(aggregate_to,length(ranks(object))), ranks(object)) )%>%
+                    as.matrix
                 }
               } else {
                 lineage.new<-object@lineage
@@ -331,23 +371,14 @@ setMethod("filter_criteria_taxa", "mgnet",
               if(length(object@info_taxa)!=0){
                 info_lineage.new<-object@info_taxa[final_pass,,drop=F]
                 if(!(aggregate_to%in%rownames(info_lineage.new))){
-                  info_lineage.new <- rbind(info_lineage.new,aggregate_to=rep(aggregate_to,ncol(object@info_taxa)))
+                  info_lineage.new <- as.data.frame(info_lineage.new) %>%
+                    mutate(!!aggregate_to := aggregate_to ) %>%
+                    as.matrix
                 }
               } else {
                 info_lineage.new<-object@info_taxa
               }
-              # log_data
-              if(length(object@norm_abundance)!=0){
-                norm_abundance.new<-object@norm_abundance[,final_pass,drop=F]
-                if(aggregate_to%in%colnames(norm_abundance.new)){
-                  norm_abundance.new[,aggregate_to] <- norm_abundance.new[,aggregate_to] + rowSums(object@norm_abundance[,!final_pass,drop=F])
-                } else {
-                  norm_abundance.new <- cbind(norm_abundance.new, aggregate_to=rowSums(object@norm_abundance[,!final_pass,drop=F]))
-                }
-              } else {
-                norm_abundance.new<-object@norm_abundance
-              }
-              # netw
+              # network
               if(length(object@network)!=0){
                 network.new<-igraph::subgraph(object@network,final_pass)
                 if(!(aggregate_to%in%taxa_id(object))){
@@ -356,7 +387,7 @@ setMethod("filter_criteria_taxa", "mgnet",
               } else {
                 network.new<-object@network
               }
-              # comm
+              # community
               if(length(object@community)!=0){
                 community.new <- object@community
                 if(is.character(final_pass)) final_pass <- which(taxa_id(object)%in%final_pass)
@@ -370,13 +401,14 @@ setMethod("filter_criteria_taxa", "mgnet",
                 community.new <- object@community
               }
               
-              return(mgnet(abundance=abundance.new,
-                           info_sample=object@info_sample,
-                           lineage=lineage.new,
-                           info_taxa=info_lineage.new,
-                           norm_abundance=norm_abundance.new,
-                           network=network.new,
-                           community=community.new))
+              return(mgnet(abundance = abundance.new,
+                           rel_abundance = rel_abundance.new,
+                           norm_abundance = norm_abundance.new,
+                           info_sample = object@info_sample,
+                           lineage = lineage.new,
+                           info_taxa = info_taxa.new,
+                           network = network.new,
+                           community = community.new))
             }
 
           })
