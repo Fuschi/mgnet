@@ -64,7 +64,7 @@ setMethod("abundance", "mgnet", function(object, rank, .fmt) {
       dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
       dplyr::summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
       tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = abundance) %>%
-      dplyr::arrange(sample_id = sample_id(object))
+      dplyr::arrange(match(sample_id, sample_id(object)))
       
     result_matrix <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
@@ -157,7 +157,7 @@ setMethod("rel_abundance", "mgnet", function(object, rank, .fmt) {
       dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
       dplyr::summarise(rel_abundance = sum(rel_abundance, na.rm = TRUE), .groups = "drop") %>%
       tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = rel_abundance) %>%
-      dplyr::arrange(sample_id = sample_id(object))
+      dplyr::arrange(match(sample_id, sample_id(object)))
     
     result <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
@@ -254,7 +254,7 @@ setMethod("norm_abundance", "mgnet", function(object, rank, .fmt) {
       dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
       dplyr::summarise(norm_abundance = sum(norm_abundance, na.rm = TRUE), .groups = "drop") %>%
       tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = norm_abundance) %>%
-      dplyr::arrange(sample_id = sample_id(object))
+      dplyr::arrange(match(sample_id, sample_id(object)))
     
     result <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
