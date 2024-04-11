@@ -20,12 +20,13 @@ setGeneric("aggregate_taxa", function(object, rank) standardGeneric("aggregate_t
 
 setMethod("aggregate_taxa", c("mgnet", "character"),
           function(object, rank) {
+            if(length(object@lineage)==0) stop("lineage slot cannot be empty")
             if(!(rank %in% ranks(object))) stop("Rank must be one of these possible choices: ", toString(ranks(object)))
             
             data.aggregate <- mgnet::abundance(object, rank)
             
             # Aggregate taxa data
-            taxa.aggregate <- object@taxa[, seq_len(match(rank, mgnet::ranks(object)))]
+            taxa.aggregate <- object@lineage[, seq_len(match(rank, mgnet::ranks(object)))]
             taxa.aggregate <- taxa.aggregate[!duplicated(taxa.aggregate), ]
             rownames(taxa.aggregate) <- taxa.aggregate[, rank]
             taxa.aggregate <- taxa.aggregate[colnames(data.aggregate), ]
