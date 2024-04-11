@@ -141,7 +141,7 @@ setGeneric("ranks", function(object) standardGeneric("ranks"))
 
 setMethod("ranks", "mgnet", function(object) {
   
-  if(length(lineage)!=0) return(colnames(object@lineage))
+  if(length(object@lineage)!=0) return(colnames(object@lineage))
   else return(character(length=0))
   
 })

@@ -39,7 +39,7 @@ setMethod("aggregate_taxa", c("mgnet", "character"),
             # Return updated mgnet object
             return(new("mgnet", abundance = as.matrix(data.aggregate), 
                        info_sample = object@info_sample, 
-                       info_taxa = as.matrix(taxa.aggregate)))
+                       lineage = as.matrix(taxa.aggregate)))
           })
 
 setMethod("aggregate_taxa", c("mgnetList", "character"),
