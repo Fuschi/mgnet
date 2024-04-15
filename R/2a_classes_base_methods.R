@@ -344,7 +344,7 @@ setMethod("community_members", "mgnetList", function(object, .fmt = "list"){
 #' For `mgnetList`, it applies the calculation to each `mgnet` object within the list and returns a vector of results.
 #'
 #' @return For an `mgnet` object, returns an integer representing the number of communities.
-#' For an `mgnetList` object, returns a numeric vector with each element representing the number of communities in each `mgnet` object within the list.
+#' For an `mgnetList` object, returns a numeric vector with each element representing the number of communities in each `mgnet` object.
 #'
 #' @export
 #' @importFrom igraph sizes
@@ -370,7 +370,7 @@ setMethod("ncommunity", "mgnet", function(object){
 
 setMethod("ncommunity","mgnetList",
           function(object){
-            sapply(object, ncommunity, simplify = TRUE, USE.NAMES = TRUE)
+            sapply(object@mgnets, ncommunity, simplify = TRUE, USE.NAMES = TRUE)
           })
 
 

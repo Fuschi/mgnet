@@ -14,7 +14,7 @@ For \code{mgnetList}, it applies the calculation to each \code{mgnet} object wit
 }
 \value{
 For an \code{mgnet} object, returns an integer representing the number of communities.
-For an \code{mgnetList} object, returns a numeric vector with each element representing the number of communities in each \code{mgnet} object within the list.
+For an \code{mgnetList} object, returns a numeric vector with each element representing the number of communities in each \code{mgnet} object.
 }
 \description{
 This function returns an integer indicating the number of communities detected in a network analysis represented by an \code{mgnet} object,
