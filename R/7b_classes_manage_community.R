@@ -21,7 +21,7 @@
 #' based on the specified `size` and `trim` parameters. The output format of isolated nodes can be adjusted with the `membership_format` parameter.
 #'
 #' @export
-#' @aliases remove_smaller_communities,mgnet-method
+#' @aliases remove_smaller_communities,mgnet-method remove_smaller_communities,mgnetList-method
 #' @importFrom igraph delete_vertices subgraph.edges
 setGeneric("remove_smaller_communities", function(object, size, trim = TRUE, membership_format = "mgnet") standardGeneric("remove_smaller_communities"))
 
@@ -57,6 +57,17 @@ setMethod("remove_smaller_communities", "mgnet", function(object, size,
     return(object)
   }
   
+})
+
+setMethod("remove_smaller_communities", "mgnetList", function(object, size,
+                                                          trim = TRUE, membership_format = "mgnet"){
+  
+  object@mgnets <- sapply(object@mgnets, \(x){
+    remove_smaller_communities(x, size = size, trim = trim,
+                               membership_format = membership_format)
+  }, simplify = FALSE, USE.NAMES = TRUE)
+  
+  return(object)
 })
 
 # TO UPDATE
