@@ -172,7 +172,7 @@ setMethod("filter_criteria_sample", "mgnetList",
 #' @aliases filter_criteria_taxa,mgnet-method filter_criteria_taxa,mgnetList-method
 setGeneric("filter_criteria_taxa",
            function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL,
-                    condition = "AND", trim = "yes", aggregate_to = "aggregate",
+                    condition = "AND", trim = "yes", aggregate_to,
                     exclude_absent_taxa = TRUE) {
              standardGeneric("filter_criteria_taxa")
            })
@@ -415,11 +415,12 @@ setMethod("filter_criteria_taxa", "mgnet",
 
 setMethod("filter_criteria_taxa", "mgnetList",
           function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL, 
-                   condition = "AND", trim = "yes", exclude_absent_taxa = TRUE ) {
+                   condition = "AND", trim = "yes", aggregate_to,
+                   exclude_absent_taxa = TRUE ) {
             # Apply the filtering criteria to each mgnet object in the list
             object@mgnets <- lapply(object@mgnets, function(mgnet_obj) {
               filter_criteria_taxa(mgnet_obj, abundance_criteria, relative_criteria, normalized_criteria, 
-                                   condition, trim, exclude_absent_taxa)
+                                   condition, trim, aggregate_to, exclude_absent_taxa)
             })
             return(object)
           })

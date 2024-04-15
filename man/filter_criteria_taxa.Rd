@@ -13,7 +13,7 @@ filter_criteria_taxa(
   normalized_criteria = NULL,
   condition = "AND",
   trim = "yes",
-  aggregate_to = "aggregate",
+  aggregate_to,
   exclude_absent_taxa = TRUE
 )
 }

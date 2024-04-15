@@ -5,11 +5,11 @@
 \title{Create an mgnet Object}
 \usage{
 mgnet(
-  abundance = matrix(nrow = 0, ncol = 0),
-  rel_abundance = matrix(nrow = 0, ncol = 0),
-  norm_abundance = matrix(nrow = 0, ncol = 0),
+  abundance = matrix(numeric(0), nrow = 0, ncol = 0),
+  rel_abundance = matrix(numeric(0), nrow = 0, ncol = 0),
+  norm_abundance = matrix(numeric(0), nrow = 0, ncol = 0),
   info_sample = data.frame(),
-  lineage = matrix(nrow = 0, ncol = 0),
+  lineage = matrix(character(0), nrow = 0, ncol = 0),
   info_taxa = data.frame(),
   network = make_empty_graph(n = 0, directed = FALSE),
   community = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))

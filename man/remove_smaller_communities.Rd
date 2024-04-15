@@ -3,6 +3,7 @@
 \name{remove_smaller_communities}
 \alias{remove_smaller_communities}
 \alias{remove_smaller_communities,mgnet-method}
+\alias{remove_smaller_communities,mgnetList-method}
 \title{Remove or Isolate Smaller Communities}
 \usage{
 remove_smaller_communities(
