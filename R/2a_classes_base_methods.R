@@ -356,7 +356,7 @@ setMethod("ncommunity", "mgnet", function(object){
   
   if(length(object@community)!=0){
     
-    sizes <- names(igraph::sizes(object@ncommunity))
+    sizes <- names(igraph::sizes(object@community))
     class(sizes) <- "numeric"
     return(max(sizes))
     
