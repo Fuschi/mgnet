@@ -130,7 +130,7 @@ setMethod("refine_sample", "mgnetList",
 #'        "no" to set their abundance to zero (min sample value for norm_abundance), 
 #'        or "aggregate" to combine them into a single category.
 #' @param aggregate_to Name for the aggregated taxa category when using `trim = "aggregate"`.
-#'        Defaults to "aggregate".        
+#'        Defaults to NULL.        
 #'
 #' @return A modified `mgnet` object with only the selected taxa, or an `mgnetList` with
 #'         each contained `mgnet` object filtered accordingly.
@@ -146,15 +146,20 @@ setMethod("refine_sample", "mgnetList",
 #' @importFrom igraph subgraph add_vertices subgraph.edges E
 #' @seealso \link{mgnet}, \link{mgnetList}
 setGeneric("refine_taxa", function(object, ..., condition = "AND", 
-                                   trim = "yes", aggregate_to = "aggregate") standardGeneric("refine_taxa"))
+                                   trim = "yes", aggregate_to = NULL) standardGeneric("refine_taxa"))
 
 setMethod("refine_taxa", "mgnet",
           function(object, ..., condition = "AND",
-                   trim = "yes", aggregate_to = "aggregate"){
+                   trim = "yes", aggregate_to = NULL){
             
             condition <- match.arg(condition, c("AND","OR"))
             trim <- match.arg(trim, c("yes","no","aggregate"))
-            aggregate_to <- if( is.character(aggregate_to) || length(aggregate_to)==0 ) stop("aggregate_to must be a non empty character string")
+            
+            if(trim == "aggregate" && is.null(aggregate_to)) stop("if you set trim as 'aggregate' the parameter aggregate_to must be set as character and indicate the new variable where the filtered taxa are aggregated")
+            if(!is.null(aggregate_to)){
+              if(!is.character(aggregate_to)) stop("aggregate_to must to be a character")
+            }
+            if(!is.null(aggregate_to) && trim != "aggregate"){warning("if the parameter trim is different from 'aggregate' the parameter aggregate to is ignored")}
             
             
             IDX <- list(...)
@@ -358,7 +363,7 @@ setMethod("refine_taxa", "mgnet",
 
 setMethod("refine_taxa", "mgnetList",
           function(object, ..., condition = "AND", 
-                   trim = "yes", aggregate_to = "aggregate") {
+                   trim = "yes", aggregate_to = NULL) {
             condition <- match.arg(condition, c("AND", "OR"))
             trim <- match.arg(trim, c("yes", "no", "aggregate"))
             

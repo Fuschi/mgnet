@@ -202,7 +202,7 @@ setMethod("filter_criteria_taxa", "mgnet",
               stop("All criteria must be either a list of functions, a single function, or NULL.")
             }
             
-            if(trim == "aggregate" && missing(aggregate_to)) stop("if you set trim as 'aggregate' the parameter aggregate_to must be set as character and indicate the new variable where the filtered taxa are aggregated")
+            if(trim == "aggregate" && is.null(aggregate_to)) stop("if you set trim as 'aggregate' the parameter aggregate_to must be set as character and indicate the new variable where the filtered taxa are aggregated")
             if(!is.null(aggregate_to)){
               if(!is.character(aggregate_to)) stop("aggregate_to must to be a character")
             }

@@ -6,13 +6,7 @@
 \alias{refine_taxa,mgnetList-method}
 \title{Refines Taxa Selection in \code{mgnet} or \code{mgnetList} Objects}
 \usage{
-refine_taxa(
-  object,
-  ...,
-  condition = "AND",
-  trim = "yes",
-  aggregate_to = "aggregate"
-)
+refine_taxa(object, ..., condition = "AND", trim = "yes", aggregate_to = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
@@ -28,7 +22,7 @@ or functions returning such indices. These criteria determine which taxa are ret
 or "aggregate" to combine them into a single category.}
 
 \item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.
-Defaults to "aggregate".}
+Defaults to NULL.}
 }
 \value{
 A modified \code{mgnet} object with only the selected taxa, or an \code{mgnetList} with
