@@ -360,23 +360,23 @@ setMethod("filter_criteria_taxa", "mgnet",
               if(length(object@lineage)!=0){
                 lineage.new<-object@lineage[final_pass,,drop=F]
                 if(!(aggregate_to%in%rownames(lineage.new))){
-                  lineage.new <- as.data.frame(lineage.new) %>%
-                    bind_rows(!!aggregate_to := setNames(rep(aggregate_to,length(ranks(object))), ranks(object)) )%>%
-                    as.matrix
+                  lineage.new <- rbind(lineage.new,
+                                       matrix(aggregate_to, nrow = 1, ncol = length(ranks(object)),
+                                              dimnames = list(aggregate_to, ranks(object)))) 
                 }
               } else {
                 lineage.new<-object@lineage
               }
               # info_taxa
               if(length(object@info_taxa)!=0){
-                info_lineage.new<-object@info_taxa[final_pass,,drop=F]
-                if(!(aggregate_to%in%rownames(info_lineage.new))){
-                  info_lineage.new <- as.data.frame(info_lineage.new) %>%
+                info_taxa.new<-object@info_taxa[final_pass,,drop=F]
+                if(!(aggregate_to%in%rownames(info_taxa.new))){
+                  info_taxa.new <- as.data.frame(info_taxa.new) %>%
                     mutate(!!aggregate_to := aggregate_to ) %>%
                     as.matrix
                 }
               } else {
-                info_lineage.new<-object@info_taxa
+                info_taxa.new<-object@info_taxa
               }
               # network
               if(length(object@network)!=0){
@@ -401,7 +401,7 @@ setMethod("filter_criteria_taxa", "mgnet",
                 community.new <- object@community
               }
               
-              return(mgnet(abundance = abundance.new,
+              return(mgnet(abundance = abundance.new, 
                            rel_abundance = rel_abundance.new,
                            norm_abundance = norm_abundance.new,
                            info_sample = object@info_sample,
