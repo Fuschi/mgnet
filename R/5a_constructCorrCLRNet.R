@@ -142,7 +142,7 @@ setMethod("constructCorrCLRNet", "mgnetList",
             object@mgnets <- sapply(object@mgnets, function(x){
               constructCorrCLRNet(x,
                                   zero_strategy = "unif", clr_method ="clr",
-                                  cor_method = "pearson", thresh_method, thresh_value, padj_method="none")},
+                                  cor_method = "pearson", thresh_method, thresh_value, padj_method=padj_method)},
               simplify = FALSE, USE.NAMES = TRUE)
             
             validObject(object)
