@@ -91,7 +91,7 @@ setMethod("show", "mgnetList", function(object) {
     
     if(length(mgnetObj@abundance)!=0){
       zeroPercentage <- sum(mgnetObj@abundance == 0) / (nrow(mgnetObj@abundance) * ncol(mgnetObj@abundance))
-      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", zeroPercentage))
+      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
     } else {
       cat("  No abundance available.\n")
     }

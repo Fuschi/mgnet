@@ -68,7 +68,7 @@ setMethod("rel_abundance<-", c("mgnetList","ANY"), function(object, value){
 })
 
 
-# LOG_ABUNDANCE
+# norm_abundance
 #------------------------------------------------------------------------------#
 #' Set Log-Transformed Abundance Data
 #'
@@ -82,20 +82,20 @@ setMethod("rel_abundance<-", c("mgnetList","ANY"), function(object, value){
 #' @return The `mgnet` or `mgnetList` object with updated log-transformed abundance data.
 #' @export
 #' @importFrom methods validObject
-#' @name log_abundance<-
-#' @aliases log_abundance<-,mgnet-method log_abundance<-,mgnetList-method
-setGeneric("log_abundance<-", function(object, value) standardGeneric("log_abundance<-"))
+#' @name norm_abundance<-
+#' @aliases norm_abundance<-,mgnet-method norm_abundance<-,mgnetList-method
+setGeneric("norm_abundance<-", function(object, value) standardGeneric("norm_abundance<-"))
 
-setMethod("log_abundance<-", "mgnet", function(object, value) {
-  object@log_abundance <- value
+setMethod("norm_abundance<-", "mgnet", function(object, value) {
+  object@norm_abundance <- value
   validObject(object)
   object
 })
 
-setMethod("log_abundance<-", "mgnetList", function(object, value) {
+setMethod("norm_abundance<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   for(i in 1:length(object)) {
-    object@mgnets[[i]]@log_abundance <- value[[i]]
+    object@mgnets[[i]]@norm_abundance <- value[[i]]
     validObject(object@mgnets[[i]])
   }
   validObject(object)
