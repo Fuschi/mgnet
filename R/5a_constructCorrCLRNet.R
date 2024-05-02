@@ -91,7 +91,7 @@ setMethod("constructCorrCLRNet", "mgnet",
                   mgnet::iclr(zero_dealing(object@abundance, method = zero_strategy))
                 }
               
-            } else if ( clr_method == "none" && length(object@norm_abundance)!=0 ){
+            } else if ( clr_method == "stored" && length(object@norm_abundance)!=0 ){
               
               norm_abundance <- object@norm_abundance
               
