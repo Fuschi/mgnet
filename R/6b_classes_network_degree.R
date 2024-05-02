@@ -8,6 +8,7 @@
 #' @param type Character indicating the type of edges to include. 
 #' Possible values: "intra" for edges within communities, "extra" for edges between communities, or "all" for all edges.
 #' @return A vector of vertex degrees.
+#' @importFrom igraph crossing intersection degree
 #' @export
 #' @aliases degree_mgnet,mgnet-method degree_mgnet,mgnetList-method
 setGeneric("degree_mgnet", function(obj, sign = "all", type = "all") standardGeneric("degree_mgnet"))

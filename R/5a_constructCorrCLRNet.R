@@ -14,7 +14,7 @@
 #' Options are "unif" for replacing zeros with values from a uniform distribution and "const" 
 #' for a constant value replacement. Default is "unif".
 #' @param clr_method Specifies the CLR transformation method: "clr" for standard CLR, "iclr" for 
-#' interquartile CLR, or "none" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".
+#' interquartile CLR, or "stored" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".
 #' @param cor_method Correlation method ("pearson", "spearman", "kendall") used for computing 
 #' pairwise correlations between taxa after CLR transformation. Default is "pearson".
 #' @param thresh_method Method for thresholding the correlation matrix to construct the adjacency 
@@ -73,16 +73,17 @@ setMethod("constructCorrCLRNet", "mgnet",
             
             # Checks
             zero_strategy <- match.arg(zero_strategy,c("unif","const"))
-            clr_method <- match.arg(clr_method,c("clr","iclr","none"))
+            clr_method <- match.arg(clr_method,c("clr","iclr","stored"))
             cor_method <- match.arg(cor_method,c("pearson","spearman","kendall"))
             thresh_method <- match.arg(thresh_method,c("absolute","density","p-value"))
             padj_method <- match.arg(padj_method, c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"))
             if(thresh_method != "p-value" && padj_method != "none") stop("adjust different from 'none' can be set only for thresh_method equal to p-value")
             if(!is.numeric(thresh_value) | thresh_value<0 | thresh_value>1) stop("thresh_value must number in range [0,1]")
-            if( clr_method != "none" && length(object@norm_abundance)!=0 ) stop("norm_abundance matrix is not empty. Please set clr_method to 'none' or remove from the object.")
-            if( clr_method != "none" && length(object@abundance)==0 ) stop("abundance matrix missing and i cannot calculate the clr") 
+            if( clr_method == "stored" && length(object@norm_abundance)==0 ) stop("norm_abundance matrix missing") 
 
-            if( clr_method != "none" && length(object@norm_abundance)==0 ){
+            if( clr_method != "stored"){
+              
+              if(length(norm_abundance(object)) != 0) message("norm_abundance slot rewritten")
               
               norm_abundance <- if(clr_method == "clr") {
                   mgnet::clr(zero_dealing(object@abundance, method = zero_strategy))

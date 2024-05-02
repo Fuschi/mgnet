@@ -24,7 +24,7 @@ Options are "unif" for replacing zeros with values from a uniform distribution a
 for a constant value replacement. Default is "unif".}
 
 \item{clr_method}{Specifies the CLR transformation method: "clr" for standard CLR, "iclr" for
-interquartile CLR, or "none" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".}
+interquartile CLR, or "stored" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".}
 
 \item{cor_method}{Correlation method ("pearson", "spearman", "kendall") used for computing
 pairwise correlations between taxa after CLR transformation. Default is "pearson".}
