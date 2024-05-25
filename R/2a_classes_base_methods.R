@@ -168,12 +168,15 @@ setMethod("ranks", "mgnetList", function(object) {
 setGeneric("info_sample_vars", function(object) standardGeneric("info_sample_vars"))
 
 setMethod("info_sample_vars", "mgnet", function(object) {
-  if(length(info_sample)!=0) return(colnames(object@info_sample))
-  else return(character(length=0))
+  if(length(info_sample)!=0){
+    return(colnames(object@info_sample))
+  } else {
+    return(character(length=0))
+  }
 })
 
 setMethod("info_sample_vars", "mgnetList", function(object) {
-  sapply(object@mgnets, ranks, simplify = FALSE, USE.NAMES = TRUE)
+  sapply(object@mgnets, info_sample_vars, simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -194,8 +197,11 @@ setMethod("info_sample_vars", "mgnetList", function(object) {
 setGeneric("info_taxa_vars", function(object) standardGeneric("info_taxa_vars"))
 
 setMethod("info_taxa_vars", "mgnet", function(object) {
-  if(length(info_taxa)!=0) return(colnames(object@info_taxa))
-  else return(character(length=0))
+  if(length(info_taxa)!=0){
+    return(colnames(object@info_taxa))
+  } else {
+    return(character(length=0))
+  }
 })
 
 setMethod("info_taxa_vars", "mgnetList", function(object) {

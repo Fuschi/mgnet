@@ -65,7 +65,7 @@ setMethod("filter_criteria_sample", "mgnet",
             
             apply_criteria <- function(data, criteria, condition){
               
-              if(length(data)==0) return(data)
+              if(length(data)==0) stop(paste(data, "slot missing."))
               if (is.null(criteria)) return(rep(TRUE,nrow(data)))
               
               result_mat <- matrix(FALSE, nrow=nrow(data), ncol=length(criteria))
