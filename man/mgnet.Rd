@@ -16,27 +16,28 @@ mgnet(
 )
 }
 \arguments{
-\item{abundance}{numeric matrix with all elements >=0 representing the abundance data
+\item{abundance}{Numeric matrix with all elements >=0 representing the abundance data
 where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.}
 
-\item{rel_abundance}{...}
-
-\item{norm_abundance}{numeric matrix of log-transformed abundance data, structured like \code{abundance}.
+\item{rel_abundance}{Numeric matrix representing the relative abundance of each taxon within each sample.
 Defaults to an empty matrix.}
 
-\item{info_sample}{data.frame containing metadata for samples. Each row should correspond
+\item{norm_abundance}{Numeric matrix of log-transformed abundance data, structured like \code{abundance}.
+Defaults to an empty matrix.}
+
+\item{info_sample}{Data.frame containing metadata for samples. Each row should correspond
 to a sample and each column to an experimental variable. Defaults to an empty data frame.}
 
-\item{lineage}{character matrix with taxonomic classification for each taxa. Each row
+\item{lineage}{Character matrix with taxonomic classification for each taxa. Each row
 corresponds to a taxa and each column to a rank. Defaults to an empty matrix.}
 
-\item{info_taxa}{data.frame with additional information on taxa. Each row should correspond
+\item{info_taxa}{Data.frame with additional information on taxa. Each row should correspond
 to a taxa. Defaults to an empty data frame.}
 
-\item{network}{an \code{igraph} object representing a network of taxa interactions. Defaults to an
+\item{network}{An \code{igraph} object representing a network of taxa interactions. Defaults to an
 empty graph.}
 
-\item{community}{an object storing community detection results from \code{network}. Defaults
+\item{community}{An object storing community detection results from \code{network}. Defaults
 to the result of a fast greedy clustering on an empty graph.}
 }
 \value{

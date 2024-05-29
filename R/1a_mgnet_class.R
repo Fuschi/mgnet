@@ -87,20 +87,21 @@ setClass("mgnet",
 #' providing a comprehensive framework for the analysis of microbial communities and their interactions.
 #' It handles object creation with custom error handling for improved user experience.
 #'
-#' @param abundance numeric matrix with all elements >=0 representing the abundance data 
+#' @param abundance Numeric matrix with all elements >=0 representing the abundance data 
 #'        where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.
-#' @param rel_abundance ...
-#' @param norm_abundance numeric matrix of log-transformed abundance data, structured like `abundance`.
+#' @param rel_abundance Numeric matrix representing the relative abundance of each taxon within each sample.
 #'        Defaults to an empty matrix.
-#' @param info_sample data.frame containing metadata for samples. Each row should correspond
+#' @param norm_abundance Numeric matrix of log-transformed abundance data, structured like `abundance`.
+#'        Defaults to an empty matrix.
+#' @param info_sample Data.frame containing metadata for samples. Each row should correspond
 #'        to a sample and each column to an experimental variable. Defaults to an empty data frame.
-#' @param lineage character matrix with taxonomic classification for each taxa. Each row
+#' @param lineage Character matrix with taxonomic classification for each taxa. Each row
 #'        corresponds to a taxa and each column to a rank. Defaults to an empty matrix.
-#' @param info_taxa data.frame with additional information on taxa. Each row should correspond
+#' @param info_taxa Data.frame with additional information on taxa. Each row should correspond
 #'        to a taxa. Defaults to an empty data frame.
-#' @param network an `igraph` object representing a network of taxa interactions. Defaults to an
+#' @param network An `igraph` object representing a network of taxa interactions. Defaults to an
 #'        empty graph.
-#' @param community an object storing community detection results from `network`. Defaults
+#' @param community An object storing community detection results from `network`. Defaults
 #'        to the result of a fast greedy clustering on an empty graph.
 #'
 #' @return Returns an `mgnet` object encapsulating the provided metagenomic data.

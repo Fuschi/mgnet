@@ -7,7 +7,7 @@
 mgnetList(...)
 }
 \arguments{
-\item{...}{Optional mgnet objects to be included in the mgnetList.
+\item{...}{Optional mgnet objects or a list of mgnet objects to be included in the mgnetList.
 Providing named mgnet objects enhances manageability and clarity. The list can be
 initialized as empty.}
 }
@@ -20,5 +20,5 @@ of multiple metagenomic networks.
 Constructs an mgnetList object to encapsulate and manage a collection of mgnet objects.
 This function ensures that all provided mgnet objects are validated and organized into a
 structured list, facilitating easy access to multiple metagenomic networks. The constructor
-supports the initialization of an empty list or a list populated with mgnet objects.
+supports the initialization of an empty list, individual mgnet objects, or a list of mgnet objects.
 }

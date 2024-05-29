@@ -84,31 +84,6 @@ are_list_assign <- function(object, value) {
   TRUE
 }
 
-
-#' Convert an mgnetList Object to a List
-#'
-#' This method allows for the conversion of an `mgnetList` object into a list, 
-#' facilitating the application of list-based operations and functions. Each element 
-#' of the list represents an `mgnet` object contained within the `mgnetList`.
-#'
-#' @param x An `mgnetList` object.
-#' @param ... Additional arguments affecting the conversion (currently unused).
-#'
-#' @return A list where each element is an `mgnet` object previously contained 
-#'         within the `mgnetList`. The names of the list elements correspond to 
-#'         the names of the `mgnet` objects in the `mgnetList`, if they are named.
-#'
-#' @importFrom methods slot
-#' @export
-#' @seealso \link{mgnetList}, for details on the `mgnetList` class.
-#' @name as.list-mgnetList
-#' @aliases as.list,mgnetList-method
-setMethod("as.list", "mgnetList", function(x, ...){
-  
-  slot(x, "mgnets")
-})
-
-
 #' Length of an mgnetList
 #'
 #' @description

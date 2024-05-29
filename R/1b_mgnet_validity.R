@@ -525,7 +525,7 @@ setValidity("mgnet", function(object) {
     }
   }
   
-  #CHECK LOG-ABUNDANCE
+  #CHECK NORM-ABUNDANCE
   #-------------------------------------#
   errors$norm_abundance <- character()
   if( length(object@norm_abundance)!=0 ){
