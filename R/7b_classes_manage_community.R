@@ -12,7 +12,7 @@
 #' @param object An object of class `igraph`, `mgnet`, or `mgnetList` representing the network.
 #' @param size A positive integer indicating the minimum number of vertices required for a community to be retained.
 #' @param trim A logical value indicating whether vertices from smaller communities should be removed (`TRUE`)
-#'        or simply isolated within the network (`FALSE`).
+#'        or label them as isolated within the network (`FALSE`).
 #' @param membership_format A character string specifying the format of the output regarding isolated nodes.
 #'        `"mgnet"` will label isolated nodes as `"0"`, whereas `"igraph"` retains the default behavior
 #'        where isolated nodes are not specifically labeled. This parameter is particularly relevant when `trim` is `FALSE`.
@@ -40,10 +40,11 @@ setMethod("remove_smaller_communities", "mgnet", function(object, size,
   comm <- as_mgnet_communities(object@community)
 
   keep.comm.names <- as.numeric(names(sizes(comm)[sizes(comm)>=size]))
-  keep.comm.vids <-  which(comm$membership %in% keep.comm.names)
+  
 
   if(!trim){
     
+    keep.comm.vids <-  which(comm$membership %in% keep.comm.names)
     community(object)$membership[setdiff(1:comm$vcount, keep.comm.vids)] <- 0
     community(object)$modularity <- NA
     if( membership_format == "igraph") community(object) <- as_igraph_communities(community(object))
@@ -52,6 +53,8 @@ setMethod("remove_smaller_communities", "mgnet", function(object, size,
     
   } else {
     
+    keep.comm.names <- keep.comm.names[!(keep.comm.names=="0")]
+    keep.comm.vids <-  which(comm$membership %in% keep.comm.names)
     object <- object[ ,keep.comm.vids]
     validObject(object)
     return(object)

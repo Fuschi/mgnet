@@ -19,7 +19,7 @@ remove_smaller_communities(
 \item{size}{A positive integer indicating the minimum number of vertices required for a community to be retained.}
 
 \item{trim}{A logical value indicating whether vertices from smaller communities should be removed (\code{TRUE})
-or simply isolated within the network (\code{FALSE}).}
+or label them as isolated within the network (\code{FALSE}).}
 
 \item{membership_format}{A character string specifying the format of the output regarding isolated nodes.
 \code{"mgnet"} will label isolated nodes as \code{"0"}, whereas \code{"igraph"} retains the default behavior
