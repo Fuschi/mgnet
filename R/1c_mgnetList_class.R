@@ -86,25 +86,21 @@ mgnetList <- function(...) {
   new("mgnetList", mgnets = mgnets)
 }
 
-# Define as.list method for mgnetList
-#------------------------------------------------------------------------------#
 #' Convert an mgnetList Object to a List
 #'
-#' This function converts an \code{mgnetList} object to a list by extracting the individual
-#' \code{mgnet} objects contained within the list.
+#' This function converts an `mgnetList` object to a list by extracting the individual
+#' `mgnet` objects contained within the list.
 #'
-#' @param x An \code{mgnetList} object to be converted to a list.
+#' @param x An `mgnetList` object to be converted to a list.
 #' @param ... Additional arguments (not currently used).
-#'
-#' @return A list containing the individual \code{mgnet} objects from the \code{mgnetList}.
-#'
-#' @seealso \code{\link{as.list}} for the generic method to convert objects to lists.
+#' @return A list containing the individual `mgnet` objects from the `mgnetList`.
 #' @export
-setMethod("as.list", signature = "mgnetList", function(x, ...) {
+as.list.mgnetList <- function(x, ...) {
   x@mgnets
-})
+}
 
-#' # Define coercion from mgnetList to list
-#' #------------------------------------------------------------------------------#
-#' #' @export
-#' setAs("mgnetList", "list", function(from) from@mgnets)
+
+# Define coercion from mgnetList to list
+#------------------------------------------------------------------------------#
+#' @export
+setAs("mgnetList", "list", function(from) from@mgnets)
