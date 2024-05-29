@@ -6,14 +6,21 @@
 \alias{filter_info_taxa,mgnetList-method}
 \title{Filter Taxa in mgnet Objects Based on Taxonomic and Metadata Conditions}
 \usage{
-filter_info_taxa(object, ...)
+filter_info_taxa(object, ..., trim = "yes", aggregate_to = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
 
 \item{...}{Conditions for filtering taxa, passed unquoted and allowing for
 dplyr-style filtering expressions. These conditions apply to columns in the
-merged dataset from \code{info_taxa} and \code{lineage}.}
+merged dataset from \code{info_taxa}, \code{lineage} and the communities membership from \code{community} slots.}
+
+\item{trim}{How to handle taxa not meeting criteria: "yes" to remove them,
+"no" to set their abundance to zero (min sample value for norm_abundance),
+or "aggregate" to combine them into a single category.}
+
+\item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.
+Defaults to "aggregate".}
 }
 \value{
 An \code{mgnet} or \code{mgnetList} object with the taxa subset according to the
@@ -28,11 +35,11 @@ the \code{info_taxa} and \code{lineage} slots. This enables filtering taxa using
 taxonomic classification and additional taxa metadata.
 }
 \details{
-The function first merges \code{info_taxa} data with \code{lineage} data to create
-a comprehensive taxonomic dataset. It then filters this dataset based on the
-provided conditions, identifying which taxa to retain. The resulting filtered
-taxa list is used to subset the original \code{mgnet} or \code{mgnetList} object, thus
-affecting related abundance and network data but not altering the sample metadata.
+The function first merges \code{info_taxa} data with \code{lineage} data and
+communities membership from \code{community}to create a comprehensive taxonomic dataset.
+It then filters this dataset based on the provided conditions, identifying which taxa to retain.
+The resulting filtered taxa list is used to subset the original \code{mgnet} or \code{mgnetList} object,
+thus affecting related abundance and network data but not altering the sample metadata.
 }
 \seealso{
 \code{\link[dplyr]{filter}} for details on filter expressions.
