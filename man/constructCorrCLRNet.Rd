@@ -21,10 +21,10 @@ constructCorrCLRNet(
 
 \item{zero_strategy}{Strategy for handling zeros in the abundance data before CLR transformation.
 Options are "unif" for replacing zeros with values from a uniform distribution and "const"
-for a constant value replacement. Default is "unif".}
+for a constant value replacement. Default is "const".}
 
 \item{clr_method}{Specifies the CLR transformation method: "clr" for standard CLR, "iclr" for
-interquartile CLR, or "stored" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".}
+interquartile CLR, or "stored" to bypass CLR transformation and use pre-computed norm_abundance data. Default is "clr".}
 
 \item{cor_method}{Correlation method ("pearson", "spearman", "kendall") used for computing
 pairwise correlations between taxa after CLR transformation. Default is "pearson".}

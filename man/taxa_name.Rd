@@ -2,8 +2,6 @@
 % Please edit documentation in R/2a_classes_base_methods.R
 \name{taxa_name}
 \alias{taxa_name}
-\alias{taxa_name,mgnet-method}
-\alias{taxa_name,mgnetList-method}
 \alias{taxa_name,mgnet,missing-method}
 \alias{taxa_name,mgnet,character-method}
 \alias{taxa_name,mgnetList,missing-method}
@@ -11,14 +9,6 @@
 \title{Retrieve Taxa Names at Specified Rank}
 \usage{
 taxa_name(object, rank = "missing")
-
-\S4method{taxa_name}{mgnet,missing}(object)
-
-\S4method{taxa_name}{mgnet,character}(object, rank = "missing")
-
-\S4method{taxa_name}{mgnetList,missing}(object)
-
-\S4method{taxa_name}{mgnetList,character}(object, rank = "missing")
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}

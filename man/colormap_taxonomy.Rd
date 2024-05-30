@@ -13,7 +13,6 @@ colormap_taxonomy(
 )
 }
 \arguments{
-
 \item{taxaID}{A character vector of taxonomic identifiers.}
 
 \item{distinctColor}{An integer specifying the maximum number of distinct colors to generate,

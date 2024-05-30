@@ -81,7 +81,7 @@ setMethod("mutate_criteria_sample", "mgnet",
             
             # Apply mutations functions to each data type
             mgnet_new <- if(length(mgnet(object))!=0){
-              apply_mgnet_mutations(abundance(object), abundance)
+              apply_mutations_mgnet(abundance(object), abundance)
             } else {
               data.frame()
             }
@@ -117,7 +117,7 @@ setMethod("mutate_criteria_sample", "mgnet",
             result <- missing_cbind(info_sample(object), result)
             
             info_sample(object) <- as.data.frame(result)
-
+            
             return(object)
           })
 

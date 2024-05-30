@@ -22,7 +22,6 @@
 )
 }
 \arguments{
-
 \item{x}{An \code{mgnet} object containing the network to be plotted.}
 
 \item{layout}{An igraph layout function or coordinates for vertex positions.

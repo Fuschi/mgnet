@@ -14,7 +14,6 @@ and their interactions, supporting advanced analysis workflows for metagenomics 
 \section{Slots}{
 
 \describe{
-
 \item{\code{abundance}}{A numeric matrix representing the raw abundance data from
 next-generation sequencing (NGS), where rows correspond to samples and columns
 to taxa. Each entry indicates the abundance of a taxon in a sample.}

@@ -127,7 +127,7 @@ setMethod("filter_info_sample", "mgnetList", function(object, ...) {
 #' thus affecting related abundance and network data but not altering the sample metadata.
 #'
 #' @export
-#' @importFrom dplyr filter inner_join
+#' @importFrom dplyr filter inner_join join_by
 #' @importFrom methods validObject
 #' @importFrom rlang enquos
 #' @name filter_info_taxa

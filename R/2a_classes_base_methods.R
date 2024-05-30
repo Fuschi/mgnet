@@ -231,10 +231,9 @@ setMethod("info_taxa_vars", "mgnetList", function(object) {
 #' @export
 #' @exportMethod taxa_name
 #' @name taxa_name
-#' @aliases taxa_name,mgnet-method taxa_name,mgnetList-method
+#' @aliases taxa_name,mgnet,missing-method taxa_name,mgnet,character-method taxa_name,mgnetList,missing-method taxa_name,mgnetList,character-method
 setGeneric("taxa_name", function(object, rank = "missing") standardGeneric("taxa_name"))
 
-#' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnet", rank = "missing"), function(object) {
   
   if(length(object@lineage) == 0 ) return(character(length = 0))
@@ -242,7 +241,6 @@ setMethod("taxa_name", signature(object = "mgnet", rank = "missing"), function(o
   
 })
 
-#' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnet", rank = "character"), function(object, rank) {
   
   if(length(object@lineage)==0) return(character(length = 0))
@@ -253,12 +251,10 @@ setMethod("taxa_name", signature(object = "mgnet", rank = "character"), function
   object@lineage[, rank]
 })
 
-#' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnetList", rank = "missing"), function(object) {
   sapply(object@mgnets, function(x) taxa_name(x), simplify=F, USE.NAMES=T)
 })
 
-#' @rdname taxa_name
 setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), function(object, rank) {
   sapply(object@mgnets, function(x) taxa_name(x, rank), simplify=F, USE.NAMES=T)
 })
