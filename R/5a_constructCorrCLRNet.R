@@ -12,9 +12,9 @@
 #' @param object An `mgnet` or `mgnetList` object containing abundance data.
 #' @param zero_strategy Strategy for handling zeros in the abundance data before CLR transformation. 
 #' Options are "unif" for replacing zeros with values from a uniform distribution and "const" 
-#' for a constant value replacement. Default is "unif".
+#' for a constant value replacement. Default is "const".
 #' @param clr_method Specifies the CLR transformation method: "clr" for standard CLR, "iclr" for 
-#' interquartile CLR, or "stored" to bypass CLR transformation and use precomputed norm_abundance data. Default is "clr".
+#' interquartile CLR, or "stored" to bypass CLR transformation and use pre-computed norm_abundance data. Default is "clr".
 #' @param cor_method Correlation method ("pearson", "spearman", "kendall") used for computing 
 #' pairwise correlations between taxa after CLR transformation. Default is "pearson".
 #' @param thresh_method Method for thresholding the correlation matrix to construct the adjacency 
