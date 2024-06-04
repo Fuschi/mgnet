@@ -1,38 +1,46 @@
-# TAXONOMY COLORMAP
+# CATEGORICAL COLOR MAP
 #------------------------------------------------------------------------------#
-#' Create Color Palette for Taxonomy
+#' Create Color Palette for Categorical Data
 #'
-#' Generates a distinct color palette for taxonomic classifications. Each unique taxon is assigned 
-#' a color up to a specified limit (`distinctColor`). Beyond this limit, `extraColor` is used for 
-#' the remaining taxa. Duplicate taxa identifiers are filtered out to ensure uniqueness.
+#' Generates a distinct color palette for categorical data classifications. Each unique category 
+#' is assigned a color up to a specified limit (`distinctColors`). Beyond this limit, `extraColor` 
+#' is used for the remaining categories. Duplicate identifiers are filtered out to ensure uniqueness.
 #'
-#' @param taxaID A character vector of taxonomic identifiers.
-#' @param distinctColor An integer specifying the maximum number of distinct colors to generate, 
-#'        ranging from 1 to 99.
-#' @param extraColor The color used for taxa identifiers exceeding the `distinctColor` limit, 
-#'        defaults to light gray. Accepts hexadecimal color codes.
+#' @param categories A character vector of identifiers for the categories.
+#' @param distinctColors An integer specifying the maximum number of distinct colors to generate, 
+#'        ranging from 1 to 99. Default is the length of categories.
+#' @param extraColor The color used for identifiers exceeding the `distinctColors` limit, 
+#'        defaults to white. Accepts hexadecimal color codes.
 #' @param alpha A numeric value specifying the transparency level of the colors.
 #' @param colorspace Defines the color space for color generation. It can be one of the predefined 
 #'        character options ('pretty', 'pretty_dark', 'rainbow', 'pastels') or a list specifying 
 #'        the 'h', 's', and 'l' elements for custom color spaces. For a detailed explanation of 
-#'        these options, see the `qualpalr` package documentation or enter `??qualpal` in the R console.
+#'        these options, see the `qualpalr` package documentation or enter `??qualpalr` in the R console.
 #'
-#' @return A named vector of hexadecimal color codes, with names corresponding to the taxa IDs.
+#' @return A named vector of hexadecimal color codes, with names corresponding to the category IDs.
 #'
 #' @export
 #' @importFrom qualpalr qualpal
 #' @importFrom grDevices adjustcolor
-colormap_taxonomy <- function(taxaID, distinctColor = 20, extraColor = "#BFBFBF",
-                              alpha = 1, colorspace = "pretty") {
+colormap_categorical <- function(categories, distinctColors, extraColor = "#FFFFFF",
+                                 alpha = 1, colorspace = "pretty") {
   
-  if(!is.character(taxaID)) {
-    stop("taxaID must be a character vector.")
+  if(!is.character(categories)) {
+    stop("categories must be a character vector.")
   }
   
-  taxaID <- unique(taxaID) # Select unique taxa IDs to avoid duplicate colors.
+  categories <- unique(categories) # Ensure category uniqueness.
   
-  if(!is.numeric(distinctColor) || distinctColor != round(distinctColor) || distinctColor < 1 || distinctColor > 99) {
-    stop("distinctColor must be an integer between 1 and 99.")
+  if(missing(distinctColors)){
+    distinctColors <- length(categories)
+  } 
+  
+  if(!is.numeric(distinctColors) || distinctColors != round(distinctColors) || distinctColors < 1 || distinctColors > 99){
+    stop("distinctColors must be an integer between 1 and 99.")
+  }
+  
+  if(distinctColors > min(99, length(categories))){
+    stop("distinctColors cannot exceed the current number of categories: ", length(categories))
   }
   
   if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {
@@ -50,19 +58,21 @@ colormap_taxonomy <- function(taxaID, distinctColor = 20, extraColor = "#BFBFBF"
   }
   
   if(is.list(colorspace) && !all(names(colorspace) %in% c("h", "s", "l"))) {
-    stop("When colorspace is a list, it must contain 'h', 's', and 'l' elements as required by qualpal.")
+    stop("When colorspace is a list, it must contain 'h', 's', and 'l' elements as required by qualpalr.")
   }
   
-  colors <- qualpalr::qualpal(n = distinctColor, colorspace = colorspace)$hex
+  # Generate colors
+  colors <- qualpalr::qualpal(n = distinctColors, colorspace = colorspace)$hex
   colors <- adjustcolor(colors, alpha.f = alpha)
   
-  if(length(taxaID) > distinctColor) {
-    extraColors <- rep(extraColor, length(taxaID) - distinctColor)
+  # Add extra colors if necessary
+  if(length(categories) > distinctColors) {
+    extraColors <- rep(extraColor, length(categories) - distinctColors)
     extraColors <- adjustcolor(extraColors, alpha.f = alpha)
     colors <- c(colors, extraColors)
   }
   
-  names(colors) <- taxaID
+  names(colors) <- categories
   
   return(colors)
 }
@@ -98,8 +108,9 @@ colormap_communities <- function(n = 20, alpha = 1, colorspace = "pretty",
                                  isolated_color = "#FFFFFF") {
   
   if(!is.numeric(n) || n != round(n) || n <= 0 || n > 99) {
-    stop("n must be a positive integer less than or equal to 99.", call. = FALSE)
+    stop("n must be a positive integer less than or equal to 99.")
   }
+  
   if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {
     stop("alpha must be in the range [0,1].")
   }
