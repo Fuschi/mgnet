@@ -6,31 +6,18 @@
 \alias{set_norm_abundance,mgnetList-method}
 \title{Set \code{norm_abundance} Slot in \code{mgnet} Objects}
 \usage{
-set_norm_abundance(
-  object,
-  value = NULL,
-  clr_variant = NULL,
-  zero_strategy = "unif"
-)
+set_norm_abundance(object, value)
 }
 \arguments{
-\item{object}{An \code{mgnet} object.}
+\item{object}{An \code{mgnet} or \code{mgnetList} object.}
 
-\item{value}{Optional. A numeric matrix to set as norm_abundance data directly.}
-
-\item{clr_variant}{Optional. A string specifying the method to calculate norm_abundance ('clr' or 'iclr').}
-
-\item{zero_strategy}{A string specifying the zero replacement strategy applied before log-ratio transformation.}
+\item{value}{The new norm_abundance data to be set, a numeric matrix for \code{mgnet} objects
+or a list of numeric matrices for \code{mgnetList} objects.}
 }
 \value{
-The \code{mgnet} object with updated norm_abundance data.
+The modified \code{mgnet} or \code{mgnetList} object with the updated rel_abundance data.
 }
 \description{
-This function allows setting the norm_abundance data directly or calculating it
-from the abundance data using specified methods ('clr' or 'iclr') after applying
-zero replacement strategies ('unif' or 'const'). The zero replacement is applied
-to the abundance data before the log-ratio transformation when 'method' is specified.
-}
-\seealso{
-\code{\link{clr}}, \code{\link{iclr}}, \code{\link{zero_dealing}}
+This function sets the rel_abundance data for an \code{mgnet} object or each \code{mgnet} object
+within an \code{mgnetList}.
 }

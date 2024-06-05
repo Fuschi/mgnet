@@ -376,6 +376,40 @@ setMethod("ncommunity","mgnetList",
           })
 
 
+# SAMPLE SUM
+#------------------------------------------------------------------------------#
+#' Calculate Sample Sum of Abundance Data in mgnet Objects
+#'
+#' This function calculates the sum of abundance values for each sample within the
+#' abundance matrix of an `mgnet` object. It returns a numeric vector where each element
+#' corresponds to the sum of abundance values for a sample.
+#'
+#' @param object An `mgnet` object containing an abundance matrix.
+#' @param na.rm Logical indicating whether NA values should be removed before 
+#'        summing the abundance values. Defaults to FALSE.
+#' @return A numeric vector with the sum of abundance values for each sample.
+#' @export
+#' @aliases sample_sum,mgnet-method sample_sum,mgnetList-method
+#' @export
+setGeneric("sample_sum", function(object, na.rm = FALSE) standardGeneric("sample_sum"))
+setMethod("sample_sum", "mgnet", function(object, na.rm = FALSE) {
+  if(is.null(object@abundance) || nrow(object@abundance) == 0) {
+    stop("The abundance matrix is missing or empty.")
+  }
+  
+  # Calculate the sum of abundance values for each sample
+  sample_sums <- rowSums(object@abundance, na.rm = na.rm)
+  
+  return(sample_sums)
+})
+
+setMethod("sample_sum","mgnetList",
+          function(object, na.rm = FALSE){
+            sapply(object@mgnets, sample_sum, simplify = TRUE, USE.NAMES = TRUE)
+          })
+
+
+
 # MGNETS
 #------------------------------------------------------------------------------#
 #' Retrieve mgnet Objects from an mgnetList

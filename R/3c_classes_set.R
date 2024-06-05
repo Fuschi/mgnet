@@ -71,47 +71,71 @@ setMethod("set_rel_abundance", "mgnetList", function(object, value) {
   return(object)
 })
 
-
 # SET norm_abundance
 #------------------------------------------------------------------------------#
 #' Set `norm_abundance` Slot in `mgnet` Objects
 #'
-#' This function allows setting the norm_abundance data directly or calculating it
-#' from the abundance data using specified methods ('clr' or 'iclr') after applying
-#' zero replacement strategies ('unif' or 'const'). The zero replacement is applied
-#' to the abundance data before the log-ratio transformation when 'method' is specified.
+#' @description
+#' This function sets the rel_abundance data for an `mgnet` object or each `mgnet` object 
+#' within an `mgnetList`.
 #'
-#' @param object An `mgnet` object.
-#' @param value Optional. A numeric matrix to set as norm_abundance data directly.
-#' @param clr_variant Optional. A string specifying the method to calculate norm_abundance ('clr' or 'iclr').
-#' @param zero_strategy A string specifying the zero replacement strategy applied before log-ratio transformation.
-#' @return The `mgnet` object with updated norm_abundance data.
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param value The new norm_abundance data to be set, a numeric matrix for `mgnet` objects 
+#' or a list of numeric matrices for `mgnetList` objects.
+#' @return The modified `mgnet` or `mgnetList` object with the updated rel_abundance data.
 #' @export
-#' @seealso \code{\link{clr}}, \code{\link{iclr}}, \code{\link{zero_dealing}}
 #' @name set_norm_abundance
 #' @aliases set_norm_abundance,mgnet-method set_norm_abundance,mgnetList-method
-setGeneric("set_norm_abundance", function(object,
-                                         value = NULL,
-                                         clr_variant = NULL, zero_strategy = "unif") standardGeneric("set_norm_abundance"))
+#' @importFrom methods validObject
+setGeneric("set_norm_abundance", function(object, value) standardGeneric("set_norm_abundance"))
 
-setMethod("set_norm_abundance", "mgnet", function(object, value = NULL, clr_variant = NULL, zero_strategy = "unif") {
+setMethod("set_norm_abundance", "mgnet", function(object, value) {
+  object@norm_abundance <- value
+  validObject(object)
+  return(object)
+})
 
-  if(is.null(value) && is.null(clr_variant)) {
-    stop("Either 'value' or 'clr_variant' must be provided, not both.")
+setMethod("set_norm_abundance", "mgnetList", function(object, value) {
+  are_list_assign(object, value)
+  
+  for (i in seq_along(object@mgnets)) {
+    object@mgnets[[i]] <- set_norm_abundance(object@mgnets[[i]], value[[i]])
+    validObject(object@mgnets[[i]])
   }
   
-  if(is.null(value) && is.null(clr_variant)) {
-    stop("Either 'value' or 'clr_variant' must be provided.")
-  }
+  validObject(object)
+  return(object)
+})
+
+# SET CLR_abundance
+#------------------------------------------------------------------------------#
+#' Store clr-transformed data in `norm_abundance` Slot in `mgnet` Objects
+#'
+#' Applies centered log-ratio (CLR) transformation or inter-quantile log-ratio (ICLR) transformation to the abundance data
+#' in `mgnet` objects, after handling zeros with specified strategies. This transformation is useful for compositional data analysis,
+#' making the data suitable for statistical modeling and comparison.
+#'
+#' @param object An `mgnet` object.
+#' @param clr_variant The method to calculate norm_abundance. Options are 'clr' for centered log-ratio and 'iclr' for
+#'        inter-quantile log-ratio. Default is 'clr'.
+#' @param zero_strategy The zero replacement strategy before log-ratio transformation.
+#'        'const' replaces zeros with a small constant, and 'unif' replaces zeros with a uniform random value
+#'        between 6.5% and 65% of the detection limit. Default is 'unif'.
+#' @return The `mgnet` object with updated `norm_abundance` data.
+#' @export
+#' @seealso \code{\link{clr}}, \code{\link{iclr}}, \code{\link{zero_dealing}}
+#'         See also:
+#'         \code{\link[=zero_dealing]{zero_dealing}} for zero replacement strategies,
+#'         \code{\link[=clr]{clr}} for details on centered log-ratio transformation,
+#'         \code{\link[=iclr]{iclr}} for details on inter-quantile log-ratio transformation.
+#'         
+#' @name set_CLR_abundance
+#' @aliases set_CLR_abundance,mgnet-method set_CLR_abundance,mgnetList-method
+setGeneric("set_CLR_abundance", function(object, clr_variant = "clr", zero_strategy = "unif") standardGeneric("set_CLR_abundance"))
+
+setMethod("set_CLR_abundance", "mgnet", function(object, clr_variant = "clr", zero_strategy = "unif") {
   
-  if(!is.null(value)) {
-    object@norm_abundance <- value
-    validObject(object)
-    return(object)
-  }
-  
-  if(!is.null(clr_variant) && !is.character(clr_variant)) stop("`clr_variant` if setted it must be a string with possible choices 'clr' and 'iclr'")
-  clr_variant <- match.arg(clr_variant, c("clr","iclr"))
+  clr_variant <- match.arg(clr_variant, c("clr", "iclr"))
   zero_strategy <- match.arg(zero_strategy, c("unif", "const"))
   if(length(object@abundance) == 0) stop("Abundance matrix missing; cannot calculate log-ratio abundance.")
   
@@ -125,23 +149,14 @@ setMethod("set_norm_abundance", "mgnet", function(object, value = NULL, clr_vari
   
   validObject(object)
   return(object)
-  
 })
 
-
-setMethod("set_norm_abundance", "mgnetList", function(object, value = NULL,
-                                                     clr_variant = NULL, zero_strategy = "unif") {
-  
-  if(!is.null(value)) are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_norm_abundance(object@mgnets[[i]], value[[i]], clr_variant, zero_strategy)
-    validObject(object@mgnets[[i]])
-  }
-  
+setMethod("set_CLR_abundance", "mgnetList", function(object, clr_variant = "clr", zero_strategy = "unif") {
+  object <- lapply(object@mgnets, function(mgnet) {
+    set_CLR_abundance(mgnet, clr_variant, zero_strategy)
+  })
   validObject(object)
   return(object)
-  
 })
 
 # SET INFO_SAMPLE

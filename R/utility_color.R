@@ -22,7 +22,7 @@
 #' @export
 #' @importFrom qualpalr qualpal
 #' @importFrom grDevices adjustcolor
-colormap_categorical <- function(categories, distinctColors, extraColor = "#FFFFFF",
+colormap_categories <- function(categories, distinctColors, extraColor = "#FFFFFF",
                                  alpha = 1, colorspace = "pretty") {
   
   if(!is.character(categories)) {

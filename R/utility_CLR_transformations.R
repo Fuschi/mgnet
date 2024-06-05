@@ -30,7 +30,7 @@ clr <- function(X) {
 }
 
 
-# CLR !!!
+# ICLR !!!
 #------------------------------------------------------------------------------#
 #' Interquartile Centered Log-Ratio Transformation
 #'
