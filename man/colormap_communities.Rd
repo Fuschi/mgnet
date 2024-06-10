@@ -2,37 +2,47 @@
 % Please edit documentation in R/utility_color.R
 \name{colormap_communities}
 \alias{colormap_communities}
-\title{Create Color Palette for Communities}
+\title{Create Color Palette for Community Visualization}
 \usage{
 colormap_communities(
-  n = 20,
-  alpha = 1,
+  community,
+  sizes_threshold,
+  smaller_color = "#D3D3D3",
+  isolated_color = "#FFFFFF",
   colorspace = "pretty",
-  isolated_color = "#FFFFFF"
+  alpha = 1
 )
 }
 \arguments{
-\item{n}{A positive integer indicating the number of distinct colors to generate, not exceeding 99.}
+\item{community}{An object representing community data, typically derived from a community detection
+method such as those available in the \code{igraph} package.}
 
-\item{alpha}{A numeric value specifying the transparency level of the colors, where 1 is opaque
+\item{sizes_threshold}{An integer specifying the minimum size a community must exceed to receive a
+unique color. If it missing the function generate color for all the communities also with size 2.
+Communities not meeting this size threshold will be assigned the \code{smaller_color}.}
+
+\item{smaller_color}{A hexadecimal color code used for communities that do not exceed the size threshold,
+defaulting to a light gray ("#D3D3D3").}
+
+\item{isolated_color}{A hexadecimal color code used for isolated nodes, often represented as community '0',
+defaulting to white ("#FFFFFF").}
+
+\item{colorspace}{Specifies the color space from which to generate the palette. Available options include
+'pretty', 'pretty_dark', 'rainbow', 'pastels', or a custom list detailing the 'h' (hue), 's' (saturation),
+and 'l' (lightness) components. For detailed settings, refer to the \code{qualpalr} documentation.}
+
+\item{alpha}{A numeric value between 0 and 1 that specifies the opacity of the colors, where 1 is fully opaque
 and 0 is fully transparent.}
-
-\item{colorspace}{Defines the color space for color generation. It can be one of the predefined
-character options ('pretty', 'pretty_dark', 'rainbow', 'pastels') or a list specifying
-the 'h', 's', and 'l' elements for custom color spaces. For a detailed explanation of
-these options, consult the \code{qualpalr} package documentation or enter \code{??qualpal} in the R console.}
-
-\item{isolated_color}{The color assigned to isolated nodes, represented by community '0'.
-Defaults to white ("#FFFFFF"). Accepts hexadecimal color codes.}
 }
 \value{
-A named vector of colors in hexadecimal format, with names from '0' to 'n', where '0'
-represents isolated nodes. The color for isolated nodes can be customized with the
-\code{isolated_color} parameter.
+A named vector of colors in hexadecimal format. The vector's names correspond to community IDs,
+with '0' typically representing isolated nodes. Each community exceeding the size threshold is assigned
+a unique color from the generated palette, while others receive the \code{smaller_color}.
 }
 \description{
-Generates a color palette with a specified number of distinct colors for visualizing communities.
-The first color, customizable via the \code{isolated_color} parameter, is designated for isolated nodes,
-with subsequent colors generated for other communities. This function uses the \code{qualpalr} package
-to create visually distinct colors.
+Generates a visually distinct color palette for representing community memberships in network
+visualizations. The palette is tailored to emphasize larger communities by providing unique colors
+for those that exceed a size threshold. Smaller communities and isolated nodes receive a common or
+default color to maintain visual clarity. This function uses the \code{qualpalr} package for color generation,
+supporting up to 99 distinct communities due to practical limits on visual distinction.
 }

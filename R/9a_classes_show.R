@@ -1,7 +1,7 @@
 # ################################################################################
 # # SHOW MGNET
 # ################################################################################
-#' @importFrom utils head
+#' @importFrom utils head tail
 setMethod("show", "mgnet", function(object) {
   cat("==== mgnet Object Summary ====\n")
 
@@ -59,10 +59,12 @@ setMethod("show", "mgnet", function(object) {
     cat(sprintf("  Detected Communities: %d\n", max(igraph::membership(object@community))))
     
     sizes <- igraph::sizes(object@community)
-    sizes_msg <- paste0("  Community Sizes:", toString(head(sizes, 6)))
+    sizes_msg <- paste0("  Community Sizes: ", toString(head(tail(sizes, -1),6)))
     if(length(sizes) > 6) sizes_msg <- paste(sizes_msg, ", etc...")
     cat(sizes_msg, "\n")
-
+    isolated_msg <- paste0("  Isolated Nodes: ", sum(are_isolated(object@community)))
+    cat(isolated_msg, "\n")
+    
   } else {
     cat("  No community detection results available.\n")
   }
@@ -104,7 +106,9 @@ setMethod("show", "mgnetList", function(object) {
       cat("  No network data available.\n")
     }
     if (!is.null(mgnetObj@community) && length(mgnetObj@community) > 0) {
-      cat(sprintf("  Detected Communities: %d\n", max(igraph::membership(mgnetObj@community))))
+      cat(sprintf("  Detected Communities: %d (%.2f%% Isolated)\n", 
+                  max(igraph::membership(mgnetObj@community)),
+                  sum(are_isolated(mgnetObj@community)) / ntaxa(mgnetObj)))
     } else {
       cat("  No community detection results available.\n")
     }

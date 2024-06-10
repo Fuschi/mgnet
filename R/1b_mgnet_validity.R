@@ -413,7 +413,7 @@
 #' compatible in terms of their structure and labeling.
 #'
 #' @param obj The S4 object containing the slots to be compared.
-#' @param slot The name of the slot to compare.
+#' @param slotName The name of the slot to compare.
 #' @param which rows or columns of the slot to compare with the network.
 #' @param errors A pre-existing character vector where any new error messages identified
 #'        during the validation process will be appended. This allows for the accumulation

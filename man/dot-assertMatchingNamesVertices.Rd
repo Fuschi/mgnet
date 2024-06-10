@@ -9,13 +9,13 @@
 \arguments{
 \item{obj}{The S4 object containing the slots to be compared.}
 
+\item{slotName}{The name of the slot to compare.}
+
 \item{which}{rows or columns of the slot to compare with the network.}
 
 \item{errors}{A pre-existing character vector where any new error messages identified
 during the validation process will be appended. This allows for the accumulation
 of error messages across multiple validation checks.}
-
-\item{slot}{The name of the slot to compare.}
 }
 \value{
 An updated character vector of error messages.
