@@ -6,16 +6,16 @@
 #' information across multiple datasets.
 #'
 #' @param object An `mgnetList` object.
-#' @param abundance A named list of functions to be applied to the abundance data matrix.
+#' @param abundance_criteria A named list of functions to be applied to the abundance data matrix.
 #'        Each function should take a single row of abundance data as input and return the value
 #'        to be stored in the `info_sample` slot. Default is `NULL`.
-#' @param rel_abundance A named list of functions to be applied to the relative abundance data matrix.
+#' @param rel_abundance_criteria A named list of functions to be applied to the relative abundance data matrix.
 #'        Each function should take a single row of relative abundance data as input and return
 #'        the value to be stored in the `info_sample` slot. Default is `NULL`.
-#' @param norm_abundance A named list of functions to be applied to the log-transformed abundance data
+#' @param norm_abundance_criteria A named list of functions to be applied to the log-transformed abundance data
 #'        matrix. Each function should take a single row of log-transformed abundance data as input
 #'        and return the value to be stored in the `info_sample` slot. Default is `NULL`.
-#' @param mgnet A named list of functions to be applied direct on the mgnet object.
+#' @param mgnet_criteria A named list of functions to be applied direct on the mgnet object.
 #'
 #' @return A modified `mgnet` object with the `info_sample` slot updated based on the applied mutations.
 #'
@@ -23,17 +23,17 @@
 #' @seealso \link{filter_criteria_sample} for sample-based filtering using criteria.
 #' @aliases mutate_criteria_sample,mgnet-method mutate_criteria_sample,mgnetList-method
 setGeneric("mutate_criteria_sample",
-           function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
-                    mgnet = NULL) {
+           function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL,
+                    mgnet_criteria = NULL) {
              standardGeneric("mutate_criteria_sample")
            })
 
 setMethod("mutate_criteria_sample", "mgnet",
-          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
-                   mgnet = NULL) {
+          function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL,
+                   mgnet_criteria = NULL) {
             
             # Checks
-            if(is.null(mgnet) & is.null(abundance) & is.null(rel_abundance) & is.null(norm_abundance)) return(object)
+            if(is.null(mgnet_criteria) & is.null(abundance_criteria) & is.null(rel_abundance_criteria) & is.null(norm_abundance_criteria)) return(object)
             
             # Check if all mutations are named list of functions or NULL
             check_mutations <- function(mutations) {
@@ -43,7 +43,7 @@ setMethod("mutate_criteria_sample", "mgnet",
               if (!all(sapply(mutations, is.function))) return(FALSE)
               TRUE
             }
-            if (!all(sapply(list(mgnet, abundance, rel_abundance, norm_abundance), check_mutations))) {
+            if (!all(sapply(list(mgnet_criteria, abundance_criteria, rel_abundance_criteria, norm_abundance_criteria), check_mutations))) {
               stop("All criteria must be named list of functions or NULL.")
             }
             
@@ -81,22 +81,22 @@ setMethod("mutate_criteria_sample", "mgnet",
             
             # Apply mutations functions to each data type
             mgnet_new <- if(length(mgnet(object))!=0){
-              apply_mutations_mgnet(abundance(object), abundance)
+              apply_mutations_mgnet(object, mgnet_criteria)
             } else {
               data.frame()
             }
             abundance_new <- if(length(abundance(object))!=0){
-              apply_mutations(abundance(object), abundance)
+              apply_mutations(abundance(object), abundance_criteria)
             } else {
               data.frame()
             }
             rel_abundance_new <- if(length(rel_abundance(object))!=0){
-              apply_mutations(rel_abundance(object), rel_abundance)
+              apply_mutations(rel_abundance(object), rel_abundance_criteria)
             } else {
               data.frame()
             }
             norm_abundance_new <- if(length(norm_abundance(object))!=0){
-              apply_mutations(norm_abundance(object), norm_abundance)
+              apply_mutations(norm_abundance(object), norm_abundance_criteria)
             } else {
               data.frame()
             }
@@ -110,8 +110,7 @@ setMethod("mutate_criteria_sample", "mgnet",
               
             }
             
-            result <- missing_cbind(abundance_new, rel_abundance)
-            result <- missing_cbind(result, rel_abundance_new)
+            result <- missing_cbind(abundance_new, rel_abundance_new)
             result <- missing_cbind(result, norm_abundance_new)
             result <- missing_cbind(result, mgnet_new)
             result <- missing_cbind(info_sample(object), result)
@@ -122,12 +121,12 @@ setMethod("mutate_criteria_sample", "mgnet",
           })
 
 setMethod("mutate_criteria_sample", "mgnetList",
-          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
-                   mgnet = NULL) {
+          function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL,
+                   mgnet_criteria = NULL) {
             # Apply the filtering criteria to each mgnet object in the list
             object@mgnets <- lapply(object@mgnets, function(mgnet_obj) {
-              mutate_criteria_sample(mgnet_obj, abundance, rel_abundance, norm_abundance,
-                                     mgnet)
+              mutate_criteria_sample(mgnet_obj, abundance_criteria, rel_abundance_criteria, norm_abundance_criteria,
+                                     mgnet_criteria)
             })
             return(object)
           })
@@ -142,22 +141,22 @@ setMethod("mutate_criteria_sample", "mgnetList",
 #' information across multiple datasets.
 #'
 #' @param object An `mgnetList` object.
-#' @param abundance A named list of functions to be applied to the abundance data matrix.
+#' @param abundance_criteria A named list of functions to be applied to the abundance data matrix.
 #'        Each function should take a single row of abundance data as input and return the value
 #'        to be stored in the `info_taxa` slot. Default is `NULL`.
-#' @param rel_abundance A named list of functions to be applied to the relative abundance data matrix.
+#' @param rel_abundance_criteria A named list of functions to be applied to the relative abundance data matrix.
 #'        Each function should take a single row of relative abundance data as input and return
 #'        the value to be stored in the `info_taxa` slot. Default is `NULL`.
-#' @param norm_abundance A named list of functions to be applied to the log-transformed abundance data
+#' @param norm_abundance_criteria A named list of functions to be applied to the log-transformed abundance data
 #'        matrix. Each function should take a single row of log-transformed abundance data as input
 #'        and return the value to be stored in the `info_taxa` slot. Default is `NULL`.
-#' @param network A named list of functions to be applied to the network data matrix.
+#' @param network_criteria A named list of functions to be applied to the network data matrix.
 #'        Each function should take a single column of network data as input and return
 #'        the value to be stored in the `info_taxa` slot. Default is `NULL`.
-#' @param community A named list of functions to be applied to the community data matrix.
+#' @param community_criteria A named list of functions to be applied to the community data matrix.
 #'        Each function should take a single column of community data as input and return
 #'        the value to be stored in the `info_taxa` slot. Default is `NULL`.
-#' @param mgnet A named list of functions to be applied direct on the mgnet object.
+#' @param mgnet_criteria A named list of functions to be applied direct on the mgnet object.
 #'
 #' @return A modified `mgnet` object with the `info_taxa` slot updated based on the applied mutations.
 #'
@@ -165,17 +164,17 @@ setMethod("mutate_criteria_sample", "mgnetList",
 #' @seealso \link{filter_criteria_taxa} for taxa-based filtering using criteria.
 #' @aliases mutate_criteria_taxa,mgnet-method mutate_criteria_taxa,mgnetList-method
 setGeneric("mutate_criteria_taxa",
-           function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
-                    network = NULL, community = NULL, mgnet = NULL) {
+           function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL,
+                    network_criteria = NULL, community_criteria = NULL, mgnet_criteria = NULL) {
              standardGeneric("mutate_criteria_taxa")
            })
 
 setMethod("mutate_criteria_taxa", "mgnet",
-          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL, 
-                   network = NULL, community = NULL, mgnet = NULL) {
+          function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL, 
+                   network_criteria = NULL, community_criteria = NULL, mgnet_criteria = NULL) {
             
             # Checks
-            if(is.null(abundance) & is.null(rel_abundance) & is.null(norm_abundance) & is.null(community) & is.null(network) & is.null(mgnet)) return(object)
+            if(is.null(abundance_criteria) & is.null(rel_abundance_criteria) & is.null(norm_abundance_criteria) & is.null(community_criteria) & is.null(network_criteria) & is.null(mgnet_criteria)) return(object)
             
             # Check if all mutations are named list of functions or NULL
             check_mutations <- function(mutations) {
@@ -185,7 +184,7 @@ setMethod("mutate_criteria_taxa", "mgnet",
               if (!all(sapply(mutations, is.function))) return(FALSE)
               TRUE
             }
-            if (!all(sapply(list(mgnet, abundance, rel_abundance, norm_abundance, community, network), check_mutations))) {
+            if (!all(sapply(list(mgnet_criteria, abundance_criteria, rel_abundance_criteria, norm_abundance_criteria, community_criteria, network_criteria), check_mutations))) {
               stop("All criteria must be named list of functions or NULL.")
             }
             
@@ -221,32 +220,32 @@ setMethod("mutate_criteria_taxa", "mgnet",
             
             # Apply mutations functions to each data type
             abundance_new <- if(length(abundance(object))!=0){
-              apply_mutations(abundance(object), abundance)
+              apply_mutations(abundance(object), abundance_criteria)
             } else {
               data.frame()
             }
             rel_abundance_new <- if(length(rel_abundance(object))!=0){
-              apply_mutations(rel_abundance(object), rel_abundance)
+              apply_mutations(rel_abundance(object), rel_abundance_criteria)
             } else {
               data.frame()
             }
             norm_abundance_new <- if(length(norm_abundance(object))!=0){
-              apply_mutations(norm_abundance(object), norm_abundance)
+              apply_mutations(norm_abundance(object), norm_abundance_criteria)
             } else {
               data.frame()
             }
             network_new <- if(length(network(object))!=0){
-              apply_mutations_mgnet_netw_comm(network(object), network)
+              apply_mutations_mgnet_netw_comm(network(object), network_criteria)
             } else {
               data.frame()
             }
             community_new <- if(length(community(object))!=0){
-              apply_mutations_mgnet_netw_comm(community(object), community)
+              apply_mutations_mgnet_netw_comm(community(object), community_criteria)
             } else {
               data.frame()
             }
             mgnet_new <- if(length(object)!=0){
-              apply_mutations_mgnet_netw_comm(object, mgnet)
+              apply_mutations_mgnet_netw_comm(object, mgnet_criteria)
             } else {
               data.frame()
             }
@@ -274,11 +273,11 @@ setMethod("mutate_criteria_taxa", "mgnet",
           })
 
 setMethod("mutate_criteria_taxa", "mgnetList",
-          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
-                   network = NULL, community = NULL, mgnet = NULL) {
+          function(object, abundance_criteria = NULL, rel_abundance_criteria = NULL, norm_abundance_criteria = NULL,
+                   network_criteria = NULL, community_criteria = NULL, mgnet_criteria = NULL) {
             # Apply the filtering criteria to each mgnet object in the list
             object@mgnets <- lapply(object@mgnets, function(mgnet_obj) {
-              mutate_criteria_taxa(mgnet_obj, abundance, rel_abundance, norm_abundance, network, community, mgnet)
+              mutate_criteria_taxa(mgnet_obj, abundance_criteria, rel_abundance_criteria, norm_abundance_criteria, network_criteria, community_criteria, mgnet_criteria)
             })
             return(object)
           })

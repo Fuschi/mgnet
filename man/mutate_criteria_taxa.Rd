@@ -8,38 +8,38 @@
 \usage{
 mutate_criteria_taxa(
   object,
-  abundance = NULL,
-  rel_abundance = NULL,
-  norm_abundance = NULL,
-  network = NULL,
-  community = NULL,
-  mgnet = NULL
+  abundance_criteria = NULL,
+  rel_abundance_criteria = NULL,
+  norm_abundance_criteria = NULL,
+  network_criteria = NULL,
+  community_criteria = NULL,
+  mgnet_criteria = NULL
 )
 }
 \arguments{
 \item{object}{An \code{mgnetList} object.}
 
-\item{abundance}{A named list of functions to be applied to the abundance data matrix.
+\item{abundance_criteria}{A named list of functions to be applied to the abundance data matrix.
 Each function should take a single row of abundance data as input and return the value
 to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{rel_abundance}{A named list of functions to be applied to the relative abundance data matrix.
+\item{rel_abundance_criteria}{A named list of functions to be applied to the relative abundance data matrix.
 Each function should take a single row of relative abundance data as input and return
 the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{norm_abundance}{A named list of functions to be applied to the log-transformed abundance data
+\item{norm_abundance_criteria}{A named list of functions to be applied to the log-transformed abundance data
 matrix. Each function should take a single row of log-transformed abundance data as input
 and return the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{network}{A named list of functions to be applied to the network data matrix.
+\item{network_criteria}{A named list of functions to be applied to the network data matrix.
 Each function should take a single column of network data as input and return
 the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{community}{A named list of functions to be applied to the community data matrix.
+\item{community_criteria}{A named list of functions to be applied to the community data matrix.
 Each function should take a single column of community data as input and return
 the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{mgnet}{A named list of functions to be applied direct on the mgnet object.}
+\item{mgnet_criteria}{A named list of functions to be applied direct on the mgnet object.}
 }
 \value{
 A modified \code{mgnet} object with the \code{info_taxa} slot updated based on the applied mutations.

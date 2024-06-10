@@ -83,8 +83,10 @@ setMethod("top_n_samples", "mgnet", function(object, n, field, rank = NULL, orde
   
   # Subset to top n
   top_n_indices <- sample_indices[1:n]
+  result <- rownames(data_matrix)[top_n_indices]
+  result <- result[!is.na(result)]
   
-  return(sample_id(object)[top_n_indices])
+  return(result)
   
 })
 
@@ -184,8 +186,10 @@ setMethod("top_n_taxa", "mgnet", function(object, n, field, rank = NULL, order_f
   
   # Subset to top n
   top_n_indices <- taxa_indices[1:n]
+  result <- colnames(data_matrix)[top_n_indices]
+  result <- result[!is.na(result)]
   
-  return(taxa_id(object)[top_n_indices])
+  return(result)
   
 })
 

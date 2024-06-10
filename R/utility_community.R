@@ -61,3 +61,29 @@ as_igraph_communities <- function(comm) {
   
   return(comm)
 }
+
+#' Check the isolated nodes
+#'
+#' 
+#'
+#' @param comm An object of class `communities`.
+#'
+#' @return a logical vector that indicate isolated nodes.
+#'
+#' @export
+#' @importFrom igraph communities membership
+are_isolated <- function(comm) {
+  if (!inherits(comm, "communities")) {
+    stop("comm must belong to communities class", call. = FALSE)
+  }
+  
+  isolated_comm_0 <- which(membership(comm) == "0")
+  
+  comm_size_1 <- names(sizes(comm))[which(sizes(comm) == 1)]
+  isolated_size_1 <- which(membership(comm) %in% comm_size_1)
+  
+  isolated <- vector(length = length(membership(comm)))
+  isolated[union(isolated_comm_0, isolated_size_1)] <- TRUE
+  
+  return(isolated)
+}
