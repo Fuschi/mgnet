@@ -284,7 +284,7 @@ setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), func
 #'
 #' @importFrom igraph membership
 #' @importFrom stats setNames
-#' @importFrom tibble rownames_to_column
+#' @importFrom tibble rownames_to_column tibble
 #' @aliases community_members,mgnet-method community_members,mgnetList-method
 #' @export
 #'
@@ -294,12 +294,20 @@ setMethod("taxa_name", signature(object = "mgnetList", rank = "character"), func
 #' 
 setGeneric("community_members", function(object, .fmt = "list") standardGeneric("community_members"))
 
-setMethod("community_members", "mgnet", function(object){
+setMethod("community_members", "mgnet", function(object, .fmt = "list"){
   
   if(length(object@community) != 0){
-    return(setNames(as.character(membership(object@community)), taxa_id(object)))
+    
+    result <- switch(.fmt,
+                     list = setNames(as.character(membership(object@community)), taxa_id(object)),
+                     df = data.frame("community" = as.character(membership(object@community)), row.names = taxa_id(object)),
+                     tbl = tibble("taxa_id" = taxa_id(object), "community" = as.character(membership(object@community))))
+    return(result)
+    
   } else {
+    
     return(character(0))
+    
   }
   
 })

@@ -3,18 +3,18 @@
 #' Apply Criteria to Filter Samples Across an mgnetList
 #'
 #' This function allows for filtering samples across all `mgnet` objects contained within an `mgnetList`
-#' based on specified criteria applied to abundance, relative abundance, and log-transformed
-#' abundance data. Custom functions define the criteria for filtering, allowing for complex and
+#' based on specified criteria applied to abundance, relative abundance, and normalized abundance data. 
+#' Custom functions define the criteria for filtering, allowing for complex and
 #' flexible sample selection processes across multiple datasets.
 #'
 #' @param object An `mgnetList` object.
-#' @param abundance_criteria A list of functions to be applied to the abundance data matrix.
+#' @param abundance A list of functions to be applied to the abundance data matrix.
 #'        Each function should take a single row of abundance data as input and return a logical
 #'        value indicating whether the sample meets the specified criteria. Default is `NULL`.
-#' @param relative_criteria A list of functions to be applied to the relative abundance data matrix.
+#' @param rel_abundance A list of functions to be applied to the relative abundance data matrix.
 #'        Each function should take a single row of relative abundance data as input and return
 #'        a logical value. Default is `NULL`.
-#' @param normalized_criteria A list of functions to be applied to the log-transformed abundance data
+#' @param norm_abundance A list of functions to be applied to the log-transformed abundance data
 #'        matrix. Each function should take a single row of log-transformed abundance data as input
 #'        and return a logical value. Default is `NULL`.
 #' @param condition A character string specifying the logical condition to apply across
@@ -36,15 +36,15 @@
 #' @name filter_criteria_sample
 #' @aliases filter_criteria_sample,mgnet-method filter_criteria_sample,mgnetList-method
 setGeneric("filter_criteria_sample",
-           function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL, condition = "AND") {
+           function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL, condition = "AND") {
              standardGeneric("filter_criteria_sample")
            })
 
 setMethod("filter_criteria_sample", "mgnet",
-          function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL, condition = "AND") {
+          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL, condition = "AND") {
             
             # Checks
-            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(normalized_criteria)) return(object)
+            if(!is.null(abundance) & !is.null(rel_abundance) & !is.null(norm_abundance)) return(object)
             
             # Check if all criteria are list, function, or NULL
             check_criteria <- function(crit) {
@@ -53,15 +53,15 @@ setMethod("filter_criteria_sample", "mgnet",
               if (is.list(crit) && all(sapply(crit, is.function))) return(TRUE)
               FALSE
             }
-            if (!all(sapply(list(abundance_criteria, relative_criteria, normalized_criteria), check_criteria))) {
+            if (!all(sapply(list(abundance, rel_abundance, norm_abundance), check_criteria))) {
               stop("All criteria must be either a list of functions, a single function, or NULL.")
             }
             
             # Convert single function to list
             to_list <- function(x) if(is.function(x)) list(x) else x
-            abundance_criteria <- to_list(abundance_criteria)
-            relative_criteria <- to_list(relative_criteria)
-            normalized_criteria <- to_list(normalized_criteria)
+            abundance <- to_list(abundance)
+            rel_abundance <- to_list(rel_abundance)
+            norm_abundance <- to_list(norm_abundance)
             
             apply_criteria <- function(data, criteria, condition){
               
@@ -89,18 +89,18 @@ setMethod("filter_criteria_sample", "mgnet",
             
             
             # Apply criteria functions to each data type
-            abundance_pass <- if(length(abundance(object))!=0){
-              apply_criteria(abundance(object), abundance_criteria, condition)
+            abundance_pass <- if(length(object@abundance)!=0){
+              apply_criteria(object@abundance, abundance, condition)
             } else {
               rep(TRUE, nsample(object))
             }
-            relative_pass <- if(length(rel_abundance(object))!=0){
-              apply_criteria(rel_abundance(object), relative_criteria, condition)
+            relative_pass <- if(length(object@rel_abundance)!=0){
+              apply_criteria(object@rel_abundance, rel_abundance, condition)
             } else {
               rep(TRUE, nsample(object))
             }
-            norm_abundance_pass <- if(length(norm_abundance(object))!=0){
-              apply_criteria(norm_abundance(object), normalized_criteria, condition)
+            norm_abundance_pass <- if(length(object@norm_abundance)!=0){
+              apply_criteria(object@norm_abundance, norm_abundance, condition)
             } else {
               rep(TRUE, nsample(object))
             }
@@ -116,10 +116,10 @@ setMethod("filter_criteria_sample", "mgnet",
           })
 
 setMethod("filter_criteria_sample", "mgnetList",
-          function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL, condition = "AND") {
+          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL, condition = "AND") {
             # Apply the filtering criteria to each mgnet object in the list
             object@mgnets <- lapply(object@mgnets, function(mgnet_obj) {
-              filter_criteria_sample(mgnet_obj, abundance_criteria, relative_criteria, normalized_criteria, condition)
+              filter_criteria_sample(mgnet_obj, abundance, rel_abundance, norm_abundance, condition)
             })
             return(object)
           })
@@ -135,12 +135,12 @@ setMethod("filter_criteria_sample", "mgnetList",
 #' allowing for complex and flexible taxa selection processes.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param abundance_criteria A list of functions to be applied to the abundance data matrix column-wise.
+#' @param abundance A list of functions to be applied to the abundance data matrix column-wise.
 #'        Each function takes a single column of abundance data as input and returns a logical value
 #'        indicating whether the taxa meets the filtering criteria.
-#' @param relative_criteria A list of functions to be applied to the relative abundance data matrix column-wise.
+#' @param rel_abundance A list of functions to be applied to the relative abundance data matrix column-wise.
 #'        Each function takes a single column of relative abundance data as input and returns a logical value.
-#' @param normalized_criteria A list of functions to be applied to the log-transformed abundance data matrix column-wise.
+#' @param norm_abundance A list of functions to be applied to the log-transformed abundance data matrix column-wise.
 #'        Each function takes a single column of log-transformed abundance data as input and returns a logical value.
 #' @param condition A character string specifying the logical condition to apply across
 #'        the criteria. Options are "AND" (default) and "OR". "AND" requires a taxa to meet all specified
@@ -171,23 +171,23 @@ setMethod("filter_criteria_sample", "mgnetList",
 #' @name filter_criteria_taxa
 #' @aliases filter_criteria_taxa,mgnet-method filter_criteria_taxa,mgnetList-method
 setGeneric("filter_criteria_taxa",
-           function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL,
+           function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
                     condition = "AND", trim = "yes", aggregate_to = NULL,
                     exclude_absent_taxa = TRUE) {
              standardGeneric("filter_criteria_taxa")
            })
 
 setMethod("filter_criteria_taxa", "mgnet",
-          function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL,
+          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL,
                    condition = "AND", trim = "yes", aggregate_to = NULL,
                    exclude_absent_taxa = TRUE) {
             
             # Checks
-            if(!is.null(abundance_criteria) & !is.null(relative_criteria) & !is.null(normalized_criteria)) return(object)
+            if(!is.null(abundance) & !is.null(rel_abundance) & !is.null(norm_abundance)) return(object)
             
             # Automatically remove taxa that are always equal to zero across all samples
             if(exclude_absent_taxa && length(abundance) != 0) {
-              zero_taxa <- colSums(abundance(object)) != 0
+              zero_taxa <- colSums(object@abundance) != 0
               object <- object[, zero_taxa]
             }
             
@@ -198,7 +198,7 @@ setMethod("filter_criteria_taxa", "mgnet",
               if (is.list(crit) && all(sapply(crit, is.function))) return(TRUE)
               FALSE
             }
-            if (!all(sapply(list(abundance_criteria, relative_criteria, normalized_criteria), check_criteria))) {
+            if (!all(sapply(list(abundance, rel_abundance, norm_abundance), check_criteria))) {
               stop("All criteria must be either a list of functions, a single function, or NULL.")
             }
             
@@ -210,9 +210,9 @@ setMethod("filter_criteria_taxa", "mgnet",
             
             # Convert single function to list
             to_list <- function(x) if(is.function(x)) list(x) else x
-            abundance_criteria <- to_list(abundance_criteria)
-            relative_criteria <- to_list(relative_criteria)
-            normalized_criteria <- to_list(normalized_criteria)
+            abundance <- to_list(abundance)
+            rel_abundance <- to_list(rel_abundance)
+            norm_abundance <- to_list(norm_abundance)
             
             apply_criteria <- function(data, criteria, condition){
               
@@ -240,18 +240,18 @@ setMethod("filter_criteria_taxa", "mgnet",
             
             
             # Apply criteria functions to each data type
-            abundance_pass <- if(length(abundance(object))!=0){
-              apply_criteria(abundance(object), abundance_criteria, condition)
+            abundance_pass <- if(length(object@abundance)!=0){
+              apply_criteria(object@abundance, abundance, condition)
             } else {
               rep(TRUE, ntaxa(object))
             }
-            relative_pass <- if(length(rel_abundance(object))!=0){
-              apply_criteria(rel_abundance(object), relative_criteria, condition)
+            relative_pass <- if(length(object@rel_abundance)!=0){
+              apply_criteria(object@rel_abundance, rel_abundance, condition)
             } else {
               rep(TRUE, ntaxa(object))
             }
-            norm_abundance_pass <- if(length(norm_abundance(object))!=0){
-              apply_criteria(norm_abundance(object), normalized_criteria, condition)
+            norm_abundance_pass <- if(length(object@norm_abundance)!=0){
+              apply_criteria(object@norm_abundance, norm_abundance, condition)
             } else {
               rep(TRUE, ntaxa(object))
             }
@@ -414,12 +414,12 @@ setMethod("filter_criteria_taxa", "mgnet",
           })
 
 setMethod("filter_criteria_taxa", "mgnetList",
-          function(object, abundance_criteria = NULL, relative_criteria = NULL, normalized_criteria = NULL, 
+          function(object, abundance = NULL, rel_abundance = NULL, norm_abundance = NULL, 
                    condition = "AND", trim = "yes", aggregate_to = NULL,
                    exclude_absent_taxa = TRUE ) {
             # Apply the filtering criteria to each mgnet object in the list
             object@mgnets <- lapply(object@mgnets, function(mgnet_obj) {
-              filter_criteria_taxa(mgnet_obj, abundance_criteria, relative_criteria, normalized_criteria, 
+              filter_criteria_taxa(mgnet_obj, abundance, rel_abundance, norm_abundance, 
                                    condition, trim, aggregate_to, exclude_absent_taxa)
             })
             return(object)

@@ -8,24 +8,24 @@
 \usage{
 filter_criteria_sample(
   object,
-  abundance_criteria = NULL,
-  relative_criteria = NULL,
-  normalized_criteria = NULL,
+  abundance = NULL,
+  rel_abundance = NULL,
+  norm_abundance = NULL,
   condition = "AND"
 )
 }
 \arguments{
 \item{object}{An \code{mgnetList} object.}
 
-\item{abundance_criteria}{A list of functions to be applied to the abundance data matrix.
+\item{abundance}{A list of functions to be applied to the abundance data matrix.
 Each function should take a single row of abundance data as input and return a logical
 value indicating whether the sample meets the specified criteria. Default is \code{NULL}.}
 
-\item{relative_criteria}{A list of functions to be applied to the relative abundance data matrix.
+\item{rel_abundance}{A list of functions to be applied to the relative abundance data matrix.
 Each function should take a single row of relative abundance data as input and return
 a logical value. Default is \code{NULL}.}
 
-\item{normalized_criteria}{A list of functions to be applied to the log-transformed abundance data
+\item{norm_abundance}{A list of functions to be applied to the log-transformed abundance data
 matrix. Each function should take a single row of log-transformed abundance data as input
 and return a logical value. Default is \code{NULL}.}
 
@@ -41,8 +41,8 @@ is filtered accordingly.
 }
 \description{
 This function allows for filtering samples across all \code{mgnet} objects contained within an \code{mgnetList}
-based on specified criteria applied to abundance, relative abundance, and log-transformed
-abundance data. Custom functions define the criteria for filtering, allowing for complex and
+based on specified criteria applied to abundance, relative abundance, and normalized abundance data.
+Custom functions define the criteria for filtering, allowing for complex and
 flexible sample selection processes across multiple datasets.
 }
 \details{

@@ -131,15 +131,12 @@ setMethod("set_community_color", signature = "mgnet", function(object,
                                                                isolated_color = "#FFFFFF", 
                                                                alpha = 1, colorspace = "pretty",
                                                                color_to, distinct_color = TRUE){
-  
-  if(!missing(sizes_threshold)){
-    if(!is.numeric(sizes_threshold) || sizes_threshold != round(sizes_threshold) || sizes_threshold <= 1) {
-      stop("sizes_threshold must be a positive integer >= 1.")
-    }
-  }
-  
   if(missing(sizes_threshold)){
     sizes_threshold <- 1
+  } else {
+    if(!is.numeric(sizes_threshold) || sizes_threshold != round(sizes_threshold) || sizes_threshold < 1) {
+      stop("sizes_threshold must be a positive integer >= 1.")
+      }
   }
   
   ncomm <- max(as.numeric(names(sizes(as_mgnet_communities(community(object))))))

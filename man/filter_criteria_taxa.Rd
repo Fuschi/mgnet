@@ -8,9 +8,9 @@
 \usage{
 filter_criteria_taxa(
   object,
-  abundance_criteria = NULL,
-  relative_criteria = NULL,
-  normalized_criteria = NULL,
+  abundance = NULL,
+  rel_abundance = NULL,
+  norm_abundance = NULL,
   condition = "AND",
   trim = "yes",
   aggregate_to = NULL,
@@ -20,14 +20,14 @@ filter_criteria_taxa(
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
 
-\item{abundance_criteria}{A list of functions to be applied to the abundance data matrix column-wise.
+\item{abundance}{A list of functions to be applied to the abundance data matrix column-wise.
 Each function takes a single column of abundance data as input and returns a logical value
 indicating whether the taxa meets the filtering criteria.}
 
-\item{relative_criteria}{A list of functions to be applied to the relative abundance data matrix column-wise.
+\item{rel_abundance}{A list of functions to be applied to the relative abundance data matrix column-wise.
 Each function takes a single column of relative abundance data as input and returns a logical value.}
 
-\item{normalized_criteria}{A list of functions to be applied to the log-transformed abundance data matrix column-wise.
+\item{norm_abundance}{A list of functions to be applied to the log-transformed abundance data matrix column-wise.
 Each function takes a single column of log-transformed abundance data as input and returns a logical value.}
 
 \item{condition}{A character string specifying the logical condition to apply across

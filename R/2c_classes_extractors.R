@@ -92,7 +92,19 @@ setMethod(f="[", signature="mgnet",function(x, i, j ) {
       
     } else if (length(x@network)!=0 & full_i) {
       
-      network.new <- igraph::subgraph(x@network,j) 
+      # Obtain the adjacency matrix
+      if(is_weighted(x@network)){
+        adj <- as_adjacency_matrix(x@network, attr = "weight", sparse = FALSE)
+      } else {
+        adj <- as_adjacency_matrix(x@network, sparse = FALSE)
+      }
+      
+      #Reorder vertices
+      adj_reorder <- adj[j,j]
+      
+      # Reconstruct the graph from the reordered adjacency matrix
+      network.new <- graph_from_adjacency_matrix(adj_reorder, mode = "undirected", weighted = TRUE)
+      
       
       if(length(x@community) != 0){
         community.new <- x@community

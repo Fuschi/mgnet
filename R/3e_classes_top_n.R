@@ -1,13 +1,12 @@
-# TOP_N_SAMPLE
+# TOP_SAMPLE
 #------------------------------------------------------------------------------#
-#' Extract Top N Samples Based on Aggregate Metrics
+#' Return Ordered the Sample IDs Based on Aggregate Metrics on Abundances Matrices
 #'
-#' Selects the top `n` samples from an `mgnet` object based on an aggregate metric calculated from 
+#' Return the ordered samples from an `mgnet` object based on an aggregate metric calculated from 
 #' specified data fields such as abundance, relative abundance, or normalized abundance, with
 #' the chosen metric, which can be customized.
 #'
 #' @param object An `mgnet` object.
-#' @param n Integer specifying the number of top samples to retrieve based on the calculated metric.
 #' @param field Character string specifying the data field to use for computing the metric.
 #'        Acceptable values are `"abundance"`, `"rel_abundance"`, or `"norm_abundance"`.
 #'        The field must not be empty in the `mgnet` object.
@@ -20,18 +19,18 @@
 #' @param decreasing Logical indicating if sorting should be in decreasing order. When `TRUE` (default),
 #'        samples with the highest metric values are considered top.
 #'
-#' @return For `mgnet` objects, a character vector of sample IDs representing the top `n` samples.
-#'         For `mgnetList` objects, returns a list where each element is a character vector of top `n`
-#'         samples for each respective `mgnet`.
+#' @return For `mgnet` objects, a character vector of sample IDs representing the ordered samples.
+#'         For `mgnetList` objects, returns a list where each element is a character vector of 
+#'         the ordered samples for each respective `mgnet`.
 #' @note Ensure that the specified field is not empty in the `mgnet` object before calling this function. 
 #'       Failing to do so will result in an error. Aggregating data at different taxonomic levels
 #'       is the result of summing up the same taxa together and not always it has sense for norm_abundance.
 #' @export
-#' @name top_n_samples
-#' @aliases top_n_samples,mgnet-method top_n_samples,mgnetList-method
-setGeneric("top_n_samples", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {standardGeneric("top_n_samples")})
+#' @name top_samples
+#' @aliases top_samples,mgnet-method top_samples,mgnetList-method
+setGeneric("top_samples", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {standardGeneric("top_samples")})
 
-setMethod("top_n_samples", "mgnet", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
+setMethod("top_samples", "mgnet", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
 
   if (!field %in% c("abundance", "rel_abundance", "norm_abundance")) {
     stop("Invalid field specified; choose from 'abundance', 'rel_abundance', 'norm_abundance'.")
@@ -70,7 +69,6 @@ setMethod("top_n_samples", "mgnet", function(object, n, field, rank = NULL, orde
     
   }
   
-  
   # Apply the order function to sum up or calculate the desired metric across columns (taxa)
   sample_scores <- apply(data_matrix, 1, order_fun)
   
@@ -81,19 +79,14 @@ setMethod("top_n_samples", "mgnet", function(object, n, field, rank = NULL, orde
     sample_indices <- order(sample_scores, decreasing = FALSE)
   }
   
-  # Subset to top n
-  top_n_indices <- sample_indices[1:n]
-  result <- rownames(data_matrix)[top_n_indices]
-  result <- result[!is.na(result)]
-  
-  return(result)
-  
+
+  return(colnames(data_matrix)[sample_indices])
 })
 
-setMethod("top_n_samples", "mgnetList", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
+setMethod("top_samples", "mgnetList", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
   
   result <- sapply(object, FUN = \(x){
-    top_n_samples(x, n = n, field = field, rank = rank, 
+    top_samples(x, field = field, rank = rank, 
                   order_fun = order_fun, decreasing = decreasing)
   }, simplify = FALSE, USE.NAMES = TRUE)
   
@@ -101,16 +94,15 @@ setMethod("top_n_samples", "mgnetList", function(object, n, field, rank = NULL, 
 })
 
 
-# TOP_N_SAMPLE
+# top_taxa
 #------------------------------------------------------------------------------#
-#' Extract Top N Taxa Based on Aggregate Metrics
+#' Return Ordered the Taxa IDs Based on Aggregate Metrics
 #'
-#' Selects the top `n` taxa from an `mgnet` object based on an aggregate metric calculated from 
+#' Reorder taxa from an `mgnet` object based on an aggregate metric calculated from 
 #' specified data fields such as abundance, relative abundance, or normalized abundance, with
 #' the chosen metric, which can be customized.
 #'
 #' @param object An `mgnet` object.
-#' @param n Integer specifying the number of top taxa to retrieve based on the calculated metric.
 #' @param field Character string specifying the data field to use for computing the metric.
 #'        Acceptable values are `"abundance"`, `"rel_abundance"`, or `"norm_abundance"`.
 #'        The field must not be empty in the `mgnet` object.
@@ -130,11 +122,11 @@ setMethod("top_n_samples", "mgnetList", function(object, n, field, rank = NULL, 
 #'       Failing to do so will result in an error. Aggregating data at different taxonomic levels
 #'       is the result of summing up the same taxa together and not always it has sense for norm_abundance.
 #' @export
-#' @name top_n_taxa
-#' @aliases top_n_taxa,mgnet-method top_n_taxa,mgnetList-method
-setGeneric("top_n_taxa", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {standardGeneric("top_n_taxa")})
+#' @name top_taxa
+#' @aliases top_taxa,mgnet-method top_taxa,mgnetList-method
+setGeneric("top_taxa", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {standardGeneric("top_taxa")})
 
-setMethod("top_n_taxa", "mgnet", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
+setMethod("top_taxa", "mgnet", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
   
   if (!field %in% c("abundance", "rel_abundance", "norm_abundance")) {
     stop("Invalid field specified; choose from 'abundance', 'rel_abundance', 'norm_abundance'.")
@@ -184,19 +176,15 @@ setMethod("top_n_taxa", "mgnet", function(object, n, field, rank = NULL, order_f
     taxa_indices <- order(taxa_scores, decreasing = FALSE)
   }
   
-  # Subset to top n
-  top_n_indices <- taxa_indices[1:n]
-  result <- colnames(data_matrix)[top_n_indices]
-  result <- result[!is.na(result)]
+  return(colnames(data_matrix)[taxa_indices])
   
-  return(result)
   
 })
 
-setMethod("top_n_taxa", "mgnetList", function(object, n, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
+setMethod("top_taxa", "mgnetList", function(object, field, rank = NULL, order_fun = sum, decreasing = TRUE) {
   
   result <- sapply(object, FUN = \(x){
-    top_n_taxa(x, n = n, field = field, rank = rank, 
+    top_taxa(x, field = field, rank = rank, 
                   order_fun = order_fun, decreasing = decreasing)
   }, simplify = FALSE, USE.NAMES = TRUE)
   

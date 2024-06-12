@@ -119,14 +119,13 @@ colormap_communities <- function(community,
     stop("The 'community' parameter must be a community object from igraph.")
   }
   
-  if(!missing(sizes_threshold)){
-    if(!is.numeric(sizes_threshold) || sizes_threshold != round(sizes_threshold) || sizes_threshold <= 1) {
-      stop("sizes_threshold must be a positive integer >= 1.")
-    }
-  }
   
   if(missing(sizes_threshold)){
     sizes_threshold <- 1
+  } else {
+    if(!is.numeric(sizes_threshold) || sizes_threshold != round(sizes_threshold) || sizes_threshold < 1) {
+      stop("sizes_threshold must be a positive integer >= 1.")
+    }
   }
   
   ncomm <- max(as.numeric(names(sizes(as_mgnet_communities(community)))))
