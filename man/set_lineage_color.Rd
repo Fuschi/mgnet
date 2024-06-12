@@ -12,6 +12,7 @@ set_lineage_color(
   field,
   rank = NULL,
   order_fun = sum,
+  decreasing = TRUE,
   extraColor = "#FFFFFF",
   alpha = 1,
   colorspace = "pretty",
@@ -27,7 +28,10 @@ set_lineage_color(
 
 \item{rank}{Optional character string specifying the taxonomic rank for aggregation and coloring.}
 
-\item{order_fun}{Function to compute rankings, defaulting to \code{sum}. Other possibilities include \code{mean}, \code{median} or custum functions.}
+\item{order_fun}{Function to compute rankings, defaulting to \code{sum}. Other possibilities include \code{mean}, \code{median} or costum functions.}
+
+\item{decreasing}{Logical indicating if sorting should be in decreasing order. When \code{TRUE} (default),
+samples with the highest metric values are considered top.}
 
 \item{extraColor}{String; hexadecimal color code for taxa outside the top set. This color is applied to taxa that do not make
 into the top \code{n} taxa across all \code{mgnet} objects in a \code{mgnetList} or within the single \code{mgnet} object. Default is "#FFFFFF" (white).}
@@ -48,5 +52,5 @@ aggregates a unique set of top \code{n} taxa across all objects to ensure distin
 are assigned a default or specified \code{extraColor}.
 }
 \seealso{
-\link[mgnet]{colormap_categories}, \link[mgnet]{top_n_taxa}
+\link[mgnet]{colormap_categories}, \link[mgnet]{top_taxa}
 }

@@ -11,6 +11,10 @@
 #'
 #' @param object An `mgnet` or `mgnetList` object to be modified.
 #' @param ... Transformations to apply, passed to dplyr::mutate().
+#' @param .by Optional; a character vector specifying the columns in the `info_sample`
+#'        data frame on which to group the data before applying the filter conditions.
+#'        This allows for complex, group-based filtering operations such as filtering
+#'        within subsets defined by one or more attributes.
 #'
 #' @return The `mgnet` or `mgnetList` object with its `info_sample` slot updated.
 #'
@@ -19,12 +23,12 @@
 #'
 #' @export
 #' @aliases mutate_info_sample,mgnet-method mutate_info_sample,mgnetList-method
-#' @importFrom dplyr mutate
+#' @importFrom dplyr mutate group_by ungroup
 #' @importFrom rlang eval_tidy expr
 #' @importFrom tibble column_to_rownames 
-setGeneric("mutate_info_sample", function(object, ...) {standardGeneric("mutate_info_sample")})
+setGeneric("mutate_info_sample", function(object, ..., .by = NULL) {standardGeneric("mutate_info_sample")})
 
-setMethod("mutate_info_sample", "mgnet", function(object, ...) {
+setMethod("mutate_info_sample", "mgnet", function(object, ..., .by = NULL) {
   
   # Check if info_sample is empty and initialize if necessary
   if(length(object@info_sample) == 0) {
@@ -37,7 +41,20 @@ setMethod("mutate_info_sample", "mgnet", function(object, ...) {
   }
   
   conditions <- rlang::enquos(...)
-  mutated_info_sample <- dplyr::mutate(info_sample(object, .fmt = "df"), !!!conditions)
+  info_sample_data <- info_sample(object, .fmt = "df")
+  
+  # Group by specified columns if .by is not NULL
+  if (!is.null(.by)) {
+    info_sample_data <- dplyr::group_by(info_sample_data, !!!rlang::syms(.by))
+  }
+  
+  # Apply mutate
+  mutated_info_sample <- dplyr::mutate(info_sample_data, !!!conditions)
+  
+  # Ungroup if it was grouped
+  if (!is.null(.by)) {
+    mutated_info_sample <- dplyr::ungroup(mutated_info_sample)
+  }
   
   if("sample_id" %in% colnames(mutated_info_sample)){
     mutated_info_sample <- mutated_info_sample %>% column_to_rownames("sample_id")
@@ -56,8 +73,6 @@ setMethod("mutate_info_sample", "mgnetList", function(object, ...) {
       mgnet_obj@info_sample <- data.frame(sample_id = sample_id(mgnet_obj))
     }
     
-    mutated_info_sample <- dplyr::mutate(info_sample(mgnet_obj, .fmt = "df"), !!!conditions)
-    
     if("sample_id" %in% colnames(mutated_info_sample)){
       mutated_info_sample <- mutated_info_sample %>% column_to_rownames("sample_id")
     }
@@ -65,6 +80,22 @@ setMethod("mutate_info_sample", "mgnetList", function(object, ...) {
     new_names <- names(rlang::eval_tidy(rlang::expr(list(!!!conditions))))
     if("sample_id" %in% new_names) {
       stop("Modification or addition of 'sample_id' column is not allowed.")
+    }
+    
+    conditions <- rlang::enquos(...)
+    info_sample_data <- info_sample(mgnet_obj, .fmt = "df")
+    
+    # Group by specified columns if .by is not NULL
+    if (!is.null(.by)) {
+      info_sample_data <- dplyr::group_by(info_sample_data, !!!rlang::syms(.by))
+    }
+    
+    # Apply mutate
+    mutated_info_sample <- dplyr::mutate(info_sample_data, !!!conditions)
+    
+    # Ungroup if it was grouped
+    if (!is.null(.by)) {
+      mutated_info_sample <- dplyr::ungroup(mutated_info_sample)
     }
     
     mgnet_obj@info_sample <- mutated_info_sample
@@ -89,6 +120,11 @@ setMethod("mutate_info_sample", "mgnetList", function(object, ...) {
 #'
 #' @param object An `mgnet` or `mgnetList` object to be modified.
 #' @param ... Transformations to apply, passed to dplyr::mutate().
+#' @param .by Optional; a character vector specifying the columns in the `info_sample`
+#'        data frame on which to group the data before applying the filter conditions.
+#'        This allows for complex, group-based filtering operations such as filtering
+#'        within subsets defined by one or more attributes.
+#'
 #' @return The `mgnet` or `mgnetList` object with its `info_taxa` slot updated.
 #' @seealso
 #' \code{\link[dplyr]{mutate}} for details on transformation conditions.
@@ -97,9 +133,10 @@ setMethod("mutate_info_sample", "mgnetList", function(object, ...) {
 #' @importFrom dplyr mutate
 #' @importFrom rlang eval_tidy expr
 #' @importFrom tibble column_to_rownames 
-setGeneric("mutate_info_taxa", function(object, ...) {standardGeneric("mutate_info_taxa")})
+setGeneric("mutate_info_taxa", function(object, ..., .by = NULL) {standardGeneric("mutate_info_taxa")})
 
-setMethod("mutate_info_taxa", "mgnet", function(object, ...) {
+setMethod("mutate_info_taxa", "mgnet", function(object, ..., .by = NULL) {
+  
   conditions <- rlang::enquos(...)
   
   # Check if info_taxa is empty and initialize if necessary
@@ -112,7 +149,20 @@ setMethod("mutate_info_taxa", "mgnet", function(object, ...) {
     stop("Modification or addition of 'taxa_id' column is not allowed.")
   }
   
-  mutated_info_taxa <- dplyr::mutate(info_taxa(object, .fmt = "df"), !!!conditions)
+  info_taxa_data <- info_taxa(object, .fmt = "df")
+  
+  # Group by specified columns if .by is not NULL
+  if (!is.null(.by)) {
+    info_taxa_data <- dplyr::group_by(info_taxa_data, !!!rlang::syms(.by))
+  }
+  
+  # Apply mutate
+  mutated_info_taxa <- dplyr::mutate(info_taxa_data, !!!conditions)
+  
+  # Ungroup if it was grouped
+  if (!is.null(.by)) {
+    mutated_info_taxa <- dplyr::ungroup(mutated_info_taxa)
+  }
   
   if("taxa_id" %in% colnames(mutated_info_taxa)){
     mutated_info_taxa <- mutated_info_taxa %>% column_to_rownames("taxa_id")
@@ -137,7 +187,20 @@ setMethod("mutate_info_taxa", "mgnetList", function(object, ...) {
       stop("Modification or addition of 'taxa_id' column is not allowed.")
     }
     
-    mutated_info_taxa <- dplyr::mutate(info_taxa(mgnet_obj, .fmt = "df"), !!!conditions)
+    info_taxa_data <- info_taxa(mgnet_obj, .fmt = "df")
+    
+    # Group by specified columns if .by is not NULL
+    if (!is.null(.by)) {
+      info_taxa_data <- dplyr::group_by(info_taxa_data, !!!rlang::syms(.by))
+    }
+    
+    # Apply mutate
+    mutated_info_taxa <- dplyr::mutate(info_taxa_data, !!!conditions)
+    
+    # Ungroup if it was grouped
+    if (!is.null(.by)) {
+      mutated_info_taxa <- dplyr::ungroup(mutated_info_taxa)
+    }
     
     if("taxa_id" %in% colnames(mutated_info_taxa)){
       mutated_info_taxa <- mutated_info_taxa %>% column_to_rownames("taxa_id")

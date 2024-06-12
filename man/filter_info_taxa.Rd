@@ -6,7 +6,7 @@
 \alias{filter_info_taxa,mgnetList-method}
 \title{Filter Taxa in mgnet Objects Based on Taxonomic and Metadata Conditions}
 \usage{
-filter_info_taxa(object, ..., trim = "yes", aggregate_to = NULL)
+filter_info_taxa(object, ..., trim = "yes", aggregate_to = NULL, .by = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
@@ -21,6 +21,12 @@ or "aggregate" to combine them into a single category.}
 
 \item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.
 Defaults to "aggregate".}
+
+\item{.by}{Optional; a character vector specifying the columns in the \code{info_taxa},
+\code{lineage} and communities membership from \code{community} data frame on which to group the
+data before applying the filter conditions.
+This allows for complex, group-based filtering operations such as filtering
+within subsets defined by one or more attributes.}
 }
 \value{
 An \code{mgnet} or \code{mgnetList} object with the taxa subset according to the

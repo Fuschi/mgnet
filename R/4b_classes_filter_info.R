@@ -13,6 +13,10 @@
 #' include dplyr-style filtering expressions. These conditions are applied to the
 #' columns of the `info_sample` data frame, which is accessed as a tibble with
 #' `sample_id` serving as the key column.
+#' @param .by Optional; a character vector specifying the columns in the `info_sample`
+#'        data frame on which to group the data before applying the filter conditions.
+#'        This allows for complex, group-based filtering operations such as filtering
+#'        within subsets defined by one or more attributes.
 #'
 #' @return An `mgnet` or `mgnetList` object with samples filtered according to the
 #' specified conditions. The filtered object(s) retain only those samples that meet
@@ -26,16 +30,16 @@
 #' or `mgnetList` object.
 #'
 #' @export
-#' @importFrom dplyr filter
+#' @importFrom dplyr filter group_by ungroup
 #' @importFrom rlang enquos
 #' @name filter_info_sample
 #' @aliases filter_info_sample,mgnet-method filter_info_sample,mgnetList-method
 #' @seealso \code{\link[dplyr]{filter}} for details on filter conditions.
-setGeneric("filter_info_sample", function(object, ...) {
+setGeneric("filter_info_sample", function(object, ..., .by = NULL) {
   standardGeneric("filter_info_sample")
 })
 
-setMethod("filter_info_sample", "mgnet", function(object, ...) {
+setMethod("filter_info_sample", "mgnet", function(object, ..., .by = NULL) {
   
   if(length(object@info_sample)==0){
     return(object[numeric(0),])
@@ -44,8 +48,20 @@ setMethod("filter_info_sample", "mgnet", function(object, ...) {
   # Capture the filtering conditions as quosures
   conditions <- rlang::enquos(...)
   
-  # Filter the info_sample data frame based on the conditions
-  filtered_info_sample <- dplyr::filter(info_sample(object, .fmt = "tbl"), !!!conditions)
+  info_sample_data <- info_sample(object, .fmt = "tbl")
+  
+  # Group by specified columns if .by is not NULL
+  if (!is.null(.by)) {
+    info_sample_data <- dplyr::group_by(info_sample_data, !!!rlang::syms(.by))
+  }
+  
+  # Apply filter
+  filtered_info_sample <- dplyr::filter(info_sample_data, !!!conditions)
+  
+  # Ungroup if it was grouped
+  if (!is.null(.by)) {
+    filtered_info_sample <- dplyr::ungroup(filtered_info_sample)
+  }
   
   # Check if the filtered result is empty
   if(nrow(filtered_info_sample) == 0) {
@@ -73,8 +89,20 @@ setMethod("filter_info_sample", "mgnetList", function(object, ...) {
       return(mgnet_obj[numeric(0),])
     }
     
-    # Filter the info_sample data frame based on the conditions
-    filtered_info_sample <- dplyr::filter(info_sample(mgnet_obj, .fmt = "tbl"), !!!conditions)
+    info_sample_data <- info_sample(mgnet_obj, .fmt = "tbl")
+    
+    # Group by specified columns if .by is not NULL
+    if (!is.null(.by)) {
+      info_sample_data <- dplyr::group_by(info_sample_data, !!!rlang::syms(.by))
+    }
+    
+    # Apply filter
+    filtered_info_sample <- dplyr::filter(info_sample_data, !!!conditions)
+    
+    # Ungroup if it was grouped
+    if (!is.null(.by)) {
+      filtered_info_sample <- dplyr::ungroup(filtered_info_sample)
+    }
     
     # Check if the filtered result is empty and throw an error if so
     if(length(filtered_info_sample) == 0) {
@@ -114,6 +142,11 @@ setMethod("filter_info_sample", "mgnetList", function(object, ...) {
 #'        or "aggregate" to combine them into a single category.
 #' @param aggregate_to Name for the aggregated taxa category when using `trim = "aggregate"`.
 #'        Defaults to "aggregate". 
+#' @param .by Optional; a character vector specifying the columns in the `info_taxa`, 
+#'        `lineage` and communities membership from `community` data frame on which to group the
+#'         data before applying the filter conditions.
+#'         This allows for complex, group-based filtering operations such as filtering
+#'         within subsets defined by one or more attributes.
 #'
 #' @return An `mgnet` or `mgnetList` object with the taxa subset according to the
 #' specified conditions. The structure of the object remains intact, but taxa that
@@ -134,9 +167,9 @@ setMethod("filter_info_sample", "mgnetList", function(object, ...) {
 #' @aliases filter_info_taxa,mgnet-method filter_info_taxa,mgnetList-method
 #' @seealso \code{\link[dplyr]{filter}} for details on filter expressions.
 setGeneric("filter_info_taxa", function(object, ...,
-                                        trim = "yes", aggregate_to = NULL) {standardGeneric("filter_info_taxa")})
+                                        trim = "yes", aggregate_to = NULL, .by = NULL) {standardGeneric("filter_info_taxa")})
 
-setMethod("filter_info_taxa", "mgnet", function(object, ..., trim = "yes", aggregate_to = NULL) {
+setMethod("filter_info_taxa", "mgnet", function(object, ..., trim = "yes", aggregate_to = NULL, .by = NULL) {
   
   if(length(object@info_taxa)==0 & length(object@lineage)==0 && length(object@community)==0){
     return(object[,numeric(0)])
@@ -174,16 +207,28 @@ setMethod("filter_info_taxa", "mgnet", function(object, ..., trim = "yes", aggre
   }
   
   
-  # Apply conditions to filter taxa
-  filtered_taxa <- dplyr::filter(merged_taxa, !!!conditions)
+  info_taxa_data <- info_taxa(object, .fmt = "tbl")
+  
+  # Group by specified columns if .by is not NULL
+  if (!is.null(.by)) {
+    info_taxa_data <- dplyr::group_by(info_taxa_data, !!!rlang::syms(.by))
+  }
+  
+  # Apply filter
+  filtered_info_taxa <- dplyr::filter(info_taxa_data, !!!conditions)
+  
+  # Ungroup if it was grouped
+  if (!is.null(.by)) {
+    filtered_info_taxa <- dplyr::ungroup(filtered_info_taxa)
+  }
   
   # Check if the filtered result is empty
-  if(nrow(filtered_taxa) == 0) {
+  if(nrow(filtered_info_taxa) == 0) {
     return(object[,integer(0)])
   }
   
   # Extract taxa IDs that meet the filtering conditions
-  final_pass <- filtered_taxa$taxa_id
+  final_pass <- filtered_info_taxa$taxa_id
   
   # yes
   #-----------------------------------------#
@@ -334,12 +379,12 @@ setMethod("filter_info_taxa", "mgnet", function(object, ..., trim = "yes", aggre
   }
 })
 
-setMethod("filter_info_taxa", "mgnetList", function(object, ..., trim = "yes", aggregate_to = NULL) {
+setMethod("filter_info_taxa", "mgnetList", function(object, ..., trim = "yes", aggregate_to = NULL, .by = NULL) {
   
   # Apply filtering to each mgnet object within the mgnetList
   object@mgnets <- sapply(object@mgnets, function(mgnet_obj) {
     filtered_taxa_obj <- filter_info_taxa(object = mgnet_obj, ... = ..., 
-                                          trim = trim, aggregate_to = aggregate_to)
+                                          trim = trim, aggregate_to = aggregate_to, .by = .by)
     
     # Capture filtering conditions as quosures
     conditions <- rlang::enquos(...)

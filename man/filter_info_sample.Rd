@@ -6,7 +6,7 @@
 \alias{filter_info_sample,mgnetList-method}
 \title{Filter Samples in mgnet Objects Based on info_sample Conditions}
 \usage{
-filter_info_sample(object, ...)
+filter_info_sample(object, ..., .by = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
@@ -15,6 +15,11 @@ filter_info_sample(object, ...)
 include dplyr-style filtering expressions. These conditions are applied to the
 columns of the \code{info_sample} data frame, which is accessed as a tibble with
 \code{sample_id} serving as the key column.}
+
+\item{.by}{Optional; a character vector specifying the columns in the \code{info_sample}
+data frame on which to group the data before applying the filter conditions.
+This allows for complex, group-based filtering operations such as filtering
+within subsets defined by one or more attributes.}
 }
 \value{
 An \code{mgnet} or \code{mgnetList} object with samples filtered according to the

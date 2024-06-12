@@ -11,7 +11,9 @@
 #' @param n Integer; the number of top taxa to be distinctly colored.
 #' @param field Character; specifies the data field (`"abundance"`, `"rel_abundance"`, or `"norm_abundance"`) used for ranking taxa.
 #' @param rank Optional character string specifying the taxonomic rank for aggregation and coloring.
-#' @param order_fun Function to compute rankings, defaulting to `sum`. Other possibilities include `mean`, `median` or custum functions.
+#' @param order_fun Function to compute rankings, defaulting to `sum`. Other possibilities include `mean`, `median` or costum functions.
+#' @param decreasing Logical indicating if sorting should be in decreasing order. When `TRUE` (default),
+#' samples with the highest metric values are considered top.
 #' @param extraColor String; hexadecimal color code for taxa outside the top set. This color is applied to taxa that do not make
 #'        into the top `n` taxa across all `mgnet` objects in a `mgnetList` or within the single `mgnet` object. Default is "#FFFFFF" (white).
 #' @param alpha Numeric; opacity level for colors, ranging from 0 (transparent) to 1 (opaque), with a default of 1.
@@ -22,16 +24,18 @@
 #' @importFrom dplyr mutate %>%
 #' @name set_lineage_color
 #' @aliases set_lineage_color,mgnet-method set_lineage_color,mgnetList-method
-#' @seealso \link[mgnet]{colormap_categories}, \link[mgnet]{top_n_taxa}
-setGeneric("set_lineage_color", function(object, n, field, rank = NULL, order_fun = sum,
+#' @seealso \link[mgnet]{colormap_categories}, \link[mgnet]{top_taxa}
+setGeneric("set_lineage_color", function(object, n, 
+                                         field, rank = NULL, order_fun = sum, decreasing = TRUE,
                                          extraColor = "#FFFFFF", alpha = 1, colorspace = "pretty",
                                          color_to) standardGeneric("set_lineage_color"))
 
-setMethod("set_lineage_color", signature = "mgnet", function(object, n, field, rank = NULL, order_fun = sum,
+setMethod("set_lineage_color", signature = "mgnet", function(object, n, 
+                                                             field, rank = NULL, order_fun = sum, decreasing = TRUE,
                                                              extraColor = "#FFFFFF", alpha = 1, colorspace = "pretty",
                                                              color_to) {
   # Determine the top n taxa based on the specified criteria
-  top_rank <- top_n_taxa(object, n, field, rank, order_fun, decreasing = TRUE)
+  top_rank <- top_taxa(object, field, rank, order_fun, decreasing = decreasing)[1:n]
   all_rank <- unique(taxa_name(object,rank))
   
   categories <- c(top_rank, all_rank)
@@ -47,11 +51,12 @@ setMethod("set_lineage_color", signature = "mgnet", function(object, n, field, r
   return(object)
 })
 
-setMethod("set_lineage_color", signature = "mgnetList", function(object, n, field, rank = NULL, order_fun = sum,
-                                                             extraColor = "#FFFFFF", alpha = 1, colorspace = "pretty",
-                                                             color_to) {
+setMethod("set_lineage_color", signature = "mgnetList", function(object, n, 
+                                                                 field, rank = NULL, order_fun = sum, decreasing = TRUE,
+                                                                 extraColor = "#FFFFFF", alpha = 1, colorspace = "pretty",
+                                                                 color_to) {
   # Determine the top n taxa based on the specified criteria
-  top_rank <- top_n_taxa(object, n, field, rank, order_fun, decreasing = TRUE)
+  top_rank <- top_taxa(object, field, rank, order_fun, decreasing = decreasing)[1:n]
   top_rank <- top_rank %>% unlist %>% unique
   n <- length(top_rank)
   

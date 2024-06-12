@@ -11,9 +11,9 @@ mutate_criteria_taxa(
   abundance = NULL,
   rel_abundance = NULL,
   norm_abundance = NULL,
-  network_criteria = NULL,
-  community_criteria = NULL,
-  mgnet_criteria = NULL
+  network = NULL,
+  community = NULL,
+  mgnet = NULL
 )
 }
 \arguments{
@@ -31,15 +31,15 @@ the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 matrix. Each function should take a single row of log-transformed abundance data as input
 and return the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{network_criteria}{A named list of functions to be applied to the network data matrix.
+\item{network}{A named list of functions to be applied to the network data matrix.
 Each function should take a single column of network data as input and return
 the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{community_criteria}{A named list of functions to be applied to the community data matrix.
+\item{community}{A named list of functions to be applied to the community data matrix.
 Each function should take a single column of community data as input and return
 the value to be stored in the \code{info_taxa} slot. Default is \code{NULL}.}
 
-\item{mgnet_criteria}{A named list of functions to be applied direct on the mgnet object.}
+\item{mgnet}{A named list of functions to be applied direct on the mgnet object.}
 }
 \value{
 A modified \code{mgnet} object with the \code{info_taxa} slot updated based on the applied mutations.

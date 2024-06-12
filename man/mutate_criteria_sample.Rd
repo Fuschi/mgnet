@@ -11,7 +11,7 @@ mutate_criteria_sample(
   abundance = NULL,
   rel_abundance = NULL,
   norm_abundance = NULL,
-  mgnet_criteria = NULL
+  mgnet = NULL
 )
 }
 \arguments{
@@ -29,7 +29,7 @@ the value to be stored in the \code{info_sample} slot. Default is \code{NULL}.}
 matrix. Each function should take a single row of log-transformed abundance data as input
 and return the value to be stored in the \code{info_sample} slot. Default is \code{NULL}.}
 
-\item{mgnet_criteria}{A named list of functions to be applied direct on the mgnet object.}
+\item{mgnet}{A named list of functions to be applied direct on the mgnet object.}
 }
 \value{
 A modified \code{mgnet} object with the \code{info_sample} slot updated based on the applied mutations.
