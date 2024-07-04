@@ -4,19 +4,33 @@
 \alias{network}
 \alias{network,mgnet-method}
 \alias{network,mgnetList-method}
-\title{Get Network Graph}
+\title{Retrieve Network Graph from mgnet Objects}
 \usage{
-network(object)
+network(
+  object,
+  add_vertex_attr = FALSE,
+  add_factor_sign = FALSE,
+  factor_sign_to = "sign"
+)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
+
+\item{add_vertex_attr}{A logical indicating whether to attach all available taxa information as attributes of the vertices. Defaults to FALSE.}
+
+\item{add_factor_sign}{A logical that if TRUE and the network is weighted, adds an edge attribute \code{factor_sign_to} that classifies edges as "Negative" or "Positive" based on their weights. Default is FALSE.}
+
+\item{factor_sign_to}{A character string specifying the name of the edge attribute for classifying the sign. Default is "sign".}
 }
 \value{
-The \code{igraph} object stored in the \code{network} slot for an \code{mgnet} object, or a list of \code{igraph} objects
-for an \code{mgnetList} object, each representing the network graph of a contained \code{mgnet} object.
+An \code{igraph} object containing the network from an \code{mgnet} object, or a list of \code{igraph} objects
+from an \code{mgnetList}, each representing the network graph of a contained \code{mgnet} object.
 }
 \description{
-Retrieves the network graph information stored in the \code{network} slot of an \code{mgnet} object
-or each \code{mgnet} object within an \code{mgnetList}. This network graph is typically an \code{igraph} object
-representing the relationships or interactions among different taxa.
+Retrieves the network graph stored in the \code{network} slot of an \code{mgnet} object
+or from each \code{mgnet} object within an \code{mgnetList}. This network graph is typically an \code{igraph} object
+representing the interactions among different taxa.
+}
+\seealso{
+\code{\link[igraph]{igraph-object}}
 }

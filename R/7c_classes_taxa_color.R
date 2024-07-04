@@ -239,8 +239,8 @@ setMethod("set_community_color", signature = "mgnetList", function(object,
       
       mgnetObj <- object[[i]]
       
-      start_color_idx <- ifelse(i==1, 1, ncommunity_sizes_threshold[i]+1)
-      final_color_idx <- cumsum(ncommunity_sizes_threshold[1:i])[i]
+      start_color_idx <- ifelse(i==1, 1, sum(ncommunity_sizes_threshold[1:(i-1)])+1 )
+      final_color_idx <- sum(ncommunity_sizes_threshold[1:i])
       colors_i <- colors[start_color_idx:final_color_idx]
       
       palette <- rep(NA_character_, length(community(mgnetObj)))

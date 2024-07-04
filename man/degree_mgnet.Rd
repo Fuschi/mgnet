@@ -4,8 +4,10 @@
 \alias{degree_mgnet}
 \alias{degree_mgnet,mgnet-method}
 \alias{degree_mgnet,mgnetList-method}
-\title{Signed Vertices Degrees with Communities Info}
+\title{Calculate Signed and Community-Specific Vertex Degrees in mgnet Objects}
 \usage{
+degree_mgnet(obj, sign = "all", type = "all")
+
 degree_mgnet(obj, sign = "all", type = "all")
 }
 \arguments{
@@ -18,8 +20,34 @@ Possible values: "positive" for positive weights, "negative" for negative weight
 Possible values: "intra" for edges within communities, "extra" for edges between communities, or "all" for all edges.}
 }
 \value{
+An integer vector containing the degrees of the vertices. Each element in the vector
+corresponds to a vertex in the \code{mgnet} object, ordered according to the vertex order in the
+igraph object.
+
 A vector of vertex degrees.
 }
 \description{
+This function computes the degrees of vertices in an \code{mgnet} object based on the signs of edge weights
+and the specified relationship to community structure. It allows for focusing on positive, negative,
+or all edges, and can differentiate between edges within the same community (intra-community) and
+edges between different communities (inter-community).
+
 Calculates the vertices degree using the information on the sign of the edges and the communities.
+}
+\details{
+The degree of a vertex is the number of edges connected to it, with possible restrictions based on
+edge sign and community membership:
+\itemize{
+\item \code{sign = "positive"}: Only edges with positive weights are considered.
+\item \code{sign = "negative"}: Only edges with negative weights are considered.
+\item \code{type = "intra"}: Only edges within the same community as the vertex are considered.
+\item \code{type = "extra"}: Only edges between different communities are considered.
+}
+
+This function is particularly useful for analyzing the connectivity patterns in ecological networks
+or social networks where edges are labeled with positive or negative weights to represent different
+types of interactions or relationships, and where community structure is an important aspect.
+}
+\seealso{
+\code{\link[igraph]{degree}} for the base function used to compute vertex degrees.
 }

@@ -415,26 +415,67 @@ setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
 
 # NETWORK
 #------------------------------------------------------------------------------#
-#' Get Network Graph
+#' Retrieve Network Graph from mgnet Objects
 #'
-#' Retrieves the network graph information stored in the `network` slot of an `mgnet` object
-#' or each `mgnet` object within an `mgnetList`. This network graph is typically an `igraph` object
-#' representing the relationships or interactions among different taxa.
+#' Retrieves the network graph stored in the `network` slot of an `mgnet` object
+#' or from each `mgnet` object within an `mgnetList`. This network graph is typically an `igraph` object
+#' representing the interactions among different taxa.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @return The `igraph` object stored in the `network` slot for an `mgnet` object, or a list of `igraph` objects
-#'         for an `mgnetList` object, each representing the network graph of a contained `mgnet` object.
+#' @param add_vertex_attr A logical indicating whether to attach all available taxa information as attributes of the vertices. Defaults to FALSE.
+#' @param add_factor_sign A logical that if TRUE and the network is weighted, adds an edge attribute `factor_sign_to` that classifies edges as "Negative" or "Positive" based on their weights. Default is FALSE.
+#' @param factor_sign_to A character string specifying the name of the edge attribute for classifying the sign. Default is "sign".
+#' @return An `igraph` object containing the network from an `mgnet` object, or a list of `igraph` objects
+#'         from an `mgnetList`, each representing the network graph of a contained `mgnet` object.
 #' @export
-#' @name network
 #' @aliases network,mgnet-method network,mgnetList-method
-setGeneric("network", function(object) standardGeneric("network"))
-
-setMethod("network", "mgnet", function(object) {
-  object@network
+#' @seealso \code{\link[igraph]{igraph-object}}
+setGeneric("network", function(object, add_vertex_attr = FALSE,
+                               add_factor_sign = FALSE, factor_sign_to = "sign") {
+  standardGeneric("network")
 })
 
-setMethod("network", "mgnetList", function(object) {
-  sapply(object@mgnets, function(x) x@network, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("network", "mgnet", function(object, add_vertex_attr = FALSE,
+                                       add_factor_sign = FALSE, factor_sign_to = "sign") {
+  
+  g <- object@network
+  if (length(g) == 0) return(g)
+  
+  if (add_vertex_attr) {
+    # Retrieve and merge metadata
+    meta_taxa <- tibble::tibble(taxa_id = taxa_id(object))
+    if (!is.null(info_taxa(object))) {
+      meta_taxa <- dplyr::left_join(meta_taxa, info_taxa(object, "tbl"), by = "taxa_id")
+    }
+    if (!is.null(lineage(object))) {
+      meta_taxa <- dplyr::left_join(meta_taxa, lineage(object, "tbl"), by = "taxa_id")
+    }
+    if (!is.null(community(object))) {
+      meta_taxa <- dplyr::left_join(meta_taxa, community_members(object, "tbl"), by = "taxa_id")
+    }
+    
+    # Add vertex attributes
+    if (ncol(meta_taxa) > 1) {
+      for (vertex_attr in names(meta_taxa)[-1]) {
+        igraph::vertex_attr(g, vertex_attr) <- meta_taxa[[vertex_attr]]
+      }
+    }
+  }
+  
+  # Add edge sign factor if required and the network is weighted
+  if (add_factor_sign && igraph::is_weighted(g)) {
+    g <- set_edge_attr(graph = g, name = factor_sign_to,
+                       value = factor(sign(igraph::E(g)$weight),
+                                      levels = c(-1, 1),
+                                      labels = c("Negative", "Positive")))
+  }
+  
+  return(g)
+})
+
+
+setMethod("network", "mgnetList", function(object, add_vertex_attr) {
+  sapply(object@mgnets, function(x) network(x, add_vertex_attr), simplify = FALSE, USE.NAMES = TRUE)
 })
 
 

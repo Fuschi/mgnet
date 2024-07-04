@@ -108,4 +108,3 @@ plot.mgnet <- function(x,layout,
   
   plot(g, layout=layout, vertex.size=vertexSize, ...)
 }
-
