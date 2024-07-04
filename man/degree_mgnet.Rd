@@ -7,32 +7,27 @@
 \title{Calculate Signed and Community-Specific Vertex Degrees in mgnet Objects}
 \usage{
 degree_mgnet(obj, sign = "all", type = "all")
-
-degree_mgnet(obj, sign = "all", type = "all")
 }
 \arguments{
-\item{obj}{An mgnet object.}
+\item{obj}{An \code{mgnet} object containing a network structured as an \code{igraph} object.}
 
-\item{sign}{Character indicating the sign of the edges to consider.
-Possible values: "positive" for positive weights, "negative" for negative weights, or "all" for all weights.}
+\item{sign}{A character string indicating the sign of the edges to consider.
+Accepted values are "positive", "negative", or "all".}
 
-\item{type}{Character indicating the type of edges to include.
-Possible values: "intra" for edges within communities, "extra" for edges between communities, or "all" for all edges.}
+\item{type}{A character string indicating the type of community relationship to consider for the
+degree calculation. Accepted values are "intra" for edges within the same community,
+"extra" for edges between different communities, or "all" for no community-based filtering.}
 }
 \value{
 An integer vector containing the degrees of the vertices. Each element in the vector
 corresponds to a vertex in the \code{mgnet} object, ordered according to the vertex order in the
 igraph object.
-
-A vector of vertex degrees.
 }
 \description{
 This function computes the degrees of vertices in an \code{mgnet} object based on the signs of edge weights
 and the specified relationship to community structure. It allows for focusing on positive, negative,
 or all edges, and can differentiate between edges within the same community (intra-community) and
 edges between different communities (inter-community).
-
-Calculates the vertices degree using the information on the sign of the edges and the communities.
 }
 \details{
 The degree of a vertex is the number of edges connected to it, with possible restrictions based on

@@ -31,6 +31,3 @@ Retrieves the network graph stored in the \code{network} slot of an \code{mgnet}
 or from each \code{mgnet} object within an \code{mgnetList}. This network graph is typically an \code{igraph} object
 representing the interactions among different taxa.
 }
-\seealso{
-\code{\link[igraph]{igraph-object}}
-}

@@ -428,8 +428,8 @@ setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
 #' @return An `igraph` object containing the network from an `mgnet` object, or a list of `igraph` objects
 #'         from an `mgnetList`, each representing the network graph of a contained `mgnet` object.
 #' @export
+#' @importFrom igraph vertex_attr set_edge_attr is_weighted E
 #' @aliases network,mgnet-method network,mgnetList-method
-#' @seealso \code{\link[igraph]{igraph-object}}
 setGeneric("network", function(object, add_vertex_attr = FALSE,
                                add_factor_sign = FALSE, factor_sign_to = "sign") {
   standardGeneric("network")
@@ -464,7 +464,7 @@ setMethod("network", "mgnet", function(object, add_vertex_attr = FALSE,
   
   # Add edge sign factor if required and the network is weighted
   if (add_factor_sign && igraph::is_weighted(g)) {
-    g <- set_edge_attr(graph = g, name = factor_sign_to,
+    g <- igraph::set_edge_attr(graph = g, name = factor_sign_to,
                        value = factor(sign(igraph::E(g)$weight),
                                       levels = c(-1, 1),
                                       labels = c("Negative", "Positive")))

@@ -1,9 +1,9 @@
 Package: mgnet
-Title: What the Package Does (One Line, Title Case)
+Title: Network Analysis and Visualization for Metagenomics Communities
 Version: 0.0.0.9000
 Authors@R: 
-  person("Alessandro", "Fuschi", role = c("aut", "cre"), email="alessandro.fuschi2@unibo.it")
-Description: What the package does (one paragraph).
+  person("Alessandro", "Fuschi", role = c("aut", "cre"), email="alessandro.fuschi.work@gmail.com")
+Description: This package provides tools for constructing, analyzing, and visualizing networks of microbial community interactions. It integrates methods for data processing for compositional data and sparsity, network construction based on correlation and association measures, and advanced visualization capabilities to help researchers understand complex microbial relationships.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
