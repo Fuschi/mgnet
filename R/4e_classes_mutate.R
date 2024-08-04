@@ -30,6 +30,9 @@ setGeneric("mutate_info_sample", function(object, ..., .by = NULL) {standardGene
 
 setMethod("mutate_info_sample", "mgnet", function(object, ..., .by = NULL) {
   
+  conditions <- rlang::enquos(...)
+  info_sample_data <- info_sample(object, .fmt = "df")
+  
   # Check if info_sample is empty and initialize if necessary
   if(length(object@info_sample) == 0) {
     object@info_sample <- data.frame(sample_id = sample_id(object))
@@ -39,9 +42,6 @@ setMethod("mutate_info_sample", "mgnet", function(object, ..., .by = NULL) {
   if("sample_id" %in% new_names) {
     stop("Modification or addition of 'sample_id' column is not allowed.")
   }
-  
-  conditions <- rlang::enquos(...)
-  info_sample_data <- info_sample(object, .fmt = "df")
   
   # Group by specified columns if .by is not NULL
   if (!is.null(.by)) {

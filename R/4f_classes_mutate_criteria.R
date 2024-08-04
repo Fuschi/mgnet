@@ -80,7 +80,7 @@ setMethod("mutate_criteria_sample", "mgnet",
             
             
             # Apply mutations functions to each data type
-            mgnet_new <- if(length(mgnet(object))!=0){
+            mgnet_new <- if(length(object)!=0){
               apply_mutations_mgnet(object, mgnet)
             } else {
               data.frame()
