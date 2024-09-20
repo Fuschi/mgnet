@@ -4,40 +4,49 @@
 \alias{top_taxa}
 \alias{top_taxa,mgnet-method}
 \alias{top_taxa,mgnetList-method}
-\title{Return Ordered the Taxa IDs Based on Aggregate Metrics}
+\title{Return Ordered the Taxa IDs Based on Aggregate Metrics on Abundances Matrices}
 \usage{
-top_taxa(object, field, rank = NULL, order_fun = sum, decreasing = TRUE)
+top_taxa(
+  object,
+  field,
+  .var,
+  .aggregation_fun = sum,
+  .order_fun = sum,
+  decreasing = TRUE
+)
 }
 \arguments{
 \item{object}{An \code{mgnet} object.}
 
 \item{field}{Character string specifying the data field to use for computing the metric.
-Acceptable values are \code{"abundance"}, \code{"rel_abundance"}, or \code{"norm_abundance"}.
+Acceptable values are \code{"abun"}, \code{"rela"}, or \code{"norm"}.
 The field must not be empty in the \code{mgnet} object.}
 
-\item{rank}{Optional character string specifying the taxonomic rank to consider when calculating metrics.
-If provided, the computation aggregates data at this taxonomic rank within the \code{lineage} data.
-Note: Aggregating data at different taxonomic levels may sum taxa classified together,
-potentially affecting the interpretability of normalized matrices.}
+\item{.var}{A character string specifying the column name from the \code{taxa} slot to be used
+for grouping and aggregation. If this parameter is omitted, the function will return
+the original abundance data without any aggregation.}
 
-\item{order_fun}{Function used to compute the aggregate metric across the selected field. The default
+\item{.aggregation_fun}{A function to specify how the abundance data should be aggregated.
+This can be any function that takes a numeric vector and returns a single number (e.g., sum, mean).
+The default aggregation function is sum.}
+
+\item{.order_fun}{Function used to compute the aggregate metric across the selected field. The default
 is \code{sum}, but other functions like \code{mean} or \code{median} can be used to tailor the analysis.}
 
 \item{decreasing}{Logical indicating if sorting should be in decreasing order. When \code{TRUE} (default),
 taxa with the highest metric values are considered top.}
 }
 \value{
-For \code{mgnet} objects, a character vector of taxa IDs representing the top \code{n} taxa.
-For \code{mgnetList} objects, returns a list where each element is a character vector of top \code{n}
-samples for each respective \code{mgnet}.
+For \code{mgnet} objects, a character vector of sample IDs representing the ordered taxa.
+For \code{mgnetList} objects, returns a list where each element is a character vector of
+the ordered taxa for each respective \code{mgnet}.
 }
 \description{
-Reorder taxa from an \code{mgnet} object based on an aggregate metric calculated from
+Return the ordered taxa from an \code{mgnet} object based on an aggregate metric calculated from
 specified data fields such as abundance, relative abundance, or normalized abundance, with
 the chosen metric, which can be customized.
 }
 \note{
 Ensure that the specified field is not empty in the \code{mgnet} object before calling this function.
-Failing to do so will result in an error. Aggregating data at different taxonomic levels
-is the result of summing up the same taxa together and not always it has sense for norm_abundance.
+Failing to do so will result in an error.
 }

@@ -1,6 +1,6 @@
 # SET ABUNDANCE
 #------------------------------------------------------------------------------#
-#' Set `abundance` Slot in `mgnet` Objects
+#' Set `abun` Slot in `mgnet` Objects
 #'
 #' @description
 #' This function sets the abundance data for an `mgnet` object or each `mgnet` object 
@@ -11,22 +11,22 @@
 #' or a list of numeric matrices for `mgnetList` objects.
 #' @return The modified `mgnet` or `mgnetList` object with the updated abundance data.
 #' @export
-#' @name set_abundance
-#' @aliases set_abundance,mgnet-method set_abundance,mgnetList-method
+#' @name set_abun
+#' @aliases set_abun,mgnet-method set_abun,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_abundance", function(object, value) standardGeneric("set_abundance"))
+setGeneric("set_abun", function(object, value) standardGeneric("set_abun"))
 
-setMethod("set_abundance", "mgnet", function(object, value) {
-  object@abundance <- value
+setMethod("set_abun", "mgnet", function(object, value) {
+  object@abun <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_abundance", "mgnetList", function(object, value) {
+setMethod("set_abun", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_abundance(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_abun(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -35,35 +35,35 @@ setMethod("set_abundance", "mgnetList", function(object, value) {
 })
 
 
-# SET REL_ABUNDANCE
+# SET rela
 #------------------------------------------------------------------------------#
-#' Set `rel_abundance` Slot in `mgnet` Objects
+#' Set `rela` Slot in `mgnet` Objects
 #'
 #' @description
-#' This function sets the rel_abundance data for an `mgnet` object or each `mgnet` object 
+#' This function sets the rela data for an `mgnet` object or each `mgnet` object 
 #' within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new rel_abundance data to be set, a numeric matrix for `mgnet` objects 
+#' @param value The new rela data to be set, a numeric matrix for `mgnet` objects 
 #' or a list of numeric matrices for `mgnetList` objects.
-#' @return The modified `mgnet` or `mgnetList` object with the updated rel_abundance data.
+#' @return The modified `mgnet` or `mgnetList` object with the updated rela data.
 #' @export
-#' @name set_rel_abundance
-#' @aliases set_rel_abundance,mgnet-method set_rel_abundance,mgnetList-method
+#' @name set_rela
+#' @aliases set_rela,mgnet-method set_rela,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_rel_abundance", function(object, value) standardGeneric("set_rel_abundance"))
+setGeneric("set_rela", function(object, value) standardGeneric("set_rela"))
 
-setMethod("set_rel_abundance", "mgnet", function(object, value) {
-  object@rel_abundance <- value
+setMethod("set_rela", "mgnet", function(object, value) {
+  object@rela <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_rel_abundance", "mgnetList", function(object, value) {
+setMethod("set_rela", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_rel_abundance(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_rela(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -71,35 +71,35 @@ setMethod("set_rel_abundance", "mgnetList", function(object, value) {
   return(object)
 })
 
-# SET norm_abundance
+# SET norm
 #------------------------------------------------------------------------------#
-#' Set `norm_abundance` Slot in `mgnet` Objects
+#' Set `norm` Slot in `mgnet` Objects
 #'
 #' @description
-#' This function sets the rel_abundance data for an `mgnet` object or each `mgnet` object 
+#' This function sets the rela data for an `mgnet` object or each `mgnet` object 
 #' within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new norm_abundance data to be set, a numeric matrix for `mgnet` objects 
+#' @param value The new norm data to be set, a numeric matrix for `mgnet` objects 
 #' or a list of numeric matrices for `mgnetList` objects.
-#' @return The modified `mgnet` or `mgnetList` object with the updated rel_abundance data.
+#' @return The modified `mgnet` or `mgnetList` object with the updated rela data.
 #' @export
-#' @name set_norm_abundance
-#' @aliases set_norm_abundance,mgnet-method set_norm_abundance,mgnetList-method
+#' @name set_norm
+#' @aliases set_norm,mgnet-method set_norm,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_norm_abundance", function(object, value) standardGeneric("set_norm_abundance"))
+setGeneric("set_norm", function(object, value) standardGeneric("set_norm"))
 
-setMethod("set_norm_abundance", "mgnet", function(object, value) {
-  object@norm_abundance <- value
+setMethod("set_norm", "mgnet", function(object, value) {
+  object@norm <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_norm_abundance", "mgnetList", function(object, value) {
+setMethod("set_norm", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_norm_abundance(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_norm(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -107,21 +107,21 @@ setMethod("set_norm_abundance", "mgnetList", function(object, value) {
   return(object)
 })
 
-# SET CLR_abundance
+# SET norm_CLR
 #------------------------------------------------------------------------------#
-#' Store clr-transformed data in `norm_abundance` Slot in `mgnet` Objects
+#' Store clr-transformed data in `norm` Slot in `mgnet` Objects
 #'
 #' Applies centered log-ratio (CLR) transformation or inter-quantile log-ratio (ICLR) transformation to the abundance data
 #' in `mgnet` objects, after handling zeros with specified strategies. This transformation is useful for compositional data analysis,
 #' making the data suitable for statistical modeling and comparison.
 #'
 #' @param object An `mgnet` object.
-#' @param clr_variant The method to calculate norm_abundance. Options are 'clr' for centered log-ratio and 'iclr' for
+#' @param clr_variant The method to calculate norm. Options are 'clr' for centered log-ratio and 'iclr' for
 #'        inter-quantile log-ratio. Default is 'clr'.
 #' @param zero_strategy The zero replacement strategy before log-ratio transformation.
 #'        'const' replaces zeros with a small constant, and 'unif' replaces zeros with a uniform random value
-#'        between 6.5% and 65% of the detection limit. Default is 'unif'.
-#' @return The `mgnet` object with updated `norm_abundance` data.
+#'        between 6.5% and 65% of the detection limit. Default is 'const'.
+#' @return The `mgnet` object with updated `norm` data.
 #' @export
 #' @seealso \code{\link{clr}}, \code{\link{iclr}}, \code{\link{zero_dealing}}
 #'         See also:
@@ -129,65 +129,66 @@ setMethod("set_norm_abundance", "mgnetList", function(object, value) {
 #'         \code{\link[=clr]{clr}} for details on centered log-ratio transformation,
 #'         \code{\link[=iclr]{iclr}} for details on inter-quantile log-ratio transformation.
 #'         
-#' @name set_CLR_abundance
-#' @aliases set_CLR_abundance,mgnet-method set_CLR_abundance,mgnetList-method
-setGeneric("set_CLR_abundance", function(object, clr_variant = "clr", zero_strategy = "unif") standardGeneric("set_CLR_abundance"))
+#' @name set_norm_CLR
+#' @aliases set_norm_CLR,mgnet-method set_norm_CLR,mgnetList-method
+setGeneric("set_norm_CLR", function(object, clr_variant = "clr", zero_strategy = "const") standardGeneric("set_norm_CLR"))
 
-setMethod("set_CLR_abundance", "mgnet", function(object, clr_variant = "clr", zero_strategy = "unif") {
+setMethod("set_norm_CLR", "mgnet", function(object, clr_variant = "clr", zero_strategy = "const") {
   
   clr_variant <- match.arg(clr_variant, c("clr", "iclr"))
   zero_strategy <- match.arg(zero_strategy, c("unif", "const"))
-  if(length(object@abundance) == 0) stop("Abundance matrix missing; cannot calculate log-ratio abundance.")
+  if(length(object@abun) == 0 & length(object@rela)) stop("abundance and relative data missing; cannot calculate log-ratio abundance.")
   
-  abundance_nozero <- zero_dealing(object@abundance, method = zero_strategy)
+  abundance_nozero <- zero_dealing(ifelse(length(object@abun)!=0, object@abun, object@rela),
+                                   method = zero_strategy)
   
   if(clr_variant == "clr") {
-    object@norm_abundance <- clr(abundance_nozero)
+    object@norm <- clr(abundance_nozero)
   } else {
-    object@norm_abundance <- iclr(abundance_nozero)
+    object@norm <- iclr(abundance_nozero)
   }
   
   validObject(object)
   return(object)
 })
 
-setMethod("set_CLR_abundance", "mgnetList", function(object, clr_variant = "clr", zero_strategy = "unif") {
+setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zero_strategy = "const") {
   object <- lapply(object@mgnets, function(mgnet) {
-    set_CLR_abundance(mgnet, clr_variant, zero_strategy)
+    set_norm_CLR(mgnet, clr_variant, zero_strategy)
   })
   validObject(object)
   return(object)
 })
 
-# SET INFO_SAMPLE
+# SET sample
 #------------------------------------------------------------------------------#
-#' Set `info_sample` Slot in `mgnet` Objects
+#' Set `sample` Slot in `mgnet` Objects
 #'
 #' @description
-#' This function sets the info_sample data for an `mgnet` object or each `mgnet` object 
+#' This function sets the sample data for an `mgnet` object or each `mgnet` object 
 #' within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new info_sample data to be set, a numeric matrix for `mgnet` objects 
+#' @param value The new sample data to be set, a numeric matrix for `mgnet` objects 
 #' or a list of numeric matrices for `mgnetList` objects.
-#' @return The modified `mgnet` or `mgnetList` object with the updated info_sample data.
+#' @return The modified `mgnet` or `mgnetList` object with the updated sample data.
 #' @export
-#' @name set_info_sample
-#' @aliases set_info_sample,mgnet-method set_info_sample,mgnetList-method
+#' @name set_sample
+#' @aliases set_sample,mgnet-method set_sample,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_info_sample", function(object, value) standardGeneric("set_info_sample"))
+setGeneric("set_sample", function(object, value) standardGeneric("set_sample"))
 
-setMethod("set_info_sample", "mgnet", function(object, value) {
-  object@info_sample <- value
+setMethod("set_sample", "mgnet", function(object, value) {
+  object@sample <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_info_sample", "mgnetList", function(object, value) {
+setMethod("set_sample", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_info_sample(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_sample(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -196,72 +197,35 @@ setMethod("set_info_sample", "mgnetList", function(object, value) {
 })
 
 
-# SET LINEAGE
+# SET taxa
 #------------------------------------------------------------------------------#
-#' Set `lineage` Slot in `mgnet` Objects
+#' Set `taxa` Slot in `mgnet` Objects
 #'
 #' @description
-#' This function sets the lineage data for an `mgnet` object or each `mgnet` object 
+#' This function sets the taxa data for an `mgnet` object or each `mgnet` object 
 #' within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new lineage data to be set, a numeric matrix for `mgnet` objects 
+#' @param value The new taxa data to be set, a numeric matrix for `mgnet` objects 
 #' or a list of numeric matrices for `mgnetList` objects.
-#' @return The modified `mgnet` or `mgnetList` object with the updated lineage data.
+#' @return The modified `mgnet` or `mgnetList` object with the updated taxa data.
 #' @export
-#' @name set_lineage
-#' @aliases set_lineage,mgnet-method set_lineage,mgnetList-method
+#' @name set_taxa
+#' @aliases set_taxa,mgnet-method set_taxa,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_lineage", function(object, value) standardGeneric("set_lineage"))
+setGeneric("set_taxa", function(object, value) standardGeneric("set_taxa"))
 
-setMethod("set_lineage", "mgnet", function(object, value) {
-  object@lineage <- value
+setMethod("set_taxa", "mgnet", function(object, value) {
+  object@taxa <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_lineage", "mgnetList", function(object, value) {
+setMethod("set_taxa", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_lineage(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
-  return(object)
-})
-
-
-# SET INFO_TAXA
-#------------------------------------------------------------------------------#
-#' Set `info_taxa` Slot in `mgnet` Objects
-#'
-#' @description
-#' This function sets the info_taxa data for an `mgnet` object or each `mgnet` object 
-#' within an `mgnetList`.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new info_taxa data to be set, a numeric matrix for `mgnet` objects 
-#' or a list of numeric matrices for `mgnetList` objects.
-#' @return The modified `mgnet` or `mgnetList` object with the updated info_taxa data.
-#' @export
-#' @name set_info_taxa
-#' @aliases set_info_taxa,mgnet-method set_info_taxa,mgnetList-method
-#' @importFrom methods validObject
-setGeneric("set_info_taxa", function(object, value) standardGeneric("set_info_taxa"))
-
-setMethod("set_info_taxa", "mgnet", function(object, value) {
-  object@info_taxa <- value
-  validObject(object)
-  return(object)
-})
-
-setMethod("set_info_taxa", "mgnetList", function(object, value) {
-  are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_info_taxa(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_taxa(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -271,9 +235,9 @@ setMethod("set_info_taxa", "mgnetList", function(object, value) {
 
 
 
-# SET NETWORK
+# SET netw
 #------------------------------------------------------------------------------#
-#' Set `network` Slot in `mgnet` Objects
+#' Set `netw` Slot in `mgnet` Objects
 #'
 #' @description
 #' This function sets the network data for an `mgnet` object or each `mgnet` object 
@@ -284,22 +248,22 @@ setMethod("set_info_taxa", "mgnetList", function(object, value) {
 #' or a list of numeric matrices for `mgnetList` objects.
 #' @return The modified `mgnet` or `mgnetList` object with the updated network data.
 #' @export
-#' @name set_network
-#' @aliases set_network,mgnet-method set_network,mgnetList-method
+#' @name set_netw
+#' @aliases set_netw,mgnet-method set_netw,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_network", function(object, value) standardGeneric("set_network"))
+setGeneric("set_netw", function(object, value) standardGeneric("set_netw"))
 
-setMethod("set_network", "mgnet", function(object, value) {
-  object@network <- value
+setMethod("set_netw", "mgnet", function(object, value) {
+  object@netw <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_network", "mgnetList", function(object, value) {
+setMethod("set_netw", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_network(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_netw(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   
@@ -310,7 +274,7 @@ setMethod("set_network", "mgnetList", function(object, value) {
 
 # SET COMMUNITY
 #------------------------------------------------------------------------------#
-#' Set `community` Slot in `mgnet` Objects
+#' Set `comm` Slot in `mgnet` Objects
 #'
 #' @description
 #' This function sets the community data for an `mgnet` object or each `mgnet` object 
@@ -321,22 +285,22 @@ setMethod("set_network", "mgnetList", function(object, value) {
 #' or a list of numeric matrices for `mgnetList` objects.
 #' @return The modified `mgnet` or `mgnetList` object with the updated community data.
 #' @export
-#' @name set_community
-#' @aliases set_community,mgnet-method set_community,mgnetList-method
+#' @name set_comm
+#' @aliases set_comm,mgnet-method set_comm,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_community", function(object, value) standardGeneric("set_community"))
+setGeneric("set_comm", function(object, value) standardGeneric("set_comm"))
 
-setMethod("set_community", "mgnet", function(object, value) {
-  object@community <- value
+setMethod("set_comm", "mgnet", function(object, value) {
+  object@comm <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_community", "mgnetList", function(object, value) {
+setMethod("set_comm", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_community(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_comm(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   

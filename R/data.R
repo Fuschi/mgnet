@@ -39,5 +39,5 @@
 #'
 #' @format A data frame with 1953 rows and columns for each taxonomic rank from phylum to OTU. The row names are the taxa IDs.
 #' @source Human Microbiome Project Phase 2
-#' @usage data(lineage_HMP2)
-"lineage_HMP2"
+#' @usage data(info_taxa_HMP2)
+"info_taxa_HMP2"

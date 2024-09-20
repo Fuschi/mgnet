@@ -38,39 +38,46 @@
 }
 
 #------------------------------------------------------------------------------#
-#' Internal: Check for Reserved Keywords in Column Names
+#' Internal: Check for Reserved Keywords in Column Names or Vertex Names of a Specified Slot
 #'
-#' This function checks if any of the specified reserved keywords are present as column names in a given object.
-#' If such keywords are found, it appends an error message to the provided list of errors.
+#' This function checks if any of the specified reserved keywords are present as column names in a matrix or data frame,
+#' or as vertex names in an igraph object within a specified slot of an S4 object.
+#' If such keywords are found, it appends a consolidated error message to the provided list of errors.
 #' This check helps prevent conflicts with internal functionality that relies on these reserved keywords.
 #'
-#' @param obj The data object to check, expected to have column names (e.g., a data frame or a matrix with column names).
+#' @param obj The S4 object to check.
+#' @param slotName The name of the slot in the object to check for column or vertex names.
 #' @param errors A character vector where error messages will be accumulated.
-#'               New error messages are appended if reserved keywords are found as column names.
+#'               New error messages are appended if reserved keywords are found as column or vertex names in the specified slot.
 #'
 #' @return A character vector of accumulated error messages, including any new errors found during this check.
 #'
+#' @importFrom methods slot
+#' @importFrom igraph V
 #' @keywords internal
-.assertNoReservedKeywords <- function(obj, errors) {
+.assertNoReservedKeywords <- function(obj, slotName, errors) {
   # Define the list of reserved keywords
-  reservedKeywords <- c("sample_id", "taxa_id", "abundance", 
-                        "rel_abundance", "norm_abundance", "community")
+  reservedKeywords <- c("sample_id", "taxa_id", "comm_id", "abun", 
+                        "rela", "norm", "mgnet")
   
-  # Check if obj has column names to avoid unnecessary warnings
-  if (!is.null(colnames(obj))) {
-    # Iterate through each reserved keyword
-    for (keyword in reservedKeywords) {
-      if (keyword %in% colnames(obj)) {
-        message <- switch(keyword,
-                          "sample_id" = "column name 'sample_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "taxa_id" = "column name 'taxa_id' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "abundance" = "column name 'abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "rel_abundance" = "column name 'rel_abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "norm_abundance" = "column name 'norm_abundance' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details.",
-                          "community" = "column name 'community' is a reserved keyword and cannot be used. This information could be encoded in the dimension names. See ?mgnet-class for details."
-        )
-        errors <- c(errors, message)
-      }
+  slotData <- slot(obj, slotName)
+  
+  # Determine the nature of slotData and set up names to check accordingly
+  namesToCheck <- NULL
+  if (is.matrix(slotData) || is.data.frame(slotData)) {
+    namesToCheck <- colnames(slotData)
+  } else if ("igraph" %in% class(slotData)) {
+    namesToCheck <- V(slotData)$name
+  }
+  
+  # If applicable, check if names contain reserved keywords
+  if (!is.null(namesToCheck)) {
+    foundKeywords <- reservedKeywords[reservedKeywords %in% namesToCheck]
+    if (length(foundKeywords) > 0) {
+      targetType <- ifelse(is.matrix(slotData) || is.data.frame(slotData), "column names", "vertex names")
+      message <- sprintf("The following reserved keywords are used as %s and cannot be used: %s. Please rename these to avoid conflicts with internal functionality.",
+                         targetType, slotName, paste(foundKeywords, collapse=", "))
+      errors <- c(errors, message)
     }
   }
   
@@ -426,7 +433,7 @@
 #' @keywords internal
 .assertMatchingNamesVertices <- function(obj, slotName, which, errors) {
   
-  netw <- slot(obj, "network")
+  netw <- slot(obj, "netw")
   obj <- slot(obj, slotName)
   
   if(which=="rows"){
@@ -478,7 +485,7 @@
 .assertMatchingCommunitiesNetwork <- function(obj, errors) {
   
   # Correcting 'object' to 'obj' based on the parameter name
-  if(length(slot(obj, "network")) == 0){
+  if(length(methods::slot(obj, "netw")) == 0){
     errors <- c(errors, "community cannot exist without the associated network.")
   } else if (length(slot(obj, "community")$membership) != vcount(slot(obj, "network"))){
     errors <- c(errors, "network and community slots must have the same number of vertices.")
@@ -487,6 +494,44 @@
   return(errors)
 }
 
+#------------------------------------------------------------------------------#
+#' Internal: Assert Matching Zero Positions Between Two Slots
+#' 
+#' Validates that the zero positions in two specified slots within an S4 object are identical.
+#' This function is crucial for ensuring data integrity, particularly in biological or ecological
+#' datasets where the absence (zero) of a measurement in one type of data must correspond to the absence
+#' in another, ensuring aligned analytical outputs.
+#'
+#' @param obj The S4 object containing the slots to be compared.
+#' @param slotName1 The name of the first slot containing a matrix to check for zero positions.
+#' @param slotName2 The name of the second slot containing a matrix to check for zero positions.
+#' @param errors A pre-existing character vector where any new error messages identified
+#'        during the validation process will be appended. This allows for the accumulation
+#'        of error messages across multiple validation checks.
+#'
+#' @return An updated character vector of error messages. If zero positions do not match,
+#'         an appropriate error message is added to the vector. If there are no discrepancies,
+#'         the original vector is returned unchanged.
+#'
+#' @importFrom methods slot
+#' @keywords internal
+.assertMatchingZeroPositions <- function(obj, slotName1, slotName2, errors) {
+  
+  matrix1 <- slot(obj, slotName1)
+  matrix2 <- slot(obj, slotName2)
+  
+  # Identify mismatching zero positions
+  zeroMismatch <- which((matrix1 == 0) != (matrix2 == 0), arr.ind = TRUE)
+  
+  if (length(zeroMismatch) > 0) {
+    # Format the indices into a human-readable string
+    errorMessage <- sprintf("Mismatch in zero positions between slots '%s' and '%s.",
+                            slotName1, slotName2)
+    errors <- c(errors, errorMessage)
+  }
+  
+  return(errors)
+}
 
 #------------------------------------------------------------------------------#
 # SET VALIDITY FUNCTION
@@ -497,180 +542,148 @@
 # conditions, such as being non-empty, having the correct data type, and meeting domain-specific
 # requirements (e.g., numeric matrices must have all elements >= 0).
 setValidity("mgnet", function(object) {
-  
   errors <- list()
   
   #CHECK ABUNDANCE
   #-------------------------------------#
-  errors$abundance <- character()
-  if( length(object@abundance)!=0 ){
-    errors$abundance <- .assertNumericMatrix(object@abundance, errors$abundance)
+  errors$abun <- character()
+  if( length(object@abun)!=0 ){
+    errors$abun <- .assertNumericMatrix(object@abun, errors$abun)
     
-    if ( length(errors$abundance)==0 ){
-      errors$abundance <- .assertUniqueRowColNames(object@abundance, errors$abundance)
-      errors$abundance <- .assertAllPositive(object@abundance, errors$abundance)
-      errors$abundance <- .assertNoReservedKeywords(object@abundance, errors$abundance)
+    if ( length(errors$abun)==0 ){
+      errors$abun <- .assertUniqueRowColNames(object@abun, errors$abun)
+      errors$abun <- .assertAllPositive(object@abun, errors$abun)
+      errors$abun <- .assertNoReservedKeywords(object, "abun", errors$abun)
     }
   }
   
   #CHECK RELATIVE
   #-------------------------------------#
-  errors$rel_abundance <- character()
-  if( length(object@rel_abundance)!=0 ){
-    errors$rel_abundance <- .assertNumericMatrix(object@rel_abundance, errors$rel_abundance)
+  errors$rela <- character()
+  if( length(object@rela)!=0 ){
+    errors$rela <- .assertNumericMatrix(object@rela, errors$rela)
     
-    if ( length(errors$rel_rel_abundance)==0 ){
-      errors$rel_abundance <- .assertUniqueRowColNames(object@rel_abundance, errors$rel_abundance)
-      errors$rel_abundance <- .assertAllPositive(object@rel_abundance, errors$rel_abundance)
-      errors$rel_abundance <- .assertNoReservedKeywords(object@rel_abundance, errors$rel_abundance)
+    if ( length(errors$rel_rela)==0 ){
+      errors$rela <- .assertUniqueRowColNames(object@rela, errors$rela)
+      errors$rela <- .assertAllPositive(object@rela, errors$rela)
+      errors$rela <- .assertNoReservedKeywords(object, "rela",errors$rela)
     }
   }
   
   #CHECK NORM-ABUNDANCE
   #-------------------------------------#
-  errors$norm_abundance <- character()
-  if( length(object@norm_abundance)!=0 ){
-    errors$norm_abundance <- .assertNumericMatrix(object@norm_abundance, errors$norm_abundance)
+  errors$norm <- character()
+  if( length(object@norm)!=0 ){
+    errors$norm <- .assertNumericMatrix(object@norm, errors$norm)
     
-    if ( length(errors$norm_abundance)==0 ){
-      errors$norm_abundance <- .assertUniqueRowColNames(object@norm_abundance, errors$norm_abundance)
-      errors$norm_abundance <- .assertNoReservedKeywords(object@norm_abundance, errors$norm_abundance)
+    if ( length(errors$norm)==0 ){
+      errors$norm <- .assertUniqueRowColNames(object@norm, errors$norm)
+      errors$norm <- .assertNoReservedKeywords(object, "norm", errors$norm)
       
     }
   }
-      
+  
   #CHECK INFO_SAMPLE
   #-------------------------------------#
-  errors$info_sample <- character()
-  if( length(object@info_sample)!=0 ){
-    errors$info_sample <- .assertDataFrame(object@info_sample, errors$info_sample)
+  errors$sample <- character()
+  if( length(object@sample)!=0 ){
+    errors$sample <- .assertDataFrame(object@sample, errors$sample)
     
-    if ( length(errors$info_sample)==0 ){
-      errors$info_sample <- .assertUniqueRowColNames(object@info_sample, errors$info_sample)
-      errors$info_sample <- .assertNoReservedKeywords(object@info_sample, errors$info_sample)
-    }
-  } 
-  
-  #CHECK LINEAGE
-  #-------------------------------------#
-  errors$lineage <- character()
-  if( length(object@lineage)!=0 ){
-    errors$lineage <- .assertCharacterMatrix(object@lineage, errors$lineage)
-    
-    if ( length(errors$lineage)==0 ){
-      errors$lineage <- .assertUniqueRowColNames(object@lineage, errors$lineage)
-      errors$lineage <- .assertNoReservedKeywords(object@lineage, errors$lineage)
+    if ( length(errors$sample)==0 ){
+      errors$sample <- .assertUniqueRowColNames(object@sample, errors$sample)
+      errors$sample <- .assertNoReservedKeywords(object, "sample", errors$sample)
     }
   }
   
   #CHECK INFO_TAXA
   #-------------------------------------#
-  errors$info_taxa <- character()
-  if( length(object@info_taxa)!=0 ){
-    errors$info_taxa <- .assertDataFrame(object@info_taxa, errors$info_taxa)
+  errors$taxa <- character()
+  if( length(object@taxa)!=0 ){
+    errors$taxa <- .assertDataFrame(object@taxa, errors$taxa)
     
-    if ( length(errors$info_taxa)==0 ){
-      errors$info_taxa <- .assertUniqueRowColNames(object@info_taxa, errors$info_taxa)
-      errors$info_taxa <- .assertNoReservedKeywords(object@info_taxa, errors$info_taxa)
+    if ( length(errors$taxa)==0 ){
+      errors$taxa <- .assertUniqueRowColNames(object@taxa, errors$taxa)
+      errors$taxa <- .assertNoReservedKeywords(object, "taxa", errors$taxa)
     }
   }
   
   # CHECK NETWORK
   #-------------------------------------#
-  errors$network <- character()
-  if(length(object@network)!=0){
-    errors$network <- .assertNamedIgraph(object@network, errors$network)
+  errors$netw <- character()
+  if(length(object@netw)!=0){
+    errors$netw <- .assertNamedIgraph(object@netw, errors$netw)
+    errors$netw <- .assertNoReservedKeywords(object, "netw", errors$netw)
   }
   
   # CHECK community
   #-------------------------------------#
-  errors$community <- character()
-  if(length(object@community)!=0){
-    errors$community <- .assertCommunitiesClass(object@community, errors$community)
+  errors$comm <- character()
+  if(length(object@comm)!=0){
+    errors$comm <- .assertCommunitiesClass(object@comm, errors$comm)
   }
   
   # CHECK RECIPROCAL PROPERTIES
   #-------------------------------------#
   errors$reciprocal <- character()
   
-  if(length(object@abundance)!=0 && length(errors$abundance)==0){
-    if(length(object@rel_abundance)!=0 && length(errors$rel_abundance)==0){
-      errors$reciprocal <- .assertMatchingNames(object, "abundance", "rel_abundance", errors$reciprocal)}
-    if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
-      errors$reciprocal <- .assertMatchingNames(object, "abundance", "norm_abundance", errors$reciprocal)}
-    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "abundance", "info_sample", errors$reciprocal)}
-    if(length(object@lineage)!=0 && length(errors$lineage)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "lineage", errors$reciprocal)}
-    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abundance", "info_taxa", errors$reciprocal)}
-    if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "abundance", "columns", errors$reciprocal)}
+  if(length(object@abun)!=0 && length(errors$abun)==0){
+    if(length(object@rela)!=0 && length(errors$rela)==0){
+      errors_tmp <- character()
+      errors_tmp <- .assertMatchingNames(object, "abun", "rela", errors$errors_tmp)
+      if(length(errors_tmp)==0){
+        errors$reciprocal <- .assertMatchingZeroPositions(object, "abun", "rela", errors_tmp)}}
+    if(length(object@norm)!=0 && length(errors$norm)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "abun", "norm", errors$reciprocal)}
+    if(length(object@sample)!=0 && length(errors$sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "abun", "sample", errors$reciprocal)}
+    if(length(object@taxa)!=0 && length(errors$taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "abun", "taxa", errors$reciprocal)}
+    if(length(object@netw)!=0 && length(errors$netw)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "abun", "columns", errors$reciprocal)}
   }
   
-  if(length(object@rel_abundance)!=0 && length(errors$rel_abundance)==0){
-    if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
-      errors$reciprocal <- .assertMatchingNames(object, "rel_abundance", "norm_abundance", errors$reciprocal)}
-    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "rel_abundance", "info_sample", errors$reciprocal)}
-    if(length(object@lineage)!=0 && length(errors$lineage)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "rel_abundance", "lineage", errors$reciprocal)}
-    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "rel_abundance", "info_taxa", errors$reciprocal)}
-    if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "rel_abundance", "columns", errors$reciprocal)}
+  if(length(object@rela)!=0 && length(errors$rela)==0){
+    if(length(object@norm)!=0 && length(errors$norm)==0){
+      errors$reciprocal <- .assertMatchingNames(object, "rela", "norm", errors$reciprocal)}
+    if(length(object@sample)!=0 && length(errors$sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "rela", "sample", errors$reciprocal)}
+    if(length(object@taxa)!=0 && length(errors$taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "rela", "taxa", errors$reciprocal)}
+    if(length(object@netw)!=0 && length(errors$netw)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "rela", "columns", errors$reciprocal)}
   }
   
-  if(length(object@norm_abundance)!=0 && length(errors$norm_abundance)==0){
-    if(length(object@info_sample)!=0 && length(errors$info_sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "norm_abundance", "info_sample", errors$reciprocal)}
-    if(length(object@lineage)!=0 && length(errors$lineage)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm_abundance", "lineage", errors$reciprocal)}
-    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-      errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm_abundance", "info_taxa", errors$reciprocal)}
-    if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "norm_abundance", "columns", errors$reciprocal)}
+  if(length(object@norm)!=0 && length(errors$norm)==0){
+    if(length(object@sample)!=0 && length(errors$sample)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "norm", "sample", errors$reciprocal)}
+    if(length(object@taxa)!=0 && length(errors$taxa)==0){
+      errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm", "taxa", errors$reciprocal)}
+    if(length(object@netw)!=0 && length(errors$netw)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "norm", "columns", errors$reciprocal)}
   }
   
-  if(length(object@lineage)!=0 && length(errors$lineage)==0){
-    if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "lineage", "info_taxa", errors$reciprocal)}
-    if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "lineage", "rows", errors$reciprocal)}
+  if(length(object@taxa)!=0 && length(errors$taxa)==0){
+    if(length(object@netw)!=0 && length(errors$netw)==0){
+      errors$reciprocal <- .assertMatchingNamesVertices(object, "taxa", "rows", errors$reciprocal)}
   }
   
-  if(length(object@info_taxa)!=0 && length(errors$info_taxa)==0){
-    if(length(object@network)!=0 && length(errors$network)==0){
-      errors$reciprocal <- .assertMatchingNamesVertices(object, "info_taxa", "rows", errors$reciprocal)}
-  }
-  
-  if(length(object@community)!=0){
+  if(length(object@comm)!=0){
     errors$reciprocal <- .assertMatchingCommunitiesNetwork(object, errors$reciprocal)
   }
   
   # Consolidate column names from slots they are unique!!
-  all_column_names <- character()
+  all_info_names <- character()
   
-  if (length(object@info_taxa) > 0) all_column_names <- c(all_column_names, colnames(object@info_taxa))
-  if (length(object@info_sample)) all_column_names <- c(all_column_names, colnames(object@info_sample))
-  if (length(object@lineage) > 0) all_column_names <- c(all_column_names, colnames(object@lineage))
+  if (length(object@taxa) > 0) all_info_names <- c(all_info_names, colnames(object@taxa))
+  if (length(object@sample)) all_info_names <- c(all_info_names, colnames(object@sample))
   
-  if (length(object@abundance) > 0) {
-    all_column_names <- c(all_column_names, colnames(object@abundance))
-  } else if (length(object@norm_abundance) > 0) {
-    all_column_names <- c(all_column_names, colnames(object@norm_abundance))
-  } else if (length(object@rel_abundance) > 0) {
-    all_column_names <- c(all_column_names, colnames(object@rel_abundance))
-  }
-  
-
   # Add error for duplicated names, if any
-  duplicated_names <- names(which(duplicated(all_column_names)))
+  duplicated_names <- unique(all_info_names[which(duplicated(all_info_names))])
   if(length(duplicated_names) > 0) {
     dup_names_str <- paste(duplicated_names, collapse = ", ")
-    errors <- c(errors, sprintf("Duplicated column names found across slots: %s. Each column name must be unique across info_taxa, info_sample, lineage, abundance-norm_abundance.", dup_names_str))
+    errors$reciprocal <- c(errors$reciprocal, sprintf("Duplicated column names found across slots: %s. Each column name must be unique across taxa and samples.", dup_names_str))
   }
-
+  
   # FORMAT ERROR OUTPUT
   errors <- Filter(function(x) length(x) > 0, errors)
   if(length(errors)==0){

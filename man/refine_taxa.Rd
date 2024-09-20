@@ -18,7 +18,7 @@ or functions returning such indices. These criteria determine which taxa are ret
 "AND" requires all criteria to be met, "OR" requires any criterion to be met.}
 
 \item{trim}{How to handle taxa not meeting criteria: "yes" to remove them,
-"no" to set their abundance to zero (min sample value for norm_abundance),
+"no" to set their abundance to zero (min sample value for norm),
 or "aggregate" to combine them into a single category.}
 
 \item{aggregate_to}{Name for the aggregated taxa category when using \code{trim = "aggregate"}.

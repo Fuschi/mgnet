@@ -1,75 +1,208 @@
 # ABUNDANCE
 #------------------------------------------------------------------------------#
-#' Retrieve Abundance Data at Specified Taxonomic Rank
+#' Retrieve Abundance Data Based on Taxonomic Information
 #'
 #' @description
-#' Retrieves abundance data for an `mgnet` or `mgnetList` object, optionally 
-#' aggregated at a specified taxonomic rank, and allows the output to be formatted 
-#' as a matrix, data frame, or tibble.
+#' Retrieves and aggregates abundance data for an `mgnet` or `mgnetList` object based on
+#' a specified column in the `taxa` data frame. This function allows for custom aggregation 
+#' methods such as sum or mean. If no column is specified, it returns the original abundance data 
+#' in the selected format. Although `taxa` can contain various types of information, it is 
+#' commonly used to obtain abundances at different taxonomic ranks or other categorical variables.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param rank A character string specifying the taxonomic rank of interest for data aggregation.
-#'        If not provided or if the rank is "missing", the function returns the original abundance 
-#'        data without aggregation. 
+#' @param object An `mgnet` or `mgnetList` object containing abundance and informational data.
+#' @param .var A character string specifying the column name from the `taxa` slot to be used 
+#'        for grouping and aggregation. If this parameter is omitted, the function will return 
+#'        the original abundance data without any aggregation.
 #' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "mat" for matrix, "df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
-#'        `mgnet`.
+#'        Possible choices are:
+#'        - "mat": returns a matrix
+#'        - "df": returns a data.frame
+#'        - "tbl": returns a tibble, where for `mgnet` objects, the row names of the abundance 
+#'          matrix are moved into a new column named `sample_id`.
+#'        The default format is "mat".
+#' @param .fun A function to specify how the abundance data should be aggregated. 
+#'        This can be any function that takes a numeric vector and returns a single number (e.g., sum, mean).
+#'        The default aggregation function is sum.
 #'
-#' @return For an `mgnet` object, abundance data formatted as specified by the `.fmt` parameter,
-#'         aggregated at the specified taxonomic rank if provided. For an `mgnetList` object, 
-#'         a list of such formatted data from each `mgnet` object within the list, allowing 
-#'         for batch processing and analysis of multiple datasets simultaneously.
+#' @return Depending on the '.fmt' parameter:
+#'         - For an `mgnet` object, returns abundance data formatted as specified, aggregated
+#'           based on the provided column if specified.
+#'         - For an `mgnetList` object, returns a list of such formatted data from each `mgnet`
+#'           object within the list, enabling batch processing and analysis of multiple datasets.
 #'
 #' @export
-#' @importFrom dplyr %>% select left_join group_by summarise
+#' @importFrom dplyr %>% select left_join group_by summarise arrange
 #' @importFrom rlang sym
-#' @importFrom tibble as_tibble rownames_to_column tibble
+#' @importFrom tibble as_tibble rownames_to_column tibble column_to_rownames
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @name abundance
-#' @aliases abundance,mgnet-method abundance,mgnetList-method
-setGeneric("abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("abundance"))
+#' @name abun
+#' @aliases abun,mgnet-method abun,mgnetList-method
+setGeneric("abun", function(object, .var = NULL, .fmt = "mat", .fun = sum) standardGeneric("abun"))
 
-setMethod("abundance", "mgnet", function(object, rank, .fmt) {
+setMethod("abun", "mgnet", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
   
   # Checks
-  if (missing(rank)) rank <- "missing"
+  if(!is.null(.var) && !is.character(.var)) {
+    stop(".var must be a character string specifying the column name.")
+  }
+  
+  if(!is.function(.fun)) {
+    stop(".fun must be a function.")
+  }
+  
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  if( length(object@abundance) == 0 ){
+  # Handling empty abundance data
+  if(length(object@abun) == 0) {
     switch(.fmt,
-           mat = {return(matrix(nrow=0, ncol=0))},
-           df  = {return(data.frame())},
-           tbl = {return(tibble::tibble())})
-  } else if(rank=="missing") {
+           mat = matrix(nrow = 0, ncol = 0),
+           df = data.frame(),
+           tbl = tibble::tibble())
+  } else if(is.null(.var)) {
+    # Return data in specified format without aggregation
     switch(.fmt,
-           mat = {return(object@abundance)},
-           df  = {return(as.data.frame(object@abundance))},
-           tbl = {return(tibble::as_tibble(object@abundance, rownames="sample_id"))})
-  }  else {
-    if(!rank %in% colnames(object@lineage)) {
-      stop("rank must be present in the object. Available ranks are: ",
-           paste(toString(colnames(object@lineage)), collapse=", "))}
+           mat = object@abun,
+           df = as.data.frame(object@abun),
+           tbl = tibble::as_tibble(object@abun, rownames = "sample_id"))
+  } else {
+    # Ensure .var is a valid column name in taxa
+    if(!(.var %in% colnames(object@taxa))) {
+      stop(".var must be present in the taxa columns. Available choices are: ", 
+           paste(colnames(object@taxa), collapse = ", "))
+    }
     
-    data_frame <- object@abundance %>% tibble::as_tibble(rownames="sample_id") %>%
-      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="abundance")
-      
-    lineage_info <- object@lineage %>%
-      tibble::as_tibble(rownames="taxa_id") %>%
-      dplyr::select(taxa_id, !!rlang::sym(rank))
-      
+    # Prepare data for aggregation
+    data_frame <- object@abun %>% 
+      tibble::as_tibble(rownames = "sample_id") %>%
+      tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "abun")
+    
+    taxonomic_info <- object@taxa %>%
+      tibble::as_tibble(rownames = "taxa_id") %>%
+      dplyr::select(taxa_id, !!rlang::sym(.var))
+    
+    # Aggregate data based on .var
     aggregated_data <- data_frame %>%
-      dplyr::left_join(lineage_info, by = "taxa_id") %>%
-      dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
-      dplyr::summarise(abundance = sum(abundance, na.rm = TRUE), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = abundance) %>%
+      dplyr::left_join(taxonomic_info, by = "taxa_id") %>%
+      dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
+      dplyr::summarise(abun = .fun(abun), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "abun") %>%
       dplyr::arrange(match(sample_id, sample_id(object)))
-      
+
     result_matrix <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
       as.matrix()
-      
+
+    switch(.fmt,
+           mat = {return(result_matrix)},
+           df  = {return(as.data.frame(result_matrix))},
+           tbl = {return(tibble::as_tibble(result_matrix, rownames="sample_id"))}
+    )
+   }
+})
+
+setMethod("abun", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
+  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
+  result <- sapply(object@mgnets, function(x) abun(object = x, .var = .var, 
+                                                        .fmt = .fmt, .fun = .fun),
+                   simplify = FALSE, USE.NAMES = TRUE)
+  return(result)
+})
+
+
+# RELATIVE ABUNDANCE
+#------------------------------------------------------------------------------#
+#' Retrieve Relative Abundance Data Based on Taxonomic Information
+#'
+#' @description
+#' Retrieves and aggregates relative abundance data for an `mgnet` or `mgnetList` object based on
+#' a specified column in the `taxa` data frame. This function allows for custom aggregation 
+#' methods such as sum or mean. If no column is specified, it returns the original relative abundance data 
+#' in the selected format. Although `taxa` can contain various types of information, it is 
+#' commonly used to obtain relative abundances at different taxonomic ranks or other categorical variables.
+#'
+#' @param object An `mgnet` or `mgnetList` object containing relative abundance and informational data.
+#' @param .var A character string specifying the column name from the `taxa` slot to be used 
+#'        for grouping and aggregation. If this parameter is omitted, the function will return 
+#'        the original relative abundance data without any aggregation.
+#' @param .fmt A character string specifying the output format of the result. 
+#'        Possible choices are:
+#'        - "mat": returns a matrix
+#'        - "df": returns a data.frame
+#'        - "tbl": returns a tibble, where for `mgnet` objects, the row names of the relative abundance 
+#'          matrix are moved into a new column named `sample_id`.
+#'        The default format is "mat".
+#' @param .fun A function to specify how the relative abundance data should be aggregated. 
+#'        This can be any function that takes a numeric vector and returns a single number (e.g., sum, mean).
+#'        The default aggregation function is sum.
+#'
+#' @return Depending on the '.fmt' parameter:
+#'         - For an `mgnet` object, returns relative abundance data formatted as specified, aggregated
+#'           based on the provided column if specified.
+#'         - For an `mgnetList` object, returns a list of such formatted data from each `mgnet`
+#'           object within the list, enabling batch processing and analysis of multiple datasets.
+#'
+#' @export
+#' @importFrom dplyr %>% select left_join group_by summarise arrange
+#' @importFrom rlang sym
+#' @importFrom tibble as_tibble rownames_to_column tibble column_to_rownames
+#' @importFrom tidyr pivot_longer pivot_wider
+#' @name rela
+#' @aliases rela,mgnet-method rela,mgnetList-method
+setGeneric("rela", function(object, .var = NULL, .fmt = "mat", .fun = sum) standardGeneric("rela"))
+
+setMethod("rela", "mgnet", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
+  
+  # Checks
+  if(!is.null(.var) && !is.character(.var)) {
+    stop(".var must be a character string specifying the column name.")
+  }
+  
+  if(!is.function(.fun)) {
+    stop(".fun must be a function.")
+  }
+  
+  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
+  
+  # Handling empty rela data
+  if(length(object@rela) == 0) {
+    switch(.fmt,
+           mat = matrix(nrow = 0, ncol = 0),
+           df = data.frame(),
+           tbl = tibble::tibble())
+  } else if(is.null(.var)) {
+    # Return data in specified format without aggregation
+    switch(.fmt,
+           mat = object@rela,
+           df = as.data.frame(object@rela),
+           tbl = tibble::as_tibble(object@rela, rownames = "sample_id"))
+  } else {
+    # Ensure .var is a valid column name in taxa
+    if(!(.var %in% colnames(object@taxa))) {
+      stop(".var must be present in the taxa columns. Available choices are: ", 
+           paste(colnames(object@taxa), collapse = ", "))
+    }
+    
+    # Prepare data for aggregation
+    data_frame <- object@rela %>% 
+      tibble::as_tibble(rownames = "sample_id") %>%
+      tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "rela")
+    
+    taxonomic_info <- object@taxa %>%
+      tibble::as_tibble(rownames = "taxa_id") %>%
+      dplyr::select(taxa_id, !!rlang::sym(.var))
+    
+    # Aggregate data based on .var
+    aggregated_data <- data_frame %>%
+      dplyr::left_join(taxonomic_info, by = "taxa_id") %>%
+      dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
+      dplyr::summarise(rela = .fun(rela), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "rela") %>%
+    dplyr::arrange(match(sample_id, sample_id(object)))
+    
+    result_matrix <- aggregated_data %>%
+      tibble::column_to_rownames("sample_id") %>%
+      as.matrix()
+    
     switch(.fmt,
            mat = {return(result_matrix)},
            df  = {return(as.data.frame(result_matrix))},
@@ -78,337 +211,210 @@ setMethod("abundance", "mgnet", function(object, rank, .fmt) {
   }
 })
 
-setMethod("abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
+setMethod("rela", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- lapply(object@mgnets, function(x) abundance(x, rank, .fmt))
+  result <- sapply(object@mgnets, function(x) rela(object = x, .var = .var, 
+                                                            .fmt = .fmt, .fun = .fun),
+                   simplify = FALSE, USE.NAMES = TRUE)
   return(result)
 })
 
 
-# REL_ABUNDANCE
+# NORMALIZED ABUNDANCE
 #------------------------------------------------------------------------------#
-#' Retrieve Relative Abundance Data at Specified Taxonomic Rank
+#' Retrieve Normalized Abundance Data Based on Taxonomic Information
 #'
 #' @description
-#' Retrieves relative abundance data for an `mgnet` or `mgnetList` object, optionally 
-#' aggregated at a specified taxonomic rank, and allows the output to be formatted 
-#' as a matrix, data frame, or tibble.
-#' 
-#' @details
-#' The relative abundance matrix is obtained by dividing each sample's abundance values by 
-#' the corresponding sample sum present in the \code{sample_sum} column of the \code{info_sample}
-#' data.frame associated with the mgnet object. The abundance matrices at the chosen rank are
-#' retrieved using the `\link{abundance}` method.
+#' Retrieves and aggregates normalized abundance data for an `mgnet` or `mgnetList` object based on
+#' a specified column in the `taxa` data frame. This function allows for custom aggregation 
+#' methods such as sum or mean. If no column is specified, it returns the original normalized abundance data 
+#' in the selected format. Although `taxa` can contain various types of information, it is 
+#' commonly used to obtain normalized abundances at different taxonomic ranks or other categorical variables.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param rank A character string specifying the taxonomic rank of interest for data aggregation.
-#'        If not provided or if the rank is "missing", the function returns the original abundance 
-#'        data without aggregation. 
+#' @param object An `mgnet` or `mgnetList` object containing normalized abundance and informational data.
+#' @param .var A character string specifying the column name from the `taxa` slot to be used 
+#'        for grouping and aggregation. If this parameter is omitted, the function will return 
+#'        the original normalized abundance data without any aggregation.
 #' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "mat" for matrix, "df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
-#'        `mgnet`.
+#'        Possible choices are:
+#'        - "mat": returns a matrix
+#'        - "df": returns a data.frame
+#'        - "tbl": returns a tibble, where for `mgnet` objects, the row names of the normalized abundance 
+#'          matrix are moved into a new column named `sample_id`.
+#'        The default format is "mat".
+#' @param .fun A function to specify how the relative abundance data should be aggregated. 
+#'        This can be any function that takes a numeric vector and returns a single number (e.g., sum, mean).
+#'        The default aggregation function is sum.
 #'
-#' @return For an `mgnet` object, abundance data formatted as specified by the `.fmt` parameter,
-#'         aggregated at the specified taxonomic rank if provided. For an `mgnetList` object, 
-#'         a list of such formatted data from each `mgnet` object within the list, allowing 
-#'         for batch processing and analysis of multiple datasets simultaneously.
+#' @return Depending on the '.fmt' parameter:
+#'         - For an `mgnet` object, returns normalized abundance data formatted as specified, aggregated
+#'           based on the provided column if specified.
+#'         - For an `mgnetList` object, returns a list of such formatted data from each `mgnet`
+#'           object within the list, enabling batch processing and analysis of multiple datasets.
 #'
 #' @export
-#' @importFrom dplyr %>% select left_join group_by summarise
+#' @importFrom dplyr %>% select left_join group_by summarise arrange
 #' @importFrom rlang sym
-#' @importFrom tibble as_tibble rownames_to_column
+#' @importFrom tibble as_tibble rownames_to_column tibble column_to_rownames
 #' @importFrom tidyr pivot_longer pivot_wider
-#' @name rel_abundance
-#' @aliases rel_abundance,mgnet-method rel_abundance,mgnetList-method
-setGeneric("rel_abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("rel_abundance"))
+#' @name norm
+#' @aliases norm,mgnet-method norm,mgnetList-method
+setGeneric("norm", function(object, .var = NULL, .fmt = "mat", .fun = sum) standardGeneric("norm"))
 
-setMethod("rel_abundance", "mgnet", function(object, rank, .fmt) {
+setMethod("norm", "mgnet", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
   
   # Checks
-  if (missing(rank)) rank <- "missing"
+  if(!is.null(.var) && !is.character(.var)) {
+    stop(".var must be a character string specifying the column name.")
+  }
+  
+  if(!is.function(.fun)) {
+    stop(".fun must be a function.")
+  }
+  
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  if( length(object@rel_abundance) == 0 ){
+  # Handling empty norm data
+  if(length(object@norm) == 0) {
     switch(.fmt,
-           mat = {return(matrix(nrow=0, ncol=0))},
-           df  = {return(data.frame())},
-           tbl = {return(tibble::tibble())})
-  } else if(rank=="missing"){
+           mat = matrix(nrow = 0, ncol = 0),
+           df = data.frame(),
+           tbl = tibble::tibble())
+  } else if(is.null(.var)) {
+    # Return data in specified format without aggregation
     switch(.fmt,
-           mat = {return(object@rel_abundance)},
-           df  = {return(as.data.frame(object@rel_abundance))},
-           tbl = {return(tibble::as_tibble(object@rel_abundance, rownames="sample_id"))})
+           mat = object@norm,
+           df = as.data.frame(object@norm),
+           tbl = tibble::as_tibble(object@norm, rownames = "sample_id"))
   } else {
-    if(!rank %in% colnames(object@lineage)) {
-      stop("rank must be present in the object. Available ranks are: ",
-           paste(toString(colnames(object@lineage)), collapse=", "))}
+    # Ensure .var is a valid column name in taxa
+    if(!(.var %in% colnames(object@taxa))) {
+      stop(".var must be present in the taxa columns. Available choices are: ", 
+           paste(colnames(object@taxa), collapse = ", "))
+    }
     
-    data_frame <- object@rel_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
-      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="rel_abundance")
+    # Prepare data for aggregation
+    data_frame <- object@norm %>% 
+      tibble::as_tibble(rownames = "sample_id") %>%
+      tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "norm")
     
-    lineage_info <- object@lineage %>%
-      tibble::as_tibble(rownames="taxa_id") %>%
-      dplyr::select(taxa_id, !!rlang::sym(rank))
+    taxonomic_info <- object@taxa %>%
+      tibble::as_tibble(rownames = "taxa_id") %>%
+      dplyr::select(taxa_id, !!rlang::sym(.var))
     
+    # Aggregate data based on .var
     aggregated_data <- data_frame %>%
-      dplyr::left_join(lineage_info, by = "taxa_id") %>%
-      dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
-      dplyr::summarise(rel_abundance = sum(rel_abundance, na.rm = TRUE), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = rel_abundance) %>%
+      dplyr::left_join(taxonomic_info, by = "taxa_id") %>%
+      dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
+      dplyr::summarise(norm = .fun(norm), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "norm") %>%
       dplyr::arrange(match(sample_id, sample_id(object)))
     
-    result <- aggregated_data %>%
+    result_matrix <- aggregated_data %>%
       tibble::column_to_rownames("sample_id") %>%
       as.matrix()
     
     switch(.fmt,
-           mat = {return(result)},
-           df  = {return(as.data.frame(result))},
-           tbl = {return(tibble::as_tibble(result, rownames="sample_id"))}
+           mat = {return(result_matrix)},
+           df  = {return(as.data.frame(result_matrix))},
+           tbl = {return(tibble::as_tibble(result_matrix, rownames="sample_id"))}
     )
   }
 })
 
-setMethod("rel_abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
+setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- lapply(object@mgnets, function(x) rel_abundance(x, rank, .fmt))
+  result <- sapply(object@mgnets, function(x) norm(object = x, .var = .var, 
+                                                             .fmt = .fmt, .fun = .fun),
+                   simplify = FALSE, USE.NAMES = TRUE)
   return(result)
 })
-
-
-# NORM_ABUNDANCE
-#------------------------------------------------------------------------------#
-#' Retrieve Log_Abundance Data at Specified Taxonomic Rank
-#'
-#' @description
-#' Retrieves log-ratio transformed abundance data for an `mgnet` or `mgnetList` object, 
-#' optionally aggregated at a specified taxonomic rank, and allows the output to 
-#' be formatted as a matrix, data frame, or tibble.
-#' 
-#' @details
-#' This function returns the log-ratio transformed abundance data, which is useful 
-#' for compositional data analysis.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param rank A character string specifying the taxonomic rank of interest for data aggregation.
-#'        If not provided or if the rank is "missing", the function returns the original abundance 
-#'        data without aggregation. 
-#' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "mat" for matrix, "df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
-#'        `mgnet`.
-#'
-#' @return For an `mgnet` object, abundance data formatted as specified by the `.fmt` parameter,
-#'         aggregated at the specified taxonomic rank if provided. For an `mgnetList` object, 
-#'         a list of such formatted data from each `mgnet` object within the list, allowing 
-#'         for batch processing and analysis of multiple datasets simultaneously.
-#'
-#' @export
-#' @importFrom dplyr %>% select left_join group_by summarise
-#' @importFrom rlang sym
-#' @importFrom tibble as_tibble rownames_to_column
-#' @importFrom tidyr pivot_longer pivot_wider
-#' @name norm_abundance
-#' @aliases norm_abundance,mgnet-method norm_abundance,mgnetList-method
-setGeneric("norm_abundance", function(object, rank = "missing", .fmt = "mat") standardGeneric("norm_abundance"))
-
-setMethod("norm_abundance", "mgnet", function(object, rank, .fmt) {
-  
-  # Checks
-  if (missing(rank))rank <- "missing"
-  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  
-  if( length(object@norm_abundance) == 0 ){
-    
-    switch(.fmt,
-           mat = {return(matrix(nrow=0, ncol=0))},
-           df  = {return(data.frame())},
-           tbl = {return(tibble::tibble())})
-    
-  } else if(rank=="missing"){
-    
-    result <- object@norm_abundance
-    switch(.fmt,
-           mat = {return(result)},
-           df  = {return(as.data.frame(result))},
-           tbl = {return(tibble::as_tibble(result, rownames="sample_id"))})
-    
-  } else {
-    
-    if( !rank %in% colnames(object@lineage) ) {
-      stop("specified rank must be present in the object. Available ranks are: ",
-           paste(toString(colnames(object@lineage)), collapse=", "))}
-    
-    data_frame <- object@norm_abundance %>% tibble::as_tibble(rownames="sample_id") %>%
-      tidyr::pivot_longer(cols=-sample_id, names_to="taxa_id", values_to="norm_abundance")
-    
-    lineage_info <- object@lineage %>%
-      tibble::as_tibble(rownames="taxa_id") %>%
-      dplyr::select(taxa_id, !!rlang::sym(rank))
-    
-    aggregated_data <- data_frame %>%
-      dplyr::left_join(lineage_info, by = "taxa_id") %>%
-      dplyr::group_by(sample_id, !!rlang::sym(rank)) %>%
-      dplyr::summarise(norm_abundance = sum(norm_abundance, na.rm = TRUE), .groups = "drop") %>%
-      tidyr::pivot_wider(names_from = !!rlang::sym(rank), values_from = norm_abundance) %>%
-      dplyr::arrange(match(sample_id, sample_id(object)))
-    
-    result <- aggregated_data %>%
-      tibble::column_to_rownames("sample_id") %>%
-      as.matrix()
-
-    switch(.fmt,
-           mat = {return(result)},
-           df  = {return(as.data.frame(result))},
-           tbl = {return(tibble::as_tibble(result, rownames="sample_id"))}
-    )
-  }
-})
-
-setMethod("norm_abundance", "mgnetList", function(object, rank = "missing", .fmt = "mat") {
-  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- lapply(object@mgnets, function(x) norm_abundance(x, rank, .fmt))
-  return(result)
-})
-
 
 
 # INFO_SAMPLE
 #------------------------------------------------------------------------------#
 #' Get Sample Information
 #'
-#' Retrieves the sample information stored in the `info_sample` slot of an `mgnet` object
+#' Retrieves the sample information stored in the `sample` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`, with the option to format the output as
 #' a data.frame or tibble.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
+#' @param .fmt A character string specifying the output format of the result.
+#'        Possible choices are "df" for data.frame, and "tbl" for tibble.
+#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix
+#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in
 #'        `mgnet`.
-#' @return The content of the `info_sample` slot for `mgnet` or a list of such contents for `mgnetList`.
+#' @return The content of the `sample` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' @export
-#' @name info_sample
-#' @aliases info_sample,mgnet-method info_sample,mgnetList-method
-setGeneric("info_sample", function(object, .fmt = "df") standardGeneric("info_sample"))
+#' @name sample
+#' @aliases sample,mgnet-method sample,mgnetList-method
+setGeneric("sample", function(object, .fmt = "df") standardGeneric("sample"))
 
-setMethod("info_sample", "mgnet", function(object, .fmt = "df") {
+setMethod("sample", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  
-  if( length(object@info_sample) == 0 ){
-    
+
+  if( length(object@sample) == 0 ){
+
     switch(.fmt,
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
   } else {
-    
+
     switch(.fmt,
-           df  = {return(object@info_sample)},
-           tbl = {return(tibble::as_tibble(object@info_sample, rownames="sample_id"))})
-    
+           df  = {return(object@sample)},
+           tbl = {return(tibble::as_tibble(object@sample, rownames="sample_id"))})
+
   }
 })
 
-setMethod("info_sample", "mgnetList", function(object, .fmt = "df") {
+setMethod("sample", "mgnetList", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  sapply(object@mgnets, function(x) info_sample(x, .fmt),
+  sapply(object@mgnets, function(x) sample(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })
-
-
-# LINEAGE
-#------------------------------------------------------------------------------#
-#' Get Lineage Information
-#'
-#' Retrieves the taxonomic lineage information stored in the `lineage` slot of an `mgnet` object
-#' or each `mgnet` object within an `mgnetList`, with the option to format the output as
-#' matrix, data.frame or tibble.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "mat" for matrix, df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
-#'        `mgnet`. Default is "mat".
-#' @return The content of the `lineage` slot for `mgnet` or a list of such contents for `mgnetList`.
-#' @export
-#' @name lineage
-#' @aliases lineage,mgnet-method lineage,mgnetList-method
-setGeneric("lineage", function(object, .fmt = "mat") standardGeneric("lineage"))
-
-setMethod("lineage", "mgnet", function(object, .fmt = "mat") {
-  
-  .fmt <- match.arg(.fmt, c("mat","df", "tbl"))
-  
-  if( length(object@lineage) == 0 ){
-    
-    switch(.fmt,
-           mat = {return(matrix(character(0),nrow=0,ncol=0))},
-           df  = {return(data.frame())},
-           tbl = {return(tibble::tibble())})
-  } else {
-    
-    switch(.fmt,
-           mat  = {return(object@lineage)},
-           df  = {return(data.frame(object@lineage))},
-           tbl = {return(tibble::as_tibble(object@lineage, rownames="taxa_id"))})
-    
-  }
-  
-})
-
-setMethod("lineage", "mgnetList", function(object, .fmt = "mat") {
-  .fmt <- match.arg(.fmt, c("mat","df", "tbl"))
-  sapply(object@mgnets, function(x, .fmt) lineage(x,.fmt),
-         simplify = FALSE, USE.NAMES = TRUE)
-})
-
 
 
 # INFO_TAXA
 #------------------------------------------------------------------------------#
 #' Get Taxa Information
-#' 
-#' Retrieves the taxa information stored in the `info_taxa` slot of an `mgnet` object
+#'
+#' Retrieves the taxa information stored in the `taxa` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`, with the option to format the output as
 #' data.frame or tibble.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param .fmt A character string specifying the output format of the result. 
-#'        Possible choices are "df" for data.frame, and "tbl" for tibble. 
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix 
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in 
+#' @param .fmt A character string specifying the output format of the result.
+#'        Possible choices are "df" for data.frame, and "tbl" for tibble.
+#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix
+#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in
 #'        `mgnet`.
-#' @return The content of the `info_taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
+#' @return The content of the `taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' @export
-#' @name info_taxa
-#' @aliases info_taxa,mgnet-method info_taxa,mgnetList-method
-setGeneric("info_taxa", function(object, .fmt = "df") standardGeneric("info_taxa"))
+#' @name taxa
+#' @aliases taxa,mgnet-method taxa,mgnetList-method
+setGeneric("taxa", function(object, .fmt = "df") standardGeneric("taxa"))
 
-setMethod("info_taxa", "mgnet", function(object, .fmt = "df") {
+setMethod("taxa", "mgnet", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  
-  if( length(object@info_taxa) == 0 ){
-    
+
+  if( length(object@taxa) == 0 ){
+
     switch(.fmt,
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
   } else {
-    
+
     switch(.fmt,
-           df  = {return(object@info_taxa)},
-           tbl = {return(tibble::as_tibble(object@info_taxa, rownames="taxa_id"))})
-    
+           df  = {return(object@taxa)},
+           tbl = {return(tibble::as_tibble(object@taxa, rownames="taxa_id"))})
+
   }
 })
 
-setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
+setMethod("taxa", "mgnetList", function(object, .fmt = "df") {
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  sapply(object@mgnets, function(x) info_taxa(x, .fmt),
+  sapply(object@mgnets, function(x) taxa(x, .fmt),
          simplify = FALSE, USE.NAMES = TRUE)
 })
 
@@ -423,59 +429,34 @@ setMethod("info_taxa", "mgnetList", function(object, .fmt = "df") {
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @param add_vertex_attr A logical indicating whether to attach all available taxa information as attributes of the vertices. Defaults to FALSE.
-#' @param add_factor_sign A logical that if TRUE and the network is weighted, adds an edge attribute `factor_sign_to` that classifies edges as "Negative" or "Positive" based on their weights. Default is FALSE.
-#' @param factor_sign_to A character string specifying the name of the edge attribute for classifying the sign. Default is "sign".
 #' @return An `igraph` object containing the network from an `mgnet` object, or a list of `igraph` objects
 #'         from an `mgnetList`, each representing the network graph of a contained `mgnet` object.
 #' @export
 #' @importFrom igraph vertex_attr set_edge_attr is_weighted E
-#' @aliases network,mgnet-method network,mgnetList-method
-setGeneric("network", function(object, add_vertex_attr = FALSE,
-                               add_factor_sign = FALSE, factor_sign_to = "sign") {
-  standardGeneric("network")
-})
+#' @aliases netw,mgnet-method netw,mgnetList-method
+setGeneric("netw", function(object, add_vertex_attr = FALSE) standardGeneric("netw"))
 
-setMethod("network", "mgnet", function(object, add_vertex_attr = FALSE,
-                                       add_factor_sign = FALSE, factor_sign_to = "sign") {
-  
-  g <- object@network
+setMethod("netw", "mgnet", function(object, add_vertex_attr = FALSE) {
+
+  g <- object@netw
   if (length(g) == 0) return(g)
-  
+
   if (add_vertex_attr) {
-    # Retrieve and merge metadata
-    meta_taxa <- tibble::tibble(taxa_id = taxa_id(object))
-    if (!is.null(info_taxa(object))) {
-      meta_taxa <- dplyr::left_join(meta_taxa, info_taxa(object, "tbl"), by = "taxa_id")
-    }
-    if (!is.null(lineage(object))) {
-      meta_taxa <- dplyr::left_join(meta_taxa, lineage(object, "tbl"), by = "taxa_id")
-    }
-    if (!is.null(community(object))) {
-      meta_taxa <- dplyr::left_join(meta_taxa, community_members(object, "tbl"), by = "taxa_id")
-    }
-    
+
     # Add vertex attributes
-    if (ncol(meta_taxa) > 1) {
-      for (vertex_attr in names(meta_taxa)[-1]) {
-        igraph::vertex_attr(g, vertex_attr) <- meta_taxa[[vertex_attr]]
+    if (ncol(object@taxa) > 1) {
+      for (vertex_attr in names(object@taxa)[-1]) {
+        igraph::vertex_attr(g, vertex_attr) <- object@taxa[[vertex_attr]]
       }
     }
   }
-  
-  # Add edge sign factor if required and the network is weighted
-  if (add_factor_sign && igraph::is_weighted(g)) {
-    g <- igraph::set_edge_attr(graph = g, name = factor_sign_to,
-                       value = factor(sign(igraph::E(g)$weight),
-                                      levels = c(-1, 1),
-                                      labels = c("Negative", "Positive")))
-  }
-  
+
   return(g)
 })
 
 
-setMethod("network", "mgnetList", function(object, add_vertex_attr) {
-  sapply(object@mgnets, function(x) network(x, add_vertex_attr), simplify = FALSE, USE.NAMES = TRUE)
+setMethod("netw", "mgnetList", function(object, add_vertex_attr) {
+  sapply(object@mgnets, function(x) netw(x, add_vertex_attr), simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -483,82 +464,24 @@ setMethod("network", "mgnetList", function(object, add_vertex_attr) {
 #------------------------------------------------------------------------------#
 #' Get Community Detection Results
 #'
-#' Retrieves the community detection results stored in the `community` slot of an `mgnet` object
+#' Retrieves the community detection results stored in the `comm` slot of an `mgnet` object
 #' or each `mgnet` object within an `mgnetList`. These results are typically derived from network
 #' analysis methods and indicate the grouping or clustering of taxa into communities based on their
 #' network interactions.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @return The community detection result object stored in the `community` slot for an `mgnet` object,
+#' @return The community detection result object stored in the `comm` slot for an `mgnet` object,
 #'         or a list of such objects for an `mgnetList` object, each representing the community
 #'         detection results of a contained `mgnet` object.
 #' @export
-#' @name community
-#' @aliases community,mgnet-method community,mgnetList-method
-setGeneric("community", function(object) standardGeneric("community"))
+#' @name comm
+#' @aliases comm,mgnet-method comm,mgnetList-method
+setGeneric("comm", function(object) standardGeneric("comm"))
 
-setMethod("community", "mgnet", function(object) {
-  object@community
+setMethod("comm", "mgnet", function(object) {
+  object@comm
 })
 
-setMethod("community", "mgnetList", function(object) {
-  sapply(object@mgnets, function(x) x@community, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("comm", "mgnetList", function(object) {
+  sapply(object@mgnets, function(x) x@comm, simplify = FALSE, USE.NAMES = TRUE)
 })
-
-
-# GETTERS DOCUMENTATION (IT DOES NOT WORKS)
-#------------------------------------------------------------------------------#
-#' Getter Functions for `mgnet` and `mgnetList` Objects
-#'
-#' @description
-#' The `mgnet` package provides a suite of getter functions designed to extract various 
-#' types of data and information from `mgnet` and `mgnetList` objects. These functions 
-#' allow users to efficiently access specific components of their metagenomic network 
-#' analysis results, facilitating further analysis, visualization, or summary.
-#'
-#' @details
-#' The getter functions cover a range of data types within the `mgnet` objects, including:
-#' 
-#' - **Abundance Data**: Retrieve raw, relative, or normalized abundance data with options
-#'   for taxonomic rank-specific aggregation and output formatting.
-#' - **Sample and Taxa Information**: Access metadata related to samples and taxa, such as sample
-#'   IDs, taxa IDs, taxonomic classification, and metadata variables.
-#' - **Network Data**: Extract network interaction data and community detection results, providing
-#'   insights into the relationships and structure within microbial communities.
-#'
-#' Each getter function is designed to be intuitive and flexible, offering parameters that allow
-#' for customized data retrieval based on the user's specific needs. Additionally, for collections
-#' of `mgnet` objects managed within an `mgnetList`, these functions facilitate batch processing
-#' across multiple datasets.
-#'
-#' @section Available Getter Functions:
-#' - `abundance(object, rank, .fmt)`: Retrieves abundance data.
-#' - `rel_abundance(object, rank, .fmt)`: Retrieves relative abundance data.
-#' - `norm_abundance(object, rank, .fmt)`: Retrieves normalized abundance data.
-#' - `sample_id(object)`: Retrieves sample IDs.
-#' - `taxa_id(object)`: Retrieves taxa IDs.
-#' - `info_sample(object, .fmt)`: Retrieves sample metadata.
-#' - `info_taxa(object, .fmt)`: Retrieves taxa metadata.
-#' - `network(object)`: Retrieves network interaction data.
-#' - `community(object)`: Retrieves community detection results.
-#'
-#' @section Usage:
-#' \dontrun{
-#' # Retrieve raw abundance data as a data frame for a specified taxonomic rank
-#' df_abundance <- abundance(mgnet_obj, rank = "Genus", .fmt = "df")
-#'
-#' # Get sample IDs from an mgnet object
-#' sample_ids <- sample_id(mgnet_obj)
-#'
-#' # Access sample metadata as a tibble
-#' sample_metadata <- info_sample(mgnet_obj, .fmt = "tbl")
-#'
-#' # Extract network data from an mgnet object
-#' net_data <- network(mgnet_obj)
-#'
-#' # For mgnetList objects, apply a getter function across all contained mgnet objects
-#' list_sample_metadata <- info_sample(mgnet_list, .fmt = "tbl")
-#' }
-#'
-#' @name mgnet-getters
-#' @rdname mgnet-getters

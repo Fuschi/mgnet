@@ -32,12 +32,12 @@ setGeneric("refine_sample", function(object, ..., condition = "AND") standardGen
 setMethod("refine_sample", "mgnet",
           function(object, ..., condition = "AND") {
             condition <- match.arg(condition, c("AND", "OR"))
-            if (length(object@network)!=0) {
-              warning("Sample subsetting removes network and community slots.")
+            if (length(object@netw)!=0) {
+              warning("Sample subsetting removes netw and comm slots.")
             }
             
             condition <- match.arg(condition, c("AND","OR"))
-            if(length(object@network)!=0) warning("sample subsetting is not defined for network, the resulting object will not have the slots netw and comm")
+            if(length(object@netw)!=0) warning("sample subsetting is not defined for network, the resulting object will not have the slots netw and comm")
             
             IDX <- list(...)
             for(i in 1:length(IDX)){
@@ -127,7 +127,7 @@ setMethod("refine_sample", "mgnetList",
 #' @param condition Logical condition to combine multiple criteria: "AND" (default) or "OR".
 #'        "AND" requires all criteria to be met, "OR" requires any criterion to be met.
 #' @param trim How to handle taxa not meeting criteria: "yes" to remove them,
-#'        "no" to set their abundance to zero (min sample value for norm_abundance), 
+#'        "no" to set their abundance to zero (min sample value for norm), 
 #'        or "aggregate" to combine them into a single category.
 #' @param aggregate_to Name for the aggregated taxa category when using `trim = "aggregate"`.
 #'        Defaults to NULL.        
@@ -218,144 +218,133 @@ setMethod("refine_taxa", "mgnet",
               #-----------------------------------------#
             } else if (trim=="no") {
               
-              if(length(object@abundance)!=0){
-                abundance.new <- object@abundance
-                abundance.new[,!IDX] <- 0
+              if(length(object@abun)!=0){
+                abun.new <- object@abun
+                abun.new[,!IDX] <- 0
               } else {
-                abundance.new <- object@abundance
+                abun.new <- object@abun
               }
               
-              if(length(object@rel_abundance)!=0){
-                rel_abundance.new <- object@rel_abundance
-                rel_abundance.new[,!IDX] <- 0
+              if(length(object@rela)!=0){
+                rela.new <- object@rela
+                rela.new[,!IDX] <- 0
               } else {
-                rel_abundance.new <- object@rel_abundance
+                rela.new <- object@rela
               }
               
-              if(length(object@norm_abundance)!=0){
-                norm_abundance.new <- object@norm_abundance
-                sample_min <- apply(object@norm_abundance, 1, min)
+              if(length(object@norm)!=0){
+                norm.new <- object@norm
+                sample_min <- apply(object@norm, 1, min)
                 
-                norm_abundance.new <- for(sample in seq_along(norm_abundance.new)){
-                  norm_abundance.new[,!IDX] <- sample_min[sample]
+                norm.new <- for(sample in seq_along(norm.new)){
+                  norm.new[,!IDX] <- sample_min[sample]
                 }
                 
               } else {
-                norm_abundance.new <- object@norm_abundance
+                norm.new <- object@norm
               }
               
-              if(length(object@network)!=0){
-                sub.network <- subgraph(network(object), taxa_id(object)[IDX])
-                preserved.edges <- E(object@network)%in%E(sub.network)
-                network.new <- subgraph.edges(graph=network(object), 
-                                              eids=E(network(object))[preserved.edges],
+              if(length(object@netw)!=0){
+                sub.netw <- subgraph(netw(object), taxa_id(object)[IDX])
+                preserved.edges <- E(object@netw)%in%E(sub.netw)
+                netw.new <- subgraph.edges(graph=netw(object), 
+                                              eids=E(netw(object))[preserved.edges],
                                               delete.vertices = FALSE)
               } else {
-                network.new<-object@network
+                netw.new<-object@netw
               }
               
-              if(length(object@community)!=0){
-                community.new <- object@community
-                community.new$membership[!IDX] <- 0
-                community.new$modularity <- NA
+              if(length(object@comm)!=0){
+                comm.new <- object@comm
+                comm.new$membership[!IDX] <- 0
+                comm.new$modularity <- NA
               } else {
-                community.new <- object@community
+                comm.new <- object@comm
               }
               
-              return(mgnet(abundance=abundance.new,
-                           rel_abundance=rel_abundance.new,
-                           norm_abundance=norm_abundance.new,
-                           info_sample=object@info_sample,
-                           lineage=object@lineage,
-                           info_taxa=object@info_taxa,
-                           network=network.new,
-                           community=community.new))
+              return(mgnet(abun=abun.new,
+                           rela=rela.new,
+                           norm=norm.new,
+                           sample=object@sample,
+                           taxa=object@taxa,
+                           netw=netw.new,
+                           comm=comm.new))
               # aggregate
               #-----------------------------------------#  
             } else if (trim=="aggregate") {
               
-              # abundance
-              if(length(object@abundance)!=0){
-                abundance.new<-object@abundance[,IDX,drop=F]
-                if(aggregate_to%in%colnames(abundance.new)){
-                  abundance.new[,aggregate_to] <- abundance.new[,aggregate_to] + rowSums(object@abundance[,!IDX,drop=F])
+              # abun
+              if(length(object@abun)!=0){
+                abun.new<-object@abun[,IDX,drop=F]
+                if(aggregate_to%in%colnames(abun.new)){
+                  abun.new[,aggregate_to] <- abun.new[,aggregate_to] + rowSums(object@abun[,!IDX,drop=F])
                 } else {
-                  abundance.new <- cbind(abundance.new, aggregate_to=rowSums(object@abundance[,!IDX,drop=F]))
+                  abun.new <- cbind(abun.new, aggregate_to=rowSums(object@abun[,!IDX,drop=F]))
                 }
               } else {
-                abundance.new<-object@abundance
+                abun.new<-object@abun
               }
-              # rel_abundance
-              if(length(object@rel_abundance)!=0){
-                rel_abundance.new<-object@rel_abundance[,IDX,drop=F]
-                if(aggregate_to%in%colnames(rel_abundance.new)){
-                  rel_abundance.new[,aggregate_to] <- rel_abundance.new[,aggregate_to] + rowSums(object@rel_abundance[,!IDX,drop=F])
+              # rela
+              if(length(object@rela)!=0){
+                rela.new<-object@rela[,IDX,drop=F]
+                if(aggregate_to%in%colnames(rela.new)){
+                  rela.new[,aggregate_to] <- rela.new[,aggregate_to] + rowSums(object@rela[,!IDX,drop=F])
                 } else {
-                  rel_abundance.new <- cbind(rel_abundance.new, aggregate_to=rowSums(object@rel_abundance[,!IDX,drop=F]))
+                  rela.new <- cbind(rela.new, aggregate_to=rowSums(object@rela[,!IDX,drop=F]))
                 }
               } else {
-                rel_abundance.new <- object@rel_abundance
+                rela.new <- object@rela
               }
-              # norm_abundance
-              if(length(object@norm_abundance)!=0){
-                norm_abundance.new<-object@norm_abundance[,IDX,drop=F]
-                if(aggregate_to%in%colnames(norm_abundance.new)){
-                  norm_abundance.new[,aggregate_to] <- norm_abundance.new[,aggregate_to] + rowSums(object@norm_abundance[,!IDX,drop=F])
+              # norm
+              if(length(object@norm)!=0){
+                norm.new<-object@norm[,IDX,drop=F]
+                if(aggregate_to%in%colnames(norm.new)){
+                  norm.new[,aggregate_to] <- norm.new[,aggregate_to] + rowSums(object@norm[,!IDX,drop=F])
                 } else {
-                  norm_abundance.new <- cbind(norm_abundance.new, aggregate_to=rowSums(object@norm_abundance[,!IDX,drop=F]))
+                  norm.new <- cbind(norm.new, aggregate_to=rowSums(object@norm[,!IDX,drop=F]))
                 }
               } else {
-                norm_abundance.new<-object@norm_abundance
+                norm.new<-object@norm
               }
-              # lineage
-              if(length(object@lineage)!=0){
-                lineage.new<-object@lineage[IDX,,drop=F]
-                if(!(aggregate_to%in%rownames(lineage.new))){
-                  lineage.new <- rbind(lineage.new,aggregate_to=rep(aggregate_to,length(ranks(object))))
+              # taxa
+              if(length(object@taxa)!=0){
+                taxa.new<-object@taxa[IDX,,drop=F]
+                if(!(aggregate_to%in%rownames(taxa.new))){
+                  taxa.new <- rbind(taxa.new,aggregate_to=rep(aggregate_to,ncol(object@taxa)))
                 }
               } else {
-                lineage.new<-object@lineage
-              }
-              # info_taxa
-              if(length(object@info_taxa)!=0){
-                info_lineage.new<-object@info_taxa[IDX,,drop=F]
-                if(!(aggregate_to%in%rownames(info_lineage.new))){
-                  info_lineage.new <- rbind(info_lineage.new,aggregate_to=rep(aggregate_to,ncol(object@info_taxa)))
-                }
-              } else {
-                info_lineage.new<-object@info_taxa
+                taxa.new<-object@taxa
               }
               # netw
-              if(length(object@network)!=0){
-                network.new<-igraph::subgraph(object@network,IDX)
+              if(length(object@netw)!=0){
+                netw.new<-igraph::subgraph(object@netw,IDX)
                 if(!(aggregate_to%in%taxa_id(object))){
-                  network.new <- igraph::add_vertices(network.new, nv=1, attr=list("name"=aggregate_to))
+                  netw.new <- igraph::add_vertices(netw.new, nv=1, attr=list("name"=aggregate_to))
                 }
               } else {
-                network.new<-object@network
+                netw.new<-object@netw
               }
               # comm
-              if(length(object@community)!=0){
-                community.new <- object@community
+              if(length(object@comm)!=0){
+                comm.new <- object@comm
                 if(is.character(IDX)) IDX <- which(taxa_id(object)%in%IDX)
-                community.new$membership <- object@community$membership[IDX]
+                comm.new$membership <- object@comm$membership[IDX]
                 if(!(aggregate_to%in%taxa_id(object))){
-                  community.new$membership <- c(community.new$membership,aggregate_to=0)
+                  comm.new$membership <- c(comm.new$membership,aggregate_to=0)
                 }
-                community.new$vcount <- length(community.new$membership)
-                community.new$modularity <- NA
+                comm.new$vcount <- length(comm.new$membership)
+                comm.new$modularity <- NA
               } else {
-                community.new <- object@community
+                comm.new <- object@comm
               }
               
-              return(mgnet(abundance=abundance.new,
-                           rel_abundance=rel_abundance.new,
-                           norm_abundance=norm_abundance.new,
-                           info_sample=object@info_sample,
-                           lineage=lineage.new,
-                           info_taxa=info_lineage.new,
-                           network=network.new,
-                           community=community.new))
+              return(mgnet(abun=abun.new,
+                           rela=rela.new,
+                           norm=norm.new,
+                           sample=object@sample,
+                           taxa=taxa.new,
+                           netw=netw.new,
+                           comm=comm.new))
             }
             
           })

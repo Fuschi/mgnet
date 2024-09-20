@@ -40,7 +40,7 @@ setClass(
         return("All elements in `mgnets` must be named.")
       }
       
-      # Ensure all names are unique
+      # Ensure names are unique
       if (length(unique(names(object@mgnets))) != length(object@mgnets)) {
         return("All element names must be unique.")
       }

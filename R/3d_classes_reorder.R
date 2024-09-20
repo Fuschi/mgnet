@@ -11,11 +11,11 @@
 #'        a function that takes `object` as its input and returns a vector of new ordering indices.
 #' @return The `mgnet` object with reordered samples.
 #' @export
-#' @name reorder_samples
-#' @aliases reorder_samples,mgnet-method reorder_samples,mgnetList-method
-setGeneric("reorder_samples", function(object, sample_order) standardGeneric("reorder_samples"))
+#' @name reorder_sample
+#' @aliases reorder_sample,mgnet-method reorder_sample,mgnetList-method
+setGeneric("reorder_sample", function(object, sample_order) standardGeneric("reorder_sample"))
 
-setMethod("reorder_samples", "mgnet", function(object, sample_order) {
+setMethod("reorder_sample", "mgnet", function(object, sample_order) {
   
   # Evaluate if sample_order is a function and apply it
   if (is.function(sample_order)) {
@@ -45,7 +45,7 @@ setMethod("reorder_samples", "mgnet", function(object, sample_order) {
   return(object)
 })
 
-setMethod("reorder_samples", "mgnetList", function(object, sample_order) {
+setMethod("reorder_sample", "mgnetList", function(object, sample_order) {
   
   # Evaluate if sample_order is a function and apply it
   if (!is.function(sample_order)) {
@@ -54,7 +54,7 @@ setMethod("reorder_samples", "mgnetList", function(object, sample_order) {
   
   for(i in 1:length(object)){
     indices_reordered_i <- sample_order(object@mgnets[[i]])
-    object@mgnets[[i]] <- reorder_samples(object@mgnets[[i]], indices_reordered_i)
+    object@mgnets[[i]] <- reorder_sample(object@mgnets[[i]], indices_reordered_i)
   }
   
   return(object)

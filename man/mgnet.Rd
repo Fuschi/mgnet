@@ -5,39 +5,35 @@
 \title{Create an mgnet Object}
 \usage{
 mgnet(
-  abundance = matrix(numeric(0), nrow = 0, ncol = 0),
-  rel_abundance = matrix(numeric(0), nrow = 0, ncol = 0),
-  norm_abundance = matrix(numeric(0), nrow = 0, ncol = 0),
-  info_sample = data.frame(),
-  lineage = matrix(character(0), nrow = 0, ncol = 0),
-  info_taxa = data.frame(),
-  network = make_empty_graph(n = 0, directed = FALSE),
-  community = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))
+  abun = matrix(numeric(0), nrow = 0, ncol = 0),
+  rela = matrix(numeric(0), nrow = 0, ncol = 0),
+  norm = matrix(numeric(0), nrow = 0, ncol = 0),
+  sample = data.frame(),
+  taxa = data.frame(),
+  netw = make_empty_graph(n = 0, directed = FALSE),
+  comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))
 )
 }
 \arguments{
-\item{abundance}{Numeric matrix with all elements >=0 representing the abundance data
+\item{abun}{Numeric matrix with all elements >=0 representing the abundance data
 where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.}
 
-\item{rel_abundance}{Numeric matrix representing the relative abundance of each taxon within each sample.
+\item{rela}{Numeric matrix representing the relative abundance of each taxon within each sample.
 Defaults to an empty matrix.}
 
-\item{norm_abundance}{Numeric matrix of log-transformed abundance data, structured like \code{abundance}.
+\item{norm}{Numeric matrix of normalized abundance data.
 Defaults to an empty matrix.}
 
-\item{info_sample}{Data.frame containing metadata for samples. Each row should correspond
+\item{sample}{Data.frame containing metadata for samples. Each row should correspond
 to a sample and each column to an experimental variable. Defaults to an empty data frame.}
 
-\item{lineage}{Character matrix with taxonomic classification for each taxa. Each row
-corresponds to a taxa and each column to a rank. Defaults to an empty matrix.}
-
-\item{info_taxa}{Data.frame with additional information on taxa. Each row should correspond
+\item{taxa}{Data.frame with additional information on taxa. Each row should correspond
 to a taxa. Defaults to an empty data frame.}
 
-\item{network}{An \code{igraph} object representing a network of taxa interactions. Defaults to an
+\item{netw}{An \code{igraph} object representing a network of taxa interactions. Defaults to an
 empty graph.}
 
-\item{community}{An object storing community detection results from \code{network}. Defaults
+\item{comm}{An object storing community detection results from \code{network}. Defaults
 to the result of a fast greedy clustering on an empty graph.}
 }
 \value{
@@ -47,13 +43,13 @@ the function execution is stopped.
 }
 \description{
 This function constructs an \code{mgnet} object, encapsulating various types of metagenomic data
-including abundance data, sample metadata, taxonomic information, network analysis results, etc.,
+including abundances data, sample metadata, taxonomic information, network analysis results, etc.,
 providing a comprehensive framework for the analysis of microbial communities and their interactions.
 It handles object creation with custom error handling for improved user experience.
 }
 \examples{
 # Assuming correct_matrix is a properly defined matrix and other necessary data are defined
-mgnet_obj <- mgnet(abundance = otu_HMP2,
-                   info_sample = info_sample_HMP2,
-                   lineage = lineage_HMP2)
+mgnet_obj <- mgnet(abun = otu_HMP2,
+                   sample = info_sample_HMP2,
+                   taxa = info_taxa_HMP2)
 }

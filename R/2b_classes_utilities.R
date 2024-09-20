@@ -84,51 +84,6 @@ are_list_assign <- function(object, value) {
   TRUE
 }
 
-#' Length of an mgnetList
-#'
-#' @description
-#' Returns the number of `mgnet` objects contained within an `mgnetList` object.
-#'
-#' @param x An `mgnetList` object.
-#' @return Integer value representing the number of `mgnet` objects in the `mgnetList`.
-#' @export
-setMethod("length", "mgnetList", function(x) {
-  length(x@mgnets)
-})
-
-
-#' Names of mgnet Objects in an mgnetList
-#'
-#' @description
-#' Retrieves the names of `mgnet` objects contained within an `mgnetList`.
-#' Names provide a convenient way to reference and manage individual `mgnet` objects.
-#'
-#' @param x An `mgnetList` object.
-#' @return A character vector of names of the `mgnet` objects.
-#'         
-#' @export
-setMethod("names", "mgnetList", function(x) {
-  names(x@mgnets)
-})
-
-#' Set Names of mgnet Objects in an mgnetList
-#'
-#' @description
-#' Sets the names of `mgnet` objects contained within an `mgnetList`.
-#' Names provide a convenient way to reference and manage individual `mgnet` objects.
-#'
-#' @param x An `mgnetList` object.
-#' @param value A character vector representing the new names to be assigned to the `mgnet` objects.
-#' @return The modified `mgnetList` object with updated names.
-#'         
-#' @importFrom methods validObject
-#' @export
-setMethod("names<-", "mgnetList", function(x, value) {
-  names(x@mgnets) <- value
-  validObject(x)
-  x
-})
-
 
 
 

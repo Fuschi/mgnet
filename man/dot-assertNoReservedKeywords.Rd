@@ -2,22 +2,25 @@
 % Please edit documentation in R/1b_mgnet_validity.R
 \name{.assertNoReservedKeywords}
 \alias{.assertNoReservedKeywords}
-\title{Internal: Check for Reserved Keywords in Column Names}
+\title{Internal: Check for Reserved Keywords in Column Names or Vertex Names of a Specified Slot}
 \usage{
-.assertNoReservedKeywords(obj, errors)
+.assertNoReservedKeywords(obj, slotName, errors)
 }
 \arguments{
-\item{obj}{The data object to check, expected to have column names (e.g., a data frame or a matrix with column names).}
+\item{obj}{The S4 object to check.}
+
+\item{slotName}{The name of the slot in the object to check for column or vertex names.}
 
 \item{errors}{A character vector where error messages will be accumulated.
-New error messages are appended if reserved keywords are found as column names.}
+New error messages are appended if reserved keywords are found as column or vertex names in the specified slot.}
 }
 \value{
 A character vector of accumulated error messages, including any new errors found during this check.
 }
 \description{
-This function checks if any of the specified reserved keywords are present as column names in a given object.
-If such keywords are found, it appends an error message to the provided list of errors.
+This function checks if any of the specified reserved keywords are present as column names in a matrix or data frame,
+or as vertex names in an igraph object within a specified slot of an S4 object.
+If such keywords are found, it appends a consolidated error message to the provided list of errors.
 This check helps prevent conflicts with internal functionality that relies on these reserved keywords.
 }
 \keyword{internal}
