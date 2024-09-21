@@ -487,7 +487,7 @@
   # Correcting 'object' to 'obj' based on the parameter name
   if(length(methods::slot(obj, "netw")) == 0){
     errors <- c(errors, "community cannot exist without the associated network.")
-  } else if (length(slot(obj, "community")$membership) != vcount(slot(obj, "network"))){
+  } else if (length(slot(obj, "comm")$membership) != vcount(slot(obj, "netw"))){
     errors <- c(errors, "network and community slots must have the same number of vertices.")
   }
   
