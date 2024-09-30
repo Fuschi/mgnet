@@ -104,7 +104,7 @@ setMethod("norm<-", "mgnetList", function(object, value) {
 
 
 
-# sample
+# meta
 #------------------------------------------------------------------------------#
 #' Set Sample Metadata
 #'
@@ -118,20 +118,20 @@ setMethod("norm<-", "mgnetList", function(object, value) {
 #' @return The `mgnet` or `mgnetList` object with updated sample metadata.
 #' @export
 #' @importFrom methods validObject
-#' @name sample<-
-#' @aliases sample<-,mgnet-method sample<-,mgnetList-method
-setGeneric("sample<-", function(object, value) standardGeneric("sample<-"))
+#' @name meta<-
+#' @aliases meta<-,mgnet-method meta<-,mgnetList-method
+setGeneric("meta<-", function(object, value) standardGeneric("meta<-"))
 
-setMethod("sample<-", c("mgnet","ANY"), function(object, value){
-  object@sample <- value
+setMethod("meta<-", c("mgnet","ANY"), function(object, value){
+  object@meta <- value
   validObject(object)
   object
 })
 
-setMethod("sample<-", c("mgnetList","ANY"), function(object, value){
+setMethod("meta<-", c("mgnetList","ANY"), function(object, value){
   are_list_assign(object, value)
   for(i in 1:length(object)) {
-    object@mgnets[[i]]@sample <- value[[i]]
+    object@mgnets[[i]]@meta <- value[[i]]
     validObject(object@mgnets[[i]])
   }
   validObject(object)

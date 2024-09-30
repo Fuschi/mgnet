@@ -22,8 +22,8 @@ setMethod("show", "mgnet", function(object) {
   
 
   # Sample metadata
-  if( length(object@sample) > 0) {
-    colNamesSample <- names(object@sample)
+  if( length(object@meta) > 0) {
+    colNamesSample <- names(object@meta)
     sampleInfo <- paste0("  Sample Meta Info: ", toString(head(colNamesSample, 4)))
     if(length(colNamesSample) > 4) sampleInfo <- paste(sampleInfo, ", etc...")
     cat(sampleInfo, "\n")

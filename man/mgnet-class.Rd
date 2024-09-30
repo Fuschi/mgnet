@@ -27,7 +27,7 @@ types of analyses. While the default normalization applied is log-ratio transfor
 to address compositional data issues, this slot is versatile and can hold other types
 of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.}
 
-\item{\code{sample}}{A data.frame containing metadata for samples, indexed by sample IDs.}
+\item{\code{meta}}{A data.frame containing metadata for samples, indexed by sample IDs.}
 
 \item{\code{taxa}}{A data.frame with additional taxa information, indexed by taxa IDs.}
 

@@ -10,18 +10,26 @@ mutate_taxa(object, ..., .by)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.
-The function targets the \code{taxa} slot, which contains metadata for each taxa}
+The function targets the \code{taxa} slot, which contains metadata for each taxon.}
 
 \item{...}{Dynamic expressions or functions to be applied to the data.
 These expressions can manipulate both abundance data (e.g., 'abun', 'rela', 'norm') and
-metadata within the sample slot. This allows for a comprehensive data transformation
+metadata within the taxa slot. This allows for a comprehensive data transformation
 experience that supports all standard and custom \code{tidyverse} manipulation techniques.}
 
 \item{.by}{Optional; a character vector specifying the columns to group data by before transformations.
 Defaults to 'taxa_id' for \code{mgnet} objects and c('mgnet', 'taxa_id') for \code{mgnetList} objects.
 Grouping ensures that transformations are contextually applied within each subgroup defined
 by \code{.by}. Usage of 'sample_id' as a grouping variable is strictly prohibited to maintain
-data consistency and avoid misinterpretation.}
+data consistency and avoid misinterpretation.
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{     ### Keywords in `mgnet` and `mgnetList`:
+     - **abun, rela, norm**: Slots within `mgnet` objects that store abundance data, which can be
+       directly manipulated or used in conjunction with metadata to perform advanced analyses.
+     - **taxa_id**: An essential identifier used to uniquely reference individual taxon within an `mgnet` object. 
+     - **mgnet**: Used exclusively within `mgnetList` objects to differentiate between multiple `mgnet` objects 
+       contained in the list.
+}\if{html}{\out{</div>}}}
 }
 \value{
 Returns the \code{mgnet} or \code{mgnetList} object with updated \code{taxa} slots reflecting the applied transformations.
@@ -31,20 +39,4 @@ All other structures within the object remain unchanged, ensuring that only the 
 This function dynamically manipulates the \code{taxa} slot within \code{mgnet} or \code{mgnetList} objects,
 applying user-defined transformations. It leverages the full suite of \code{tidyverse} tools, particularly
 \code{dplyr}, to enable powerful and flexible data transformations.
-}
-\details{
-The function is designed to integrate seamlessly with the \code{tidyverse}, allowing users
-to utilize familiar and potent data manipulation verbs such as \code{mutate}, \code{filter}.
-It supports using any \code{tidyverse}-compatible expressions, including conditional operations,
-summarizations, and complex transformations involving both abundance and metadata fields.
-This flexibility makes it particularly useful for ecological and biological data analysis,
-where combining different data types and conditions is common.
-
-\if{html}{\out{<div class="sourceCode">}}\preformatted{     ### Keywords in `mgnet` and `mgnetList`:
-     - **abun, rela, norm**: Slots within `mgnet` objects that store abundance data, which can be
-       directly manipulated or used in conjunction with metadata to perform advanced analyses.
-     - **taxa_id**: An essential identifier used to uniquely reference individual taxon within an `mgnet` object. 
-     - **mgnet**: Used exclusively within `mgnetList` objects to differentiate between multiple `mgnet` objects 
-       contained in the list.
-}\if{html}{\out{</div>}}
 }

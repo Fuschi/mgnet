@@ -8,7 +8,7 @@ mgnet(
   abun = matrix(numeric(0), nrow = 0, ncol = 0),
   rela = matrix(numeric(0), nrow = 0, ncol = 0),
   norm = matrix(numeric(0), nrow = 0, ncol = 0),
-  sample = data.frame(),
+  meta = data.frame(),
   taxa = data.frame(),
   netw = make_empty_graph(n = 0, directed = FALSE),
   comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))
@@ -24,7 +24,7 @@ Defaults to an empty matrix.}
 \item{norm}{Numeric matrix of normalized abundance data.
 Defaults to an empty matrix.}
 
-\item{sample}{Data.frame containing metadata for samples. Each row should correspond
+\item{meta}{Data.frame containing metadata for samples. Each row should correspond
 to a sample and each column to an experimental variable. Defaults to an empty data frame.}
 
 \item{taxa}{Data.frame with additional information on taxa. Each row should correspond

@@ -6,22 +6,29 @@
 \alias{taxa,mgnetList-method}
 \title{Get Taxa Information}
 \usage{
-taxa(object, .fmt = "df")
+taxa(object, .fmt)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
 
 \item{.fmt}{A character string specifying the output format of the result.
-Possible choices are "df" for data.frame, and "tbl" for tibble.
-When ".fmt" is set to "tbl", for \code{mgnet} objects, the row names of the abundance matrix
-are moved into a new column named \code{sample_id}, aligning with the reserved keyword in
-\code{mgnet}.}
+Possible choices are:
+- "df": Returns the output as a \code{data.frame}.
+- "tbl": Returns the output as a \code{tibble}. For \code{mgnet} objects, if present, the row names of
+the abundance matrix are converted into a new column named \code{taxa_id}, ensuring alignment
+with the reserved keyword in \code{mgnet}.
+- "list_df": When working with \code{mgnetList}, returns a list of \code{data.frame} objects,
+each corresponding to the \code{taxa} of an individual \code{mgnet} object.
+- "list_tbl": Similar to "list_df", but each entry in the list is a \code{tibble}.
+- "tbl" (for \code{mgnetList} only): Concatenates the results of all \code{mgnet} objects into a single
+\code{tibble}, with an additional column identifying the source \code{mgnet} object. The column is named
+\code{mgnet}, which is a reserved keyword of the \code{mgnet} class and contains the name of each \code{mgnet} object.}
 }
 \value{
 The content of the \code{taxa} slot for \code{mgnet} or a list of such contents for \code{mgnetList}.
 }
 \description{
 Retrieves the taxa information stored in the \code{taxa} slot of an \code{mgnet} object
-or each \code{mgnet} object within an \code{mgnetList}, with the option to format the output as
-data.frame or tibble.
+or for each \code{mgnet} object within an \code{mgnetList}, with the option to format the output as
+a \code{data.frame}, \code{tibble}, or a combined \code{tibble} for multiple mgnet objects.
 }

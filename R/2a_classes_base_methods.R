@@ -18,7 +18,7 @@ setMethod("nsample", "mgnet", function(object) {
   if(length(object@abun!=0)) return(nrow(object@abun))
   else if(length(object@rela!=0)) return(nrow(object@rela))
   else if(length(object@norm!=0)) return(nrow(object@norm))
-  else if(length(object@sample!=0)) return(nrow(object@sample))
+  else if(length(object@meta!=0)) return(nrow(object@meta))
   else return(0)
 })
 
@@ -76,7 +76,7 @@ setGeneric("sample_id", function(object) standardGeneric("sample_id"))
 
 setMethod("sample_id", "mgnet", function(object) {
   if(length(object@abun!=0)) return(rownames(object@abun))
-  else if(length(object@sample!=0)) return(rownames(object@sample))
+  else if(length(object@meta!=0)) return(rownames(object@meta))
   else if(length(object@norm!=0)) return(rownames(object@norm))
   else if(length(object@rela!=0)) return(rownames(object@rela))
   else return(character(length=0))
@@ -123,7 +123,7 @@ setMethod("taxa_id", "mgnetList", function(object) {
 #------------------------------------------------------------------------------#
 #' Get Sample Metadata Variables
 #'
-#' Retrieves the names of metadata variables available in the `sample` slot of an `mgnet` object,
+#' Retrieves the names of metadata variables available in the `meta` slot of an `mgnet` object,
 #' or for each `mgnet` object within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
@@ -131,20 +131,20 @@ setMethod("taxa_id", "mgnetList", function(object) {
 #'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
 #'         the metadata variable names in the corresponding `mgnet` objects.
 #' @export
-#' @name sample_vars
-#' @aliases sample_vars,mgnet-method sample_vars,mgnetList-method
-setGeneric("sample_vars", function(object) standardGeneric("sample_vars"))
+#' @name meta_vars
+#' @aliases meta_vars,mgnet-method meta_vars,mgnetList-method
+setGeneric("meta_vars", function(object) standardGeneric("meta_vars"))
 
-setMethod("sample_vars", "mgnet", function(object) {
-  if(length(object@sample)!=0){
-    return(colnames(object@sample))
+setMethod("meta_vars", "mgnet", function(object) {
+  if(length(object@meta)!=0){
+    return(colnames(object@meta))
   } else {
     return(character(length=0))
   }
 })
 
-setMethod("sample_vars", "mgnetList", function(object) {
-  sapply(object@mgnets, sample_vars, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("meta_vars", "mgnetList", function(object) {
+  sapply(object@mgnets, meta_vars, simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -210,11 +210,17 @@ setMethod("ncomm","mgnetList",
 setGeneric("taxa_vars", function(object) standardGeneric("taxa_vars"))
 
 setMethod("taxa_vars", "mgnet", function(object) {
-  if(length(object@taxa)!=0){
+  
+  if(length(object@taxa)!=0 & length(object@comm)!=0){
+    return(c("comm_id", colnames(object@taxa)))
+  } else if(length(object@taxa)!=0 & length(object@comm)==0){
     return(colnames(object@taxa))
+  } else if(length(object@taxa)==0 & length(object@comm)!=0){
+    return("comm_id")
   } else {
     return(character(length=0))
   }
+  
 })
 
 setMethod("taxa_vars", "mgnetList", function(object) {
@@ -227,15 +233,15 @@ setMethod("taxa_vars", "mgnetList", function(object) {
 #' Pull Sample Information from mgnet or mgnetList Objects
 #'
 #' @description
-#' Retrieves specific sample information from the `sample` data frame within `mgnet` objects,
+#' Retrieves specific sample information from the `meta` data frame within `mgnet` objects,
 #' or each `mgnet` object within an `mgnetList`. This function simplifies direct access to specific columns of interest
 #' using dynamic column name handling.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param var The name or position of the column to retrieve from the `sample` data frame. 
+#' @param var The name or position of the column to retrieve from the `meta` data frame. 
 #'        If -1 (default), the last column of the data frame is returned. You can specify the column name unquoted due to non-standard evaluation.
 #' @return For a single `mgnet` object, a vector containing the data from the specified column 
-#'         of the `sample` data frame is returned. For an `mgnetList` object, a list of such vectors
+#'         of the `meta` data frame is returned. For an `mgnetList` object, a list of such vectors
 #'         is returned, each corresponding to one `mgnet` object in the list.
 #'
 #' @details
@@ -243,17 +249,17 @@ setMethod("taxa_vars", "mgnetList", function(object) {
 #'
 #' @export
 #' @importFrom dplyr pull
-#' @name pull_sample
-#' @aliases pull_sample,mgnet-method pull_sample,mgnetList-method
-setGeneric("pull_sample", function(object, var = -1) standardGeneric("pull_sample"))
+#' @name pull_meta
+#' @aliases pull_meta,mgnet-method pull_meta,mgnetList-method
+setGeneric("pull_meta", function(object, var = -1) standardGeneric("pull_meta"))
 
-setMethod("pull_sample", signature(object = "mgnet"), function(object, var = -1) {
+setMethod("pull_meta", signature(object = "mgnet"), function(object, var = -1) {
   
-  dplyr::pull(object@sample, {{var}})
+  dplyr::pull(object@meta, {{var}})
 })
 
-setMethod("pull_sample", signature(object = "mgnetList"), function(object, var = -1) {
-  sapply(object@mgnets, function(x) pull_sample(x, var), simplify = FALSE, USE.NAMES = TRUE)
+setMethod("pull_meta", signature(object = "mgnetList"), function(object, var = -1) {
+  sapply(object@mgnets, function(x) pull_meta(x, var), simplify = FALSE, USE.NAMES = TRUE)
 })
 
 

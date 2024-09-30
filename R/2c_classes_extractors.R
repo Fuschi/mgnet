@@ -106,7 +106,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
     new_mgnet@abun <- matrix(nrow=0, ncol=0)
     new_mgnet@rela <- matrix(nrow=0, ncol=0)
     new_mgnet@norm <- matrix(nrow=0, ncol=0)
-    new_mgnet@sample <- data.frame()
+    new_mgnet@meta <- data.frame()
     new_mgnet@taxa <- x@taxa[j,]
     new_mgnet@netw <- igraph::make_empty_graph(0)
     new_mgnet@comm = igraph::cluster_fast_greedy(igraph::make_empty_graph(0,directed=F))
@@ -120,7 +120,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
     new_mgnet@abun <- matrix(numeric(0), nrow=0, ncol=0)
     new_mgnet@rela <- matrix(numeric(0), nrow=0, ncol=0)
     new_mgnet@norm <- matrix(numeric(0), nrow=0, ncol=0)
-    new_mgnet@sample <- x@sample[i,]
+    new_mgnet@meta <- x@meta[i,]
     new_mgnet@taxa <- data.frame()
     new_mgnet@netw <- igraph::make_empty_graph(0)
     new_mgnet@comm = igraph::cluster_fast_greedy(igraph::make_empty_graph(0,directed=F))
@@ -134,7 +134,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
     if(length(x@abun) != 0) abun.new <- x@abun[i,j,drop=F] else abun.new <- x@abun
     if(length(x@rela) != 0) rela.new <- x@rela[i,j,drop=F] else rela.new <- x@rela
     if(length(x@norm) != 0) norm.new <- x@norm[i,j,drop=F] else norm.new <- x@norm
-    if(length(x@sample) != 0) sample.new <- x@sample[i, ,drop=F] else sample.new <- x@sample
+    if(length(x@meta) != 0) meta.new <- x@meta[i, ,drop=F] else meta.new <- x@meta
     if(length(x@taxa) != 0) taxa.new <- x@taxa[j, ,drop=F] else taxa.new <- x@taxa
 
     if(length(x@netw) == 0){
@@ -143,7 +143,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
       return(mgnet(abun = abun.new,
                    rela = rela.new,
                    norm = norm.new,
-                   sample = sample.new,
+                   meta = meta.new,
                    taxa = taxa.new))
       
     } else if (length(x@netw)!=0 & full_i) {
@@ -175,7 +175,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
       return(mgnet(abun = abun.new,
                    rela = rela.new,
                    norm = norm.new,
-                   sample = sample.new,
+                   meta = meta.new,
                    taxa = taxa.new,
                    netw = netw.new,
                    comm = comm.new))
@@ -187,7 +187,7 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
       return(mgnet(abun = abun.new,
                    rela = rela.new,
                    norm = norm.new,
-                   sample = sample.new,
+                   meta = meta.new,
                    taxa = taxa.new))
     
     } else {

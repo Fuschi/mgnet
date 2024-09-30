@@ -585,13 +585,13 @@ setValidity("mgnet", function(object) {
   
   #CHECK INFO_SAMPLE
   #-------------------------------------#
-  errors$sample <- character()
-  if( length(object@sample)!=0 ){
-    errors$sample <- .assertDataFrame(object@sample, errors$sample)
+  errors$meta <- character()
+  if( length(object@meta)!=0 ){
+    errors$meta <- .assertDataFrame(object@meta, errors$meta)
     
-    if ( length(errors$sample)==0 ){
-      errors$sample <- .assertUniqueRowColNames(object@sample, errors$sample)
-      errors$sample <- .assertNoReservedKeywords(object, "sample", errors$sample)
+    if ( length(errors$meta)==0 ){
+      errors$meta <- .assertUniqueRowColNames(object@meta, errors$meta)
+      errors$meta <- .assertNoReservedKeywords(object, "meta", errors$meta)
     }
   }
   
@@ -634,8 +634,8 @@ setValidity("mgnet", function(object) {
         errors$reciprocal <- .assertMatchingZeroPositions(object, "abun", "rela", errors_tmp)}}
     if(length(object@norm)!=0 && length(errors$norm)==0){
       errors$reciprocal <- .assertMatchingNames(object, "abun", "norm", errors$reciprocal)}
-    if(length(object@sample)!=0 && length(errors$sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "abun", "sample", errors$reciprocal)}
+    if(length(object@meta)!=0 && length(errors$meta)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "abun", "meta", errors$reciprocal)}
     if(length(object@taxa)!=0 && length(errors$taxa)==0){
       errors$reciprocal <- .assertMatchingColsRowsNames(object, "abun", "taxa", errors$reciprocal)}
     if(length(object@netw)!=0 && length(errors$netw)==0){
@@ -645,8 +645,8 @@ setValidity("mgnet", function(object) {
   if(length(object@rela)!=0 && length(errors$rela)==0){
     if(length(object@norm)!=0 && length(errors$norm)==0){
       errors$reciprocal <- .assertMatchingNames(object, "rela", "norm", errors$reciprocal)}
-    if(length(object@sample)!=0 && length(errors$sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "rela", "sample", errors$reciprocal)}
+    if(length(object@meta)!=0 && length(errors$meta)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "rela", "meta", errors$reciprocal)}
     if(length(object@taxa)!=0 && length(errors$taxa)==0){
       errors$reciprocal <- .assertMatchingColsRowsNames(object, "rela", "taxa", errors$reciprocal)}
     if(length(object@netw)!=0 && length(errors$netw)==0){
@@ -654,8 +654,8 @@ setValidity("mgnet", function(object) {
   }
   
   if(length(object@norm)!=0 && length(errors$norm)==0){
-    if(length(object@sample)!=0 && length(errors$sample)==0){
-      errors$reciprocal <- .assertMatchingRowNames(object, "norm", "sample", errors$reciprocal)}
+    if(length(object@meta)!=0 && length(errors$meta)==0){
+      errors$reciprocal <- .assertMatchingRowNames(object, "norm", "meta", errors$reciprocal)}
     if(length(object@taxa)!=0 && length(errors$taxa)==0){
       errors$reciprocal <- .assertMatchingColsRowsNames(object, "norm", "taxa", errors$reciprocal)}
     if(length(object@netw)!=0 && length(errors$netw)==0){
@@ -675,7 +675,7 @@ setValidity("mgnet", function(object) {
   all_info_names <- character()
   
   if (length(object@taxa) > 0) all_info_names <- c(all_info_names, colnames(object@taxa))
-  if (length(object@sample)) all_info_names <- c(all_info_names, colnames(object@sample))
+  if (length(object@meta)) all_info_names <- c(all_info_names, colnames(object@meta))
   
   # Add error for duplicated names, if any
   duplicated_names <- unique(all_info_names[which(duplicated(all_info_names))])

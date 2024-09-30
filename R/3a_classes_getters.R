@@ -323,6 +323,7 @@ setMethod("norm", "mgnet", function(object, .var = NULL, .fmt = "mat", .fun = su
 })
 
 setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
+  
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   result <- sapply(object@mgnets, function(x) norm(object = x, .var = .var, 
                                                              .fmt = .fmt, .fun = .fun),
@@ -335,43 +336,73 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #------------------------------------------------------------------------------#
 #' Get Sample Information
 #'
-#' Retrieves the sample information stored in the `sample` slot of an `mgnet` object
-#' or each `mgnet` object within an `mgnetList`, with the option to format the output as
-#' a data.frame or tibble.
+#' Retrieves the sample information stored in the `meta` slot of an `mgnet` object
+#' or for each `mgnet` object within an `mgnetList`, with the option to format the output as
+#' a `data.frame`, `tibble`, or a combined `tibble` for multiple mgnet objects.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @param .fmt A character string specifying the output format of the result.
-#'        Possible choices are "df" for data.frame, and "tbl" for tibble.
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in
-#'        `mgnet`.
-#' @return The content of the `sample` slot for `mgnet` or a list of such contents for `mgnetList`.
+#'        Possible choices are:
+#'        - "df": Returns the output as a `data.frame`.
+#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, if present, the row names of
+#'          the abundance matrix are converted into a new column named `sample_id`, ensuring alignment
+#'          with the reserved keyword in `mgnet`.
+#'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
+#'          each corresponding to the `meta` of an individual `mgnet` object.
+#'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
+#'        - "tbl" (for `mgnetList` only): Concatenates the results of all `mgnet` objects into a single 
+#'          `tibble`, with an additional column identifying the source `mgnet` object. The column is named 
+#'          `mgnet`, which is a reserved keyword of the `mgnet` class and contains the name of each `mgnet` object.
+#'          
+#' @return The content of the `meta` slot for `mgnet` or a list of such contents for `mgnetList`.
+#' 
+#' @importFrom purrr map imap list_rbind
 #' @export
-#' @name sample
-#' @aliases sample,mgnet-method sample,mgnetList-method
-setGeneric("sample", function(object, .fmt = "df") standardGeneric("sample"))
+#' @name meta
+#' @aliases meta,mgnet-method meta,mgnetList-method
+setGeneric("meta", function(object, .fmt) standardGeneric("meta"))
 
-setMethod("sample", "mgnet", function(object, .fmt = "df") {
+setMethod("meta", "mgnet", function(object, .fmt) {
+  
+  if(missing(.fmt)) .fmt<- "df"
   .fmt <- match.arg(.fmt, c("df", "tbl"))
 
-  if( length(object@sample) == 0 ){
+  if( length(object@meta) == 0 ){
 
     switch(.fmt,
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
+    
   } else {
 
     switch(.fmt,
-           df  = {return(object@sample)},
-           tbl = {return(tibble::as_tibble(object@sample, rownames="sample_id"))})
+           df  = {return(object@meta)},
+           tbl = {return(tibble::as_tibble(object@meta, rownames="sample_id"))})
 
   }
 })
 
-setMethod("sample", "mgnetList", function(object, .fmt = "df") {
-  .fmt <- match.arg(.fmt, c("df", "tbl"))
-  sapply(object@mgnets, function(x) sample(x, .fmt),
-         simplify = FALSE, USE.NAMES = TRUE)
+setMethod("meta", "mgnetList", function(object, .fmt) {
+  if(missing(.fmt)) .fmt <- "list_df"
+  .fmt <- match.arg(.fmt, c("list_df", "list_tbl", "tbl"))
+  
+  if(.fmt == "list_df") {
+    
+    return(purrr::map(object, function(x) meta(x, .fmt = "df")))
+    
+  } else if(.fmt == "list_tbl") {
+    
+    return(purrr::map(object, function(x) meta(x, .fmt = "tbl")))
+    
+  } else {
+    
+    purrr::map(object, function(x) meta(x, .fmt = "tbl")) %>%
+      purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+      purrr::list_rbind() %>%
+      return()
+    
+  }
+  
 })
 
 
@@ -380,42 +411,92 @@ setMethod("sample", "mgnetList", function(object, .fmt = "df") {
 #' Get Taxa Information
 #'
 #' Retrieves the taxa information stored in the `taxa` slot of an `mgnet` object
-#' or each `mgnet` object within an `mgnetList`, with the option to format the output as
-#' data.frame or tibble.
+#' or for each `mgnet` object within an `mgnetList`, with the option to format the output as
+#' a `data.frame`, `tibble`, or a combined `tibble` for multiple mgnet objects.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @param .fmt A character string specifying the output format of the result.
-#'        Possible choices are "df" for data.frame, and "tbl" for tibble.
-#'        When ".fmt" is set to "tbl", for `mgnet` objects, the row names of the abundance matrix
-#'        are moved into a new column named `sample_id`, aligning with the reserved keyword in
-#'        `mgnet`.
+#'        Possible choices are:
+#'        - "df": Returns the output as a `data.frame`.
+#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, if present, the row names of
+#'          the abundance matrix are converted into a new column named `taxa_id`, ensuring alignment
+#'          with the reserved keyword in `mgnet`.
+#'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
+#'          each corresponding to the `taxa` of an individual `mgnet` object.
+#'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
+#'        - "tbl" (for `mgnetList` only): Concatenates the results of all `mgnet` objects into a single 
+#'          `tibble`, with an additional column identifying the source `mgnet` object. The column is named 
+#'          `mgnet`, which is a reserved keyword of the `mgnet` class and contains the name of each `mgnet` object.
+#'          
 #' @return The content of the `taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
+#' 
+#' @importFrom purrr map imap list_rbind
 #' @export
 #' @name taxa
 #' @aliases taxa,mgnet-method taxa,mgnetList-method
-setGeneric("taxa", function(object, .fmt = "df") standardGeneric("taxa"))
+setGeneric("taxa", function(object, .fmt) standardGeneric("taxa"))
 
-setMethod("taxa", "mgnet", function(object, .fmt = "df") {
+setMethod("taxa", "mgnet", function(object, .fmt) {
+  
+  if(missing(.fmt)) .fmt <- "df"
   .fmt <- match.arg(.fmt, c("df", "tbl"))
 
-  if( length(object@taxa) == 0 ){
-
+  
+  if(length(object@taxa) == 0 && length(object@comm) == 0){
     switch(.fmt,
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
-  } else {
-
+  }
+  
+  
+  if(length(object@taxa) != 0 && length(object@comm) == 0){
     switch(.fmt,
            df  = {return(object@taxa)},
            tbl = {return(tibble::as_tibble(object@taxa, rownames="taxa_id"))})
-
   }
+  
+  if(length(object@taxa) == 0 && length(object@comm) != 0){
+    switch(.fmt,
+           df  = {return(comm_id(object, .fmt = "df"))},
+           tbl = {return(comm_id(object, .fmt = "tbl"))})
+  }
+  
+  if(length(object@taxa) != 0 && length(object@comm) != 0){
+    
+    result <- comm_id(object, .fmt = "tbl") %>%
+      left_join(tibble::rownames_to_column(object@taxa, "taxa_id"),  
+                by = "taxa_id")
+    
+    switch(.fmt,
+           df  = {return(tibble::column_to_rownames(result, "taxa_id"))},
+           tbl = {return(result)})
+    
+  }
+  
 })
 
-setMethod("taxa", "mgnetList", function(object, .fmt = "df") {
-  .fmt <- match.arg(.fmt, c("df", "tbl"))
-  sapply(object@mgnets, function(x) taxa(x, .fmt),
-         simplify = FALSE, USE.NAMES = TRUE)
+setMethod("taxa", "mgnetList", function(object, .fmt) {
+  
+  if(missing(.fmt)) .fmt <- "list_df"
+  .fmt <- match.arg(.fmt, c("list_df", "list_tbl", "tbl"))
+  
+  if(.fmt == "list_df") {
+    
+    return(purrr::map(object, function(x) taxa(x, .fmt = "df")))
+    
+  } else if(.fmt == "list_tbl") {
+    
+    return(purrr::map(object, function(x) taxa(x, .fmt = "tbl")))
+    
+  } else {
+    
+    purrr::map(object, function(x) taxa(x, .fmt = "tbl")) %>%
+      purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+      purrr::list_rbind() %>%
+      return()
+    
+  }
+  
 })
 
 

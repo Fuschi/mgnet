@@ -21,7 +21,7 @@ setOldClass("communities")
 #'        types of analyses. While the default normalization applied is log-ratio transformation
 #'        to address compositional data issues, this slot is versatile and can hold other types
 #'        of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.
-#' @slot sample A data.frame containing metadata for samples, indexed by sample IDs.
+#' @slot meta A data.frame containing metadata for samples, indexed by sample IDs.
 #' @slot taxa A data.frame with additional taxa information, indexed by taxa IDs.
 #' @slot netw An `igraph` object representing the network of taxa interactions.
 #' @slot comm An object storing community detection results from network analysis.
@@ -52,7 +52,7 @@ setClass("mgnet",
     abun = "ANY",
     rela = "ANY",
     norm = "ANY",
-    sample = "ANY",
+    meta = "ANY",
     taxa = "ANY",
     netw = "ANY",
     comm = "ANY"  
@@ -62,7 +62,7 @@ setClass("mgnet",
     abun = matrix(numeric(0), nrow=0, ncol=0),
     rela = matrix(numeric(0), nrow=0, ncol=0),
     norm = matrix(numeric(0), nrow=0, ncol=0),
-    sample = data.frame(),
+    meta = data.frame(),
     taxa = data.frame(),
     netw = igraph::make_empty_graph(0),
     comm = igraph::cluster_fast_greedy(
@@ -90,7 +90,7 @@ setClass("mgnet",
 #'        Defaults to an empty matrix.
 #' @param norm Numeric matrix of normalized abundance data.
 #'        Defaults to an empty matrix.
-#' @param sample Data.frame containing metadata for samples. Each row should correspond
+#' @param meta Data.frame containing metadata for samples. Each row should correspond
 #'        to a sample and each column to an experimental variable. Defaults to an empty data frame.
 #' @param taxa Data.frame with additional information on taxa. Each row should correspond
 #'        to a taxa. Defaults to an empty data frame.
@@ -115,7 +115,7 @@ setClass("mgnet",
 mgnet <- function(abun = matrix(numeric(0), nrow=0,ncol=0),
                   rela = matrix(numeric(0), nrow=0,ncol=0),
                   norm = matrix(numeric(0), nrow=0, ncol=0),
-                  sample = data.frame(),
+                  meta = data.frame(),
                   taxa = data.frame(),
                   netw = make_empty_graph(n=0, directed=FALSE),
                   comm = cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
@@ -125,7 +125,7 @@ mgnet <- function(abun = matrix(numeric(0), nrow=0,ncol=0),
     mgnet_object <- new("mgnet", 
                         abun = abun, 
                         rela = rela, norm = norm,
-                        sample = sample,
+                        meta = meta,
                         taxa = taxa,
                         netw = netw, comm = comm)
     
