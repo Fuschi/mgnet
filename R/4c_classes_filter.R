@@ -476,7 +476,8 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
     unique()
   
   # Check the variables needed
-  validate_required_variables(object, keys_required, "taxa")
+  lapply(object, \(x){
+    validate_required_variables(x, keys_required, "taxa")})
   
   # Store needed abundances keys
   keys_abundance <- c("abun","rela","norm")
