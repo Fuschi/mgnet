@@ -1,0 +1,512 @@
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RD)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RL, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RL)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RL)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+dev.off()
+object <- plants_CPH$RA
+sign <- "positive"
+type <- "intra"
+sign <- match.arg(sign, c("positive", "negative", "all"))
+type <- match.arg(type, c("intra", "extra", "all"))
+obj <- object
+# Ensure the network is present
+if (is.null(obj@network)) {
+stop("The mgnet object does not contain a network.")
+}
+# Ensure community data is available if needed
+if (type != "all" && is.null(obj@community)) {
+stop("Community data is required for intra or extra community calculations.")
+}
+net <- obj@network
+com <- obj@community
+switch(sign, positive = 1, negative = -1, all = 0)
+switch(sign, positive = 1, negative = -1, all = 0)
+sign <- "all"
+switch(sign, positive = 1, negative = -1, all = 0)
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0)
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) > 0
+switch(sign, positive = 1, negative = -1, all = 0) >= 0
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) >= 0
+sign <- "positive"
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) >= 0
+seq_along()
+help("seq_along")
+sign <- "all"
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) > 0
+eids <- E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) > 0
+eids
+igraph::delete_edges(net, which(!eids))
+net
+eids <- E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) < 0
+net <- igraph::delete_edges(net, which(eids))
+net
+net <- obj@network
+com <- obj@community
+eids <- E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) < 0
+igraph::delete_edges(net, which(eids))
+as_igraph_communities(obj@community)
+help(crossing)
+if (type != "intra") {
+eids <- igraph::crossing(com, net)
+}
+igraph::crossing(com, net)
+!crossing(com, net)
+!igraph::crossing(com, net)
+igraph::crossing(com, net)
+rep(vcount(net), FALSE)
+vcount(net)
+rep(FALSE, vcount(net))
+eids_type <- switch(type,
+intra = !igraph::crossing(com, net),
+extra = igraph::crossing(com, net),
+all = rep(FALSE, vcount(net)))
+eids_type
+eids_sign
+help("delete_edges")
+# Ensure the network is present
+if (is.null(obj@network)) {
+stop("The mgnet object does not contain a network.")
+}
+sign <- "positive"
+type <- "intra"
+# Ensure the network is present
+if (is.null(obj@network)) {
+stop("The mgnet object does not contain a network.")
+}
+# Ensure community data is available if needed
+if (type != "all" && is.null(obj@community)) {
+stop("Community data is required for intra or extra community calculations.")
+}
+net <- obj@network
+com <- as_igraph_communities(obj@community)
+# Filter edges based on sign (links to remove)
+eids_sign <- E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) < 0
+# Filter edges based on community intra/extra types (links to remove)
+eids_type <- switch(type,
+intra = igraph::crossing(com, net),
+extra = !igraph::crossing(com, net),
+all = rep(FALSE, vcount(net)))
+eids_sign
+eids_type
+which(eids_sign | eids_type)
+eids_sign
+sum(eids_sign)
+sum(eids_sign)
+eids_sign
+sum(eids_sign)
+length(eids_sign)
+sum(eids_type)
+which(eids_sign | eids_type) %>% length
+sub_netw <- delete.edges(net, which(eids_sign | eids_type) )
+sub_netw <- delete_edges(net, which(eids_sign | eids_type) )
+help("delete_edges")
+switch(sign, positive = 1, negative = -1, all = 0) < 0
+sign
+switch(sign, positive = 1, negative = -1, all = 0) < 0
+switch(sign, positive = 1, negative = -1, all = 0)
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0)
+E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) < 0
+degree_mgnet(plants_CPH$RA)
+degree_mgnet(plants_CPH$RA, "positive")
+sum(degree_mgnet(plants_CPH$RA, "positive", "all")) + sum(degree_mgnet(plants_CPH$RA, "negative", "intra"))
+degree(plants_CPH$RA) %>% sum
+degree(plants_CPH$RA@network) %>% sum
+127744 / 2
+E(network(plants_CPH$RA)$weight)
+E(network(plants_CPH$RA))$weight
+E(network(plants_CPH$RA))$weight > 0
+E(network(plants_CPH$RA))$weight > 0 %>% sum()
+sum(E(network(plants_CPH$RA))$weight > 0)
+sum(E(network(plants_CPH$RA))$weight < 0)
+degree(network(plants_CPH$RA)) %>% sort(de)
+degree(network(plants_CPH$RA)) %>% sort() %>% tail
+degree_mgnet(plants_CPH$RA) %>% sort() %>% tail
+degree(network(plants_CPH$RA) %>% subgraph.edges(which(E(.)$weight<0), delete.vertices = FALSE)) %>% sort() %>% tail
+degree(network(plants_CPH$RA) %>% subgraph.edges(which(E(.)$weight>0), delete.vertices = FALSE)) %>% sort() %>% tail
+191 + 43
+degree_mgnet(plants_CPH$RA) %>% sort %>% tail
+degree_mgnet(plants_CPH$RA, "positive") %>% sort %>% tail
+degree_mgnet(plants_CPH$RA, "negative") %>% sort %>% tail
+library(tidyverse)
+library(mgnet)
+sewage_CPH <- readRDS("../../data/R/sewage_CPH.rds")
+plants_CPH <- sewage_CPH %>%
+split_mgnet(Plant) %>%
+filter_criteria_taxa(abundance = c(
+\(x) median(x[x>0]) >= 5,
+\(x) sum(x>0) >= .2
+)) %>%
+constructCorrCLRNet(thresh_method = "density", thresh_value = .01) %>%
+cluster_signed() %>%
+set_community_color(sizes_threshold = 30, color_to = "color_community", distinct_color = TRUE)
+plants_CPH_core <- plants_CPH %>%
+remove_smaller_communities(30) %>%
+mutate_criteria_taxa(mgnet = c(
+"degree_pos_intra" = \(x) degree_mgnet(x, "positive", "intra"),
+"degree_neg_extra" = \(x) degree_mgnet(x, "negative", "extra")
+)) %>%
+filter_info_taxa(degree_pos_intra >= 5,
+degree_neg_extra >= 5)
+plants_CPH_core
+pdf(file = "../../plots/PDF/networks.pdf", width = 12, height = 4)
+set.seed(42)
+par(mfrow = c(1,3), mar=c(0,0,0,0))
+plot(plants_CPH_core$RA, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RA)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RA)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RD, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RD)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RD)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RL, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RL)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RL)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+dev.off()
+plants_CPH_core <- plants_CPH %>%
+remove_smaller_communities(30) %>%
+mutate_criteria_taxa(mgnet = c(
+"degree_pos_intra" = \(x) degree_mgnet(x, "positive", "intra"),
+"degree_neg_extra" = \(x) degree_mgnet(x, "negative", "extra")
+)) %>%
+filter_info_taxa(degree_pos_intra >= 3,
+degree_neg_extra >= 3)
+pdf(file = "../../plots/PDF/networks.pdf", width = 12, height = 4)
+set.seed(42)
+par(mfrow = c(1,3), mar=c(0,0,0,0))
+plot(plants_CPH_core$RA, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RA)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RA)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RD, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RD)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RD)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RL, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RL)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RL)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+dev.off()
+plants_CPH_core <- plants_CPH
+pdf(file = "../../plots/PDF/networks.pdf", width = 12, height = 4)
+set.seed(42)
+par(mfrow = c(1,3), mar=c(0,0,0,0))
+plot(plants_CPH_core$RA, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RA)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RA)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RD, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RD)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RD)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RL, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RL)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RL)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+dev.off()
+plants_CPH_core <- plants_CPH %>%
+remove_smaller_communities(30) %>%
+mutate_criteria_taxa(mgnet = c(
+"degree_pos_intra" = \(x) degree_mgnet(x, "positive", "intra"),
+"degree_neg_extra" = \(x) degree_mgnet(x, "negative", "extra")
+)) %>%
+filter_info_taxa(degree_pos_intra >= 3,
+degree_neg_extra >= 3)
+pdf(file = "../../plots/PDF/networks.pdf", width = 12, height = 4)
+set.seed(42)
+par(mfrow = c(1,3), mar=c(0,0,0,0))
+plot(plants_CPH_core$RA, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RA)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RA)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RD, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RD)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RD)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+plot(plants_CPH_core$RL, vertex.label = NA,
+vertex.color = adjustcolor(info_taxa(plants_CPH_core$RL)$color_community, .75),
+vertex.size = colMeans(norm_abundance(plants_CPH_core$RL)),
+expFactor = 1.5, maxSize = 10, alphaFactor = .25)
+dev.off()
+degree(plants_CPH_core$RA) %>% sort %>% head
+degree(network(plants_CPH_core$RA)) %>% sort %>% head
+degree(network(plants_CPH$RA)) %>% sort %>% head
+degree(network(plants_CPH$RA))["29471 "]
+degree(network(plants_CPH$RA))["29471"]
+subgraph(network(plants_CPH$RA), "29471")
+subgraph(network(plants_CPH$RA), vids = which(V(network(plants_CPH$RA))$name == "29471"))
+which(V(network(plants_CPH$RA))$name == "29471")
+incident(network(plants_CPH$RA), "29471")
+help("vertex_attr")
+library(tidyverse)
+library(mgnet)
+sewage_CPH <- readRDS("../../data/R/sewage_CPH.rds")
+info_taxa(sewage_CPH)
+info_taxa(sewage_CPH, "tbl")
+help("scale_size_continuous")
+library(scales)
+# Define a custom transformation function
+custom_scale_trans <- function(trans_fun = identity_trans(), force_positive = TRUE) {
+trans_new(
+name = paste("custom_scale", deparse(substitute(trans_fun)), sep = "_"),
+transform = function(x) {
+if (force_positive) {
+# Shift all values to positive domain
+shift_value <- if (any(x < 0)) -min(x) + 1 else 0
+x <- x + shift_value
+}
+# Apply the specified scales transformation
+trans_fun$transform(x)
+},
+inverse = function(x) {
+transformed_x <- trans_fun$inverse(x)
+if (force_positive && exists("shift_value")) {
+transformed_x <- transformed_x - shift_value
+}
+transformed_x
+}
+)
+}
+# Example usage with a specific transformation and force_positive
+custom_trans <- custom_scale_trans(sqrt_trans(), force_positive = TRUE)
+custom_trans$name
+library(scales)
+library(ggplot2)
+# Define a custom transformation function with a descriptive name
+positive_shift_scale_trans <- function(trans_fun = identity_trans(), force_positive = TRUE) {
+trans_new(
+name = paste("positive_shift_scale", deparse(substitute(trans_fun)), sep = "_"),
+transform = function(x) {
+if (force_positive) {
+# Shift all values to positive domain
+shift_value <- if (any(x < 0)) -min(x) + 1 else 0
+x <- x + shift_value
+}
+# Apply the specified scales transformation
+trans_fun$transform(x)
+},
+inverse = function(x) {
+transformed_x <- trans_fun$inverse(x)
+if (force_positive && exists("shift_value")) {
+transformed_x <- transformed_x - shift_value
+}
+transformed_x
+}
+)
+}
+# Example usage with a logarithmic transformation and forcing positive
+custom_trans <- positive_shift_scale_trans(log_trans(), force_positive = TRUE)
+library(scales)
+library(ggplot2)
+# Define a custom transformation function with a descriptive name
+positive_shift_scale_trans <- function(trans_fun = identity_trans(), force_positive = TRUE) {
+trans_new(
+name = paste("positive_shift_scale", deparse(substitute(trans_fun)), sep = "_"),
+transform = function(x) {
+if (force_positive) {
+# Shift all values to positive domain
+shift_value <- if (any(x < 0)) -min(x) + 1 else 0
+x <- x + shift_value
+}
+# Apply the specified scales transformation
+trans_fun$transform(x)
+},
+inverse = function(x) {
+transformed_x <- trans_fun$inverse(x)
+if (force_positive && exists("shift_value")) {
+transformed_x <- transformed_x - shift_value
+}
+transformed_x
+}
+)
+}
+# Example usage with a logarithmic transformation and forcing positive
+custom_trans <- positive_shift_scale_trans(log_trans(), force_positive = TRUE)
+# Simulate some data with negative and positive values
+set.seed(123)
+data <- data.frame(
+x = rnorm(100),
+y = rnorm(100),
+size = rnorm(100, mean = 0, sd = 3)
+)
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = custom_trans) +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+# Simulate some data with negative and positive values
+set.seed(123)
+data <- data.frame(
+x = rnorm(100),
+y = rnorm(100),
+size = rnorm(100, mean = 0, sd = 3)
+)
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = custom_trans) +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+library(scales)
+library(ggplot2)
+# Define a custom transformation function with a descriptive name
+positive_shift_scale_trans <- function(trans_fun = identity_trans(), force_positive = TRUE) {
+trans_new(
+name = paste("positive_shift_scale", deparse(substitute(trans_fun)), sep = "_"),
+transform = function(x) {
+if (force_positive) {
+# Shift all values to positive domain
+shift_value <- if (any(x < 0)) -min(x) + 1 else 0
+x <- x + shift_value
+}
+# Apply the specified scales transformation
+trans_fun$transform(x)
+},
+inverse = function(x) {
+transformed_x <- trans_fun$inverse(x)
+if (force_positive && exists("shift_value")) {
+transformed_x <- transformed_x - shift_value
+}
+transformed_x
+}
+)
+}
+# Example usage with a logarithmic transformation and forcing positive
+custom_trans <- positive_shift_scale_trans(log_trans(), force_positive = TRUE)
+# Simulate some data with negative and positive values
+set.seed(123)
+data <- data.frame(
+x = rnorm(100),
+y = rnorm(100),
+size = rnorm(100, mean = 0, sd = 3)
+)
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = custom_trans) +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+#scale_size_continuous(trans = custom_trans) +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = log10) +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = "log10") +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+# Plot using the custom scale transformation
+ggplot(data, aes(x = x, y = y, size = size)) +
+geom_point() +
+scale_size_continuous(trans = "sqrt") +
+ggtitle("Plot with Custom Size Scaling") +
+theme_minimal()
+# Sample data, potentially including negative values
+data <- data.frame(
+x = c(-10, 0, 5, 15, 20),
+y = c(1, 2, 3, 4, 5)
+)
+library(scales)
+library(ggplot2)
+positive_shift_scale_trans <- function(trans_fun = identity_trans(), force_positive = TRUE) {
+trans_new(
+name = paste("positive_shift_scale", deparse(substitute(trans_fun)), sep = "_"),
+transform = function(x) {
+if (force_positive) {
+# Shift all values to positive domain by adding more than the absolute value of the minimum
+shift_value <- if (any(x <= 0)) -min(x, na.rm = TRUE) + 1 else 0
+x <- x + shift_value
+attr(x, "shift_value") <- shift_value  # Store shift value for use in inverse
+}
+# Apply the specified scales transformation
+trans_fun$transform(x)
+},
+inverse = function(x) {
+# Retrieve the shift value
+shift_value <- attr(x, "shift_value")
+# Reverse the specified scales transformation
+x <- trans_fun$inverse(x)
+if (force_positive && !is.null(shift_value)) {
+x <- x - shift_value  # Adjust back using the stored shift value
+}
+x
+}
+)
+}
+# Example Usage:
+# Create a scale transformation with a square root function, forcing all input to positive
+custom_trans <- positive_shift_scale_trans(sqrt_trans(), force_positive = TRUE)
+# Sample data, potentially including negative values
+data <- data.frame(
+x = c(-10, 0, 5, 15, 20),
+y = c(1, 2, 3, 4, 5)
+)
+# Applying transformation
+transformed_sizes <- custom_trans$transform(data$x)
+# Reversing transformation
+inversed_sizes <- custom_trans$inverse(transformed_sizes)
+print(transformed_sizes)
+print(inversed_sizes)
+# Generate some sample data, possibly including negative values
+data <- data.frame(
+x = 1:10,
+y = c(-15, -10, -5, 0, 5, 10, 15, 20, 25, 30)
+)
+# Create a plot using ggplot2 with custom size transformation
+ggplot(data, aes(x, y)) +
+geom_point(aes(size = y)) +
+scale_size_continuous(trans = custom_trans) +
+ggtitle("Plot with Custom Size Transformation") +
+theme_minimal()
+# Create a plot using ggplot2 with custom size transformation
+ggplot(data, aes(x, y)) +
+geom_point(aes(size = y)) +
+scale_size_continuous(
+trans = custom_trans,
+breaks = c(-15, -10, -5, 0, 5, 10, 15, 20, 25, 30),  # Explicit breaks at original values
+labels = c(-15, -10, -5, 0, 5, 10, 15, 20, 25, 30)   # Corresponding labels for these breaks
+) +
+ggtitle("Plot with Custom Size Transformation") +
+theme_minimal()
+quantile(c(-1,2,3))
+help("scale_size_continuous")
+help(scales_new)
+help(scale_new)
+help(trans_new)
+# Assuming the custom transformation logic is defined here
+apply_custom_transformation <- function(sizes, a, b, c) {
+# Example transformation logic
+a * (sizes ^ b) + c
+}
+# Define the custom scale function
+scale_mgnet_node_size <- function(a = 1, b = 1, c = 0, ...) {
+trans_fun <- scales::trans_new(
+name = paste("custom", a, b, c, sep = "_"),
+transform = function(x) apply_custom_transformation(x, a, b, c),
+inverse = function(x) NULL  # Inverse might not be necessary for visualization
+)
+scale_size_continuous(trans = trans_fun, ...)
+scale_mgnet_node_size
+()
+# Define the custom scale function
+scale_mgnet_node_size <- function(a = 1, b = 1, c = 0, ...) {
+trans_fun <- scales::trans_new(
+name = paste("custom", a, b, c, sep = "_"),
+transform = function(x) apply_custom_transformation(x, a, b, c),
+inverse = function(x) NULL  # Inverse might not be necessary for visualization
+)
+scale_size_continuous(trans = trans_fun, ...)
+}
+scale_mgnet_node_size()

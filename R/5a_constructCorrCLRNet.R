@@ -74,16 +74,17 @@
 #' 
 #' @aliases constructCorrCLRNet,mgnet-method constructCorrCLRNet,mgnetList-method
 #' @export
-setGeneric("constructCorrCLRNet", function(object, zero_strategy = "unif", clr_method,
-                                           cor_method = "pearson", thresh_method, thresh_value, padj_method="none") standardGeneric("constructCorrCLRNet"))
+setGeneric("constructCorrCLRNet", function(object, zero_strategy = "unif", clr_method = NULL,
+                                           cor_method = "pearson", thresh_method = NULL, thresh_value = NULL, padj_method = NULL) standardGeneric("constructCorrCLRNet"))
 
 setMethod("constructCorrCLRNet", "mgnet",
-          function(object, zero_strategy = "unif", clr_method ="clr",
-                   cor_method = "pearson", thresh_method, thresh_value, padj_method="none"){
+          function(object, zero_strategy = "unif", clr_method = NULL,
+                   cor_method = "pearson", thresh_method = NULL, thresh_value = NULL, padj_method = NULL){
             
             # Checks
-            if(missing(clr_method) & length(norm(object))!=0) clr_method <- "stored"
-            if(missing(clr_method) & length(norm(object))==0) clr_method <- "clr"
+            if(is.null(padj_method)) padj_method <- "none"
+            if(is.null(clr_method) & length(norm(object))!=0) clr_method <- "stored"
+            if(is.null(clr_method) & length(norm(object))==0) clr_method <- "clr"
 
             zero_strategy <- match.arg(zero_strategy,c("unif","const"))
             clr_method <- match.arg(clr_method,c("clr","iclr","stored"))
@@ -150,8 +151,8 @@ setMethod("constructCorrCLRNet", "mgnet",
 
 
 setMethod("constructCorrCLRNet", "mgnetList",
-          function(object, zero_strategy = "unif", clr_method ="clr",
-                   cor_method = "pearson", thresh_method, thresh_value, padj_method="none"){
+          function(object, zero_strategy = "unif", clr_method = NULL,
+                   cor_method = "pearson", thresh_method = NULL, thresh_value = NULL, padj_method = NULL){
             
             object@mgnets <- sapply(object@mgnets, function(x){
               constructCorrCLRNet(x,

@@ -3,13 +3,13 @@
 #' Create Color Palette for Categorical Data
 #'
 #' Generates a distinct color palette for categorical data classifications. Each unique category 
-#' is assigned a color up to a specified limit (`distinctColors`). Beyond this limit, `extraColor` 
+#' is assigned a color up to a specified limit (`distinct_colors`). Beyond this limit, `extraColor` 
 #' is used for the remaining categories. Duplicate identifiers are filtered out to ensure uniqueness.
 #'
 #' @param categories A character vector of identifiers for the categories.
-#' @param distinctColors An integer specifying the maximum number of distinct colors to generate, 
+#' @param distinct_colors An integer specifying the maximum number of distinct colors to generate, 
 #'        ranging from 1 to 99. Default is the length of categories.
-#' @param extraColor The color used for identifiers exceeding the `distinctColors` limit, 
+#' @param extraColor The color used for identifiers exceeding the `distinct_colors` limit, 
 #'        defaults to white. Accepts hexadecimal color codes.
 #' @param alpha A numeric value specifying the transparency level of the colors.
 #' @param colorspace Defines the color space for color generation. It can be one of the predefined 
@@ -22,25 +22,25 @@
 #' @export
 #' @importFrom qualpalr qualpal
 #' @importFrom grDevices adjustcolor
-colormap_categories <- function(categories, distinctColors, extraColor = "#FFFFFF",
+colormap_categories <- function(categories, distinct_colors, extraColor = "#FFFFFF",
                                  alpha = 1, colorspace = "pretty") {
   
-  if(!is.character(categories)) {
-    stop("categories must be a character vector.")
+  if(!is.character(categories) & !is.logical(categories)) {
+    stop("categories must be a character or logical vector.")
   }
   
-  categories <- unique(categories) # Ensure category uniqueness.
+  uniq_categories <- unique(categories) # Ensure category uniqueness.
   
-  if(missing(distinctColors)){
-    distinctColors <- length(categories)
+  if(missing(distinct_colors)){
+    distinct_colors <- length(uniq_categories)
   } 
   
-  if(!is.numeric(distinctColors) || distinctColors != round(distinctColors) || distinctColors < 1 || distinctColors > 99){
-    stop("distinctColors must be an integer between 1 and 99.")
+  if(!is.numeric(distinct_colors) || distinct_colors != round(distinct_colors) || distinct_colors < 1 || distinct_colors > 99){
+    stop("distinct_colors must be an integer between 1 and 99.")
   }
   
-  if(distinctColors > min(99, length(categories))){
-    stop("distinctColors cannot exceed the current number of categories: ", length(categories))
+  if(distinct_colors > min(99, length(uniq_categories))){
+    stop("distinct_colors cannot exceed the current number of categories: ", length(uniq_categories))
   }
   
   if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {
@@ -62,17 +62,17 @@ colormap_categories <- function(categories, distinctColors, extraColor = "#FFFFF
   }
   
   # Generate colors
-  colors <- qualpalr::qualpal(n = distinctColors, colorspace = colorspace)$hex
+  colors <- qualpalr::qualpal(n = distinct_colors, colorspace = colorspace)$hex
   colors <- adjustcolor(colors, alpha.f = alpha)
   
   # Add extra colors if necessary
-  if(length(categories) > distinctColors) {
-    extraColors <- rep(extraColor, length(categories) - distinctColors)
+  if(length(uniq_categories) > distinct_colors) {
+    extraColors <- rep(extraColor, length(uniq_categories) - distinct_colors)
     extraColors <- adjustcolor(extraColors, alpha.f = alpha)
     colors <- c(colors, extraColors)
   }
   
-  names(colors) <- categories
+  names(colors) <- uniq_categories
   
   return(colors)
 }
@@ -168,7 +168,7 @@ colormap_communities <- function(community,
   palette_with_isolated[1:length(palette_with_smaller)] <- palette_with_smaller
   palette_with_isolated[is.na(palette_with_isolated)] <- isolated_color
   # Adjust color transparency
-  palette <- grDevices::adjustcolor(palette, alpha.f = alpha)
+  palette_with_isolated <- grDevices::adjustcolor(palette_with_isolated, alpha.f = alpha)
   
   # Assign names
   names(palette_with_isolated) <- as.character(names(igraph::sizes(community)))

@@ -256,9 +256,9 @@ setMethod("filter_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-tidyr::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
+        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
         dplyr::distinct() %>%
-        dplyr::select(tidyr::all_of(c("mgnet", "sample_id")))
+        dplyr::select(tidyselect::all_of(c("mgnet", "sample_id")))
       
     } else {
       
@@ -266,7 +266,8 @@ setMethod("filter_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
       filtered_samples[[i]] <- sample_info_data_merged %>%
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() 
+        dplyr::ungroup() %>%
+        dplyr::select(tidyselect::all_of(c("mgnet", "sample_id")))
       
     }
   }
@@ -378,17 +379,6 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = "taxa_id") {
   } else {
     taxa_info_data = taxa(object, .fmt = "tbl")
   }
-  
-  taxa_info_data <- tibble::tibble(taxa_id = taxa_id(object))
-  if(length(taxa(object))!=0){
-    taxa_info_data <- taxa_info_data %>% 
-      dplyr::left_join(taxa(object, .fmt = "tbl"), by = "taxa_id")
-  }
-  if(length(comm(object))!=0){
-    taxa_info_data <- taxa_info_data %>% 
-      dplyr::left_join(comm_id(object, .fmt = "tbl"), by = "taxa_id")
-  }
-  
   
   if(length(needed_abundance_keys) != 0){
     
@@ -505,9 +495,6 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
       if(length(taxa(object))!=0){
         y <- y %>% dplyr::left_join(taxa(x, .fmt = "tbl"), by = "taxa_id")
       }
-      if(length(comm(x))!=0){
-        y <- y %>% dplyr::left_join(comm_id(x, .fmt = "tbl"), by = "taxa_id")
-      }
       return(y)
     }) %>%
     purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
@@ -554,9 +541,9 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-tidyr::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
+        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
         dplyr::distinct() %>%
-        dplyr::select(tidyr::all_of(c("mgnet", "taxa_id")))
+        dplyr::select(tidyselect::all_of(c("mgnet", "taxa_id")))
       
     } else {
       
@@ -564,7 +551,8 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
       filtered_taxa[[i]] <- taxa_info_data_merged %>%
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() 
+        dplyr::ungroup() %>%
+        dplyr::select(tidyselect::all_of(c("mgnet", "taxa_id")))
       
     }
   }

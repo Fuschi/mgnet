@@ -6,7 +6,7 @@
 \usage{
 colormap_categories(
   categories,
-  distinctColors,
+  distinct_colors,
   extraColor = "#FFFFFF",
   alpha = 1,
   colorspace = "pretty"
@@ -15,10 +15,10 @@ colormap_categories(
 \arguments{
 \item{categories}{A character vector of identifiers for the categories.}
 
-\item{distinctColors}{An integer specifying the maximum number of distinct colors to generate,
+\item{distinct_colors}{An integer specifying the maximum number of distinct colors to generate,
 ranging from 1 to 99. Default is the length of categories.}
 
-\item{extraColor}{The color used for identifiers exceeding the \code{distinctColors} limit,
+\item{extraColor}{The color used for identifiers exceeding the \code{distinct_colors} limit,
 defaults to white. Accepts hexadecimal color codes.}
 
 \item{alpha}{A numeric value specifying the transparency level of the colors.}
@@ -33,6 +33,6 @@ A named vector of hexadecimal color codes, with names corresponding to the categ
 }
 \description{
 Generates a distinct color palette for categorical data classifications. Each unique category
-is assigned a color up to a specified limit (\code{distinctColors}). Beyond this limit, \code{extraColor}
+is assigned a color up to a specified limit (\code{distinct_colors}). Beyond this limit, \code{extraColor}
 is used for the remaining categories. Duplicate identifiers are filtered out to ensure uniqueness.
 }

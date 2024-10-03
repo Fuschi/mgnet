@@ -43,7 +43,7 @@
 #' @importFrom tibble column_to_rownames tibble add_column
 setGeneric("mutate_sample", function(object, ..., .by) {standardGeneric("mutate_sample")})
 
-setMethod("mutate_sample", "mgnet", function(object, ..., .by = "sample_id") {
+setMethod("mutate_sample", "mgnet", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -68,7 +68,7 @@ setMethod("mutate_sample", "mgnet", function(object, ..., .by = "sample_id") {
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
   # Check the variables needed
-  validate_required_variables(object, keys_required, "sample")
+  #validate_required_variables(object, keys_required, "sample")
   
   # Validate the .by argument
   if (missing(.by)) {
@@ -157,7 +157,7 @@ setMethod("mutate_sample", "mgnet", function(object, ..., .by = "sample_id") {
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_sample", "mgnetList", function(object, ..., .by = c("mgnet", "sample_id")) {
+setMethod("mutate_sample", "mgnetList", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -182,13 +182,13 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
   # Check the variables needed
-  lapply(object, \(x){
-    validate_required_variables(x, keys_required, "sample")})
+  #lapply(object, \(x){
+  #  validate_required_variables(x, keys_required, "sample")})
   
   
   # Validate the .by argument
   if (missing(.by)) {
-    .by <- "sample_id"
+    .by <- c("mgnet","sample_id")
   }
   
   if (!is.character(.by) || "taxa_id" %in% .by) {
@@ -280,6 +280,7 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
         tibble::column_to_rownames("sample_id")
     })
   
+  info_sample_mutated_splitted <- info_sample_mutated_splitted[names(object)]
   meta(object) <- info_sample_mutated_splitted
   return(object)
 })
@@ -323,7 +324,7 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
 #' @importFrom tibble column_to_rownames tibble add_column
 setGeneric("mutate_taxa", function(object, ..., .by) {standardGeneric("mutate_taxa")})
 
-setMethod("mutate_taxa", "mgnet", function(object, ..., .by = "sample_id") {
+setMethod("mutate_taxa", "mgnet", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -348,15 +349,15 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = "sample_id") {
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
   # Check the variables needed
-  validate_required_variables(object, keys_required, "taxa")
+  #validate_required_variables(object, keys_required, "taxa")
   
   # Validate the .by argument
   if (missing(.by)) {
-    .by <- "sample_id"
+    .by <- "taxa_id"
   }
   
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
+  if (!is.character(.by) || "sample_id" %in% .by) {
+    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
   }
   
   # Forbidden functions and disallowed variables
@@ -412,9 +413,10 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = "sample_id") {
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-any_of(c("taxa_id", needed_abundance_keys))) %>%
+        dplyr::select(-any_of(c("sample_id", needed_abundance_keys))) %>%
         dplyr::distinct() %>%
-        dplyr::arrange(match(taxa_id, taxa_id(object)))
+        dplyr::arrange(match(taxa_id, taxa_id(object))) %>%
+        dplyr::select(-tidyselect::any_of("comm_id"))
       
     } else {
       
@@ -424,7 +426,8 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = "sample_id") {
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::arrange(match(taxa_id, taxa_id(object)))
+        dplyr::arrange(match(taxa_id, taxa_id(object))) %>%
+        dplyr::select(-tidyselect::any_of("comm_id"))
       
     }
   } # End of loop over expressions
@@ -436,12 +439,12 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = "sample_id") {
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "taxa_id")) {
+setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are taxa to process
-  if (ntaxa(object) == 0) {
+  if (any(ntaxa(object) == 0)) {
     stop("Error: No taxa available in the 'mgnet' object.")
   }
   
@@ -461,16 +464,17 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
   # Check the variables needed
-  validate_required_variables(object, keys_required, "sample")
+  #lapply(object, \(x){
+  #  validate_required_variables(x, keys_required, "taxa")})
   
   
   # Validate the .by argument
   if (missing(.by)) {
-    .by <- "sample_id"
+    .by <- c("mgnet","taxa_id")
   }
   
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
+  if (!is.character(.by) || "sample_id" %in% .by) {
+    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
   }
   
   
@@ -532,7 +536,7 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-tidyr::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
+        dplyr::select(-tidyr::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
         dplyr::distinct() 
       
       
@@ -554,9 +558,11 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "ta
       dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
     }) %>%
     purrr::map(\(x){
-      x %>% dplyr::select(-"mgnet") %>%
+      x %>% dplyr::select(-any_of(c("mgnet", "comm_id"))) %>%
         tibble::column_to_rownames("taxa_id")
     })
+  
+  info_taxa_mutated_splitted <- info_taxa_mutated_splitted[names(object)]
   
   taxa(object) <- info_taxa_mutated_splitted
   return(object)
