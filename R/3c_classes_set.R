@@ -159,9 +159,9 @@ setMethod("set_norm_CLR", "mgnet", function(object, clr_variant = "clr", zero_st
 })
 
 setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zero_strategy = "const") {
-  object <- lapply(object@mgnets, function(mgnet) {
+  object <- mgnetList(lapply(object@mgnets, function(mgnet) {
     set_norm_CLR(mgnet, clr_variant, zero_strategy)
-  })
+  }))
   validObject(object)
   return(object)
 })

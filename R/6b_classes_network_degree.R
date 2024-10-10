@@ -50,7 +50,7 @@ setMethod("degree_mgnet", "mgnet",
             }
             
             net <- obj@netw
-            com <- obj@netw
+            com <- obj@comm
             
             # Filter edges based on sign (links to remove)
             eids_sign <- E(net)$weight * switch(sign, positive = 1, negative = -1, all = 0) < 0
@@ -59,10 +59,10 @@ setMethod("degree_mgnet", "mgnet",
             eids_type <- switch(type, 
                                 intra = igraph::crossing(com, net), 
                                 extra = !igraph::crossing(com, net), 
-                                all = rep(FALSE, vcount(net))) 
+                                all = rep(FALSE, ecount(net))) 
 
             # Remove links
-            sub_netw <- delete_edges(net, which(eids_sign | eids_type) )
+            sub_netw <- igraph::delete_edges(net, which(eids_sign | eids_type) )
             
             # Calculate degree
             return(igraph::degree(sub_netw))

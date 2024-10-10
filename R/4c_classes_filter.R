@@ -110,11 +110,9 @@ setMethod("filter_sample", "mgnet", function(object, ..., .by = "sample_id") {
         )
     }
     
-    if(length(needed_noabundance_keys) != 0){
-      long_abun <- long_abun %>%
+    long_abun <- long_abun %>%
         dplyr::left_join(meta(object, .fmt = "tbl"), by = "sample_id")
-    }
-    
+
   }
   # END LONG FORMAT SAMPLE DATA
   #----------------------------------------------------------------------------#
@@ -397,11 +395,9 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = "taxa_id") {
         )
     }
     
-    if(length(taxa(object)) != 0){
-      taxa_abun_data <- taxa_abun_data %>%
-        dplyr::left_join(taxa(object, .fmt = "tbl"),
-                         by = "taxa_id")
-    }
+    taxa_abun_data <- taxa_abun_data %>%
+      dplyr::left_join(taxa(object, .fmt = "tbl"),
+                       by = "taxa_id")
     
   }
   # END LONG FORMAT SAMPLE DATA

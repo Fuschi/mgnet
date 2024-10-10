@@ -525,8 +525,8 @@ setMethod("netw", "mgnet", function(object, add_vertex_attr = FALSE) {
   if (add_vertex_attr) {
 
     # Add vertex attributes
-    if (ncol(object@taxa) > 1) {
-      for (vertex_attr in names(object@taxa)[-1]) {
+    if (length(object@taxa) != 0) {
+      for (vertex_attr in names(object@taxa)) {
         igraph::vertex_attr(g, vertex_attr) <- object@taxa[[vertex_attr]]
       }
     }

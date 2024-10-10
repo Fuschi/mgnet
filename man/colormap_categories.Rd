@@ -36,3 +36,6 @@ Generates a distinct color palette for categorical data classifications. Each un
 is assigned a color up to a specified limit (\code{distinct_colors}). Beyond this limit, \code{extraColor}
 is used for the remaining categories. Duplicate identifiers are filtered out to ensure uniqueness.
 }
+\seealso{
+\link{colormap_community}, \link{colormap_communities}
+}

@@ -2,10 +2,10 @@
 % Please edit documentation in R/utilis_color.R
 \name{colormap_communities}
 \alias{colormap_communities}
-\title{Create Color Palette for Community Visualization}
+\title{Create Color Palette for a List of Community Visualizations with Shared Colors}
 \usage{
 colormap_communities(
-  community,
+  list_comm,
   sizes_threshold,
   smaller_color = "#D3D3D3",
   isolated_color = "#FFFFFF",
@@ -14,30 +14,27 @@ colormap_communities(
 )
 }
 \arguments{
-\item{community}{An object representing community data, typically derived from a community detection
-method such as those available in the \code{igraph} package.}
+\item{list_comm}{A list of community objects (from \code{igraph::community}) that need distinct color palettes.}
 
 \item{sizes_threshold}{An integer specifying the minimum size a community must exceed to receive a
-unique color. If it missing the function generate color for all the communities also with size 2.
-Communities not meeting this size threshold will be assigned the \code{smaller_color}.}
+unique color. If missing, colors are generated for all communities including those of size 2.}
 
-\item{smaller_color}{A hexadecimal color code used for communities that do not exceed the size threshold,
-defaulting to a light gray ("#D3D3D3").}
+\item{smaller_color}{A hexadecimal color code for communities below the size threshold, default is "#D3D3D3".}
 
-\item{isolated_color}{A hexadecimal color code used for isolated nodes, often represented as community '0',
-defaulting to white ("#FFFFFF").}
+\item{isolated_color}{A hexadecimal color code for isolated nodes, default is white ("#FFFFFF").}
 
-\item{colorspace}{Specifies the color space from which to generate the palette. Available options include
-'pretty', 'pretty_dark', 'rainbow', 'pastels', or a custom list detailing the 'h' (hue), 's' (saturation),
-and 'l' (lightness) components. For detailed settings, refer to the \code{qualpalr} documentation.}
+\item{colorspace}{Specifies the color space to generate the palette. Available options are 'pretty',
+'pretty_dark', 'rainbow', 'pastels', or a custom list with 'h', 's', 'l' components.}
 
-\item{alpha}{A numeric value between 0 and 1 that specifies the opacity of the colors, where 1 is fully opaque
-and 0 is fully transparent.}
+\item{alpha}{A numeric value between 0 and 1 for color opacity, where 1 is fully opaque and 0 is transparent.}
+}
+\value{
+A list of color palettes, one for each community in \code{list_comm}, with shared color logic across all communities.
 }
 \description{
-Generates a visually distinct color palette for representing community memberships in network
-visualizations. The palette is tailored to emphasize larger communities by providing unique colors
-for those that exceed a size threshold. Smaller communities and isolated nodes receive a common or
-default color to maintain visual clarity. This function uses the \code{qualpalr} package for color generation,
-supporting up to 99 distinct communities due to practical limits on visual distinction.
+Generates visually distinct color palettes for each community in a list of community memberships,
+ensuring consistent unique colors across all large communities in all networks.
+}
+\seealso{
+\link{colormap_community}, \link{colormap_categories}
 }
