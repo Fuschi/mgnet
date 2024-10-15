@@ -28,7 +28,7 @@
 #' or social networks where edges are labeled with positive or negative weights to represent different
 #' types of interactions or relationships, and where community structure is an important aspect.
 #'
-#' @importFrom igraph degree delete_edges E crossing
+#' @importFrom igraph degree delete_edges E crossing ecount
 #' @export
 #' @aliases degree_mgnet,mgnet-method degree_mgnet,mgnetList-method
 #' @seealso \code{\link[igraph]{degree}} for the base function used to compute vertex degrees.
@@ -59,7 +59,7 @@ setMethod("degree_mgnet", "mgnet",
             eids_type <- switch(type, 
                                 intra = igraph::crossing(com, net), 
                                 extra = !igraph::crossing(com, net), 
-                                all = rep(FALSE, ecount(net))) 
+                                all = rep(FALSE, igraph::ecount(net))) 
 
             # Remove links
             sub_netw <- igraph::delete_edges(net, which(eids_sign | eids_type) )

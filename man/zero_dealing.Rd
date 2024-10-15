@@ -4,7 +4,7 @@
 \alias{zero_dealing}
 \title{Zero Replacement in Compositional Data}
 \usage{
-zero_dealing(X, method = "unif")
+zero_dealing(X, method = "const")
 }
 \arguments{
 \item{X}{A numeric matrix representing the compositional data, where each row represents a sample and each column represents a variable/taxon.}

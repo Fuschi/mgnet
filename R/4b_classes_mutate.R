@@ -1,4 +1,4 @@
-#' Modify and Augment `mgnet` Objects by Transforming the `sample` Slot
+#' Modify and Augment `mgnet` Objects by Transforming the `meta` Slot
 #'
 #' This function dynamically manipulates the `sample` slot within `mgnet` or `mgnetList` objects,
 #' applying user-defined transformations. It leverages the full suite of `tidyverse` tools, particularly
@@ -34,16 +34,17 @@
 #'         All other structures within the object remain unchanged, ensuring that only the targeted metadata is modified.
 #'
 #' @export
-#' @aliases mutate_sample,mgnet-method mutate_sample,mgnetList-method
+#' @aliases mutate_meta,mgnet-method mutate_meta,mgnetList-method
 #' @importFrom dplyr mutate group_by ungroup distinct relocate arrange
-#' @importFrom tidyr expand_grid any_of
+#' @importFrom tidyr expand_grid 
+#' @importFrom tidyselect any_of
 #' @importFrom rlang enquos syms quo_get_expr eval_tidy
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("mutate_sample", function(object, ..., .by) {standardGeneric("mutate_sample")})
+setGeneric("mutate_meta", function(object, ..., .by) {standardGeneric("mutate_meta")})
 
-setMethod("mutate_sample", "mgnet", function(object, ..., .by) {
+setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -67,9 +68,6 @@ setMethod("mutate_sample", "mgnet", function(object, ..., .by) {
   # Store needed abundances keys
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
-  # Check the variables needed
-  #validate_required_variables(object, keys_required, "sample")
-  
   # Validate the .by argument
   if (missing(.by)) {
     .by <- "sample_id"
@@ -78,7 +76,6 @@ setMethod("mutate_sample", "mgnet", function(object, ..., .by) {
   if (!is.character(.by) || "taxa_id" %in% .by) {
     stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
   }
-  
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -157,7 +154,7 @@ setMethod("mutate_sample", "mgnet", function(object, ..., .by) {
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_sample", "mgnetList", function(object, ..., .by) {
+setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -181,11 +178,6 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by) {
   # Store needed abundances keys
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
-  # Check the variables needed
-  #lapply(object, \(x){
-  #  validate_required_variables(x, keys_required, "sample")})
-  
-  
   # Validate the .by argument
   if (missing(.by)) {
     .by <- c("mgnet","sample_id")
@@ -194,7 +186,6 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by) {
   if (!is.character(.by) || "taxa_id" %in% .by) {
     stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
   }
-  
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -318,6 +309,7 @@ setMethod("mutate_sample", "mgnetList", function(object, ..., .by) {
 #' @aliases mutate_taxa,mgnet-method mutate_taxa,mgnetList-method
 #' @importFrom dplyr mutate group_by ungroup distinct relocate arrange
 #' @importFrom tidyr expand_grid any_of
+#' @importFrom tidyselect any_of
 #' @importFrom rlang enquos syms quo_get_expr eval_tidy
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
@@ -347,9 +339,6 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by) {
   
   # Store needed abundances keys
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
-  # Check the variables needed
-  #validate_required_variables(object, keys_required, "taxa")
   
   # Validate the .by argument
   if (missing(.by)) {

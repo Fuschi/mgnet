@@ -5,43 +5,56 @@ setOldClass("communities")
 ################################################################################
 #' MetaGenomic NETwork (mgnet) Class
 #'
-#' An S4 class for comprehensive management and analysis of metagenomic networks.
-#' It encapsulates various types of microbial data, including abundances matrices,
-#' sample metadata, taxonomic information, and network analysis results.
-#' This class serves as a robust framework for analyzing microbial communities
-#' and their interactions, supporting advanced analysis workflows for metagenomics research.
+#' An S4 class designed for comprehensive management and analysis of metagenomic networks.
+#' It encapsulates a variety of microbial data including abundance matrices, sample metadata,
+#' taxonomic information, and results from network analysis. This class serves as a robust 
+#' framework for exploring microbial communities and their interactions, supporting 
+#' sophisticated workflows in metagenomics research. Designed to be compatible with the tidyverse,
+#' `mgnet` facilitates seamless integration with pipelines that leverage tidyverse packages
+#' for data manipulation, analysis, and visualization.
 #'
 #' @slot abun A numeric matrix representing the raw abundance data from
 #'        next-generation sequencing (NGS), where rows correspond to samples and columns
-#'        to taxa. Each entry indicates the abundance of a taxon in a sample.
+#'        to taxa. 
 #' @slot rela A numeric matrix representing the relative abundance of each taxon
-#'        within each sample, mirroring the structure of `abundance`. This is calculated as
-#'        the proportion of each taxon's abundance relative to the total abundance in the sample.
-#' @slot norm A numeric matrix of normalized abundance data, facilitating various
-#'        types of analyses. While the default normalization applied is log-ratio transformation
-#'        to address compositional data issues, this slot is versatile and can hold other types
-#'        of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.
-#' @slot meta A data.frame containing metadata for samples, indexed by sample IDs.
-#' @slot taxa A data.frame with additional taxa information, indexed by taxa IDs.
-#' @slot netw An `igraph` object representing the network of taxa interactions.
-#' @slot comm An object storing community detection results from network analysis.
-#'
+#'        within each sample. It is calculated as the proportion of each taxon's abundance
+#'        relative to the total abundance in the sample, providing insights into the
+#'        relative presence of taxa across samples.
+#' @slot norm A numeric matrix of normalized abundance data, suitable for comparative
+#'        analysis across samples. This includes transformations such as log-ratio transformation,
+#'        rarefaction, or DESeq normalization, to address issues like compositional data biases.
+#' @slot meta A data frame containing metadata for samples, indexed by sample IDs.
+#'        Metadata can include sample collection details, experimental conditions, 
+#'        and clinical outcomes.
+#' @slot taxa A data frame containing a broad range of metadata associated with each taxon,
+#'        indexed by taxa IDs. This metadata may encompass any relevant ecological, genetic,
+#'        or phenotypic information pertinent to each taxon.
+#' @slot netw An `igraph` object that depicts the network of interactions among taxa
+#'        based on their co-occurrence and other ecological metrics. This network can
+#'        be used to infer ecological relationships and community structure.
+#' @slot comm An object storing results from community detection analysis performed
+#'        on the network. This can help identify clusters or groups of taxa that frequently
+#'        interact or share similar ecological niches.
 #'
 #' @section Reserved Keywords:
-#' The `mgnet` class reserves keywords for internal use, which should not be used
-#' as column names in the provided matrices or data.frames: `sample_id`, `taxa_id`, `comm_id`,
-#' `abun`,`rela`, `norm`.
-#' These keywords are utilized for specific functionalities and methods within the `mgnet` package.
-#' Using these names as column identifiers in your data may lead to unexpected behavior or errors.
+#' The `mgnet` class reserves the following keywords for internal use, which should not be used
+#' as column names in provided matrices or data frames: `sample_id`, `taxa_id`, `comm_id`,
+#' `abun`, `rela`, `norm`, `meta`, `taxa`, `netw`, `comm`, `.`, `mgnet`.
+#' These keywords are integral to the functioning of methods within the `mgnet` package, and using these as column identifiers cause errors.
 #'
 #' @importFrom igraph make_empty_graph cluster_fast_greedy
 #' @importFrom methods setClass
 #'
-#' @seealso \code{\link{mgnet}} for the constructor function.
+#' @seealso \link{mgnet} for the constructor function which details how to create an instance
+#'          of this class.
 #'
 #' @examples
 #' # Creating an empty mgnet object
 #' empty_mgnet <- mgnet()
+#'
+#' # Creating a mgnet object with example data
+#' data(otu_HMP2, meta_HMP2, taxa_HMP2, package = "mgnet")
+#' HMP2 <- mgnet(abun = otu_HMP2, meta = meta_HMP2, taxa = taxa_HMP2)
 #'
 #' @name mgnet-class
 #' @rdname mgnet-class
@@ -79,38 +92,54 @@ setClass("mgnet",
 ################################################################################
 #' Create an mgnet Object
 #'
-#' This function constructs an `mgnet` object, encapsulating various types of metagenomic data
-#' including abundances data, sample metadata, taxonomic information, network analysis results, etc.,
-#' providing a comprehensive framework for the analysis of microbial communities and their interactions.
-#' It handles object creation with custom error handling for improved user experience.
+#' This function constructs an `mgnet` object, encapsulating a comprehensive range of metagenomic data.
+#' It integrates abundance data, sample metadata, taxonomic details, and network analysis results into a single
+#' structure, providing a robust platform for analyzing microbial communities and their interactions. 
+#' Enhanced error handling is implemented to ensure a smooth user experience by providing clear feedback
+#' on input errors.
 #'
-#' @param abun Numeric matrix with all elements >=0 representing the abundance data 
-#'        where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.
-#' @param rela Numeric matrix representing the relative abundance of each taxon within each sample.
-#'        Defaults to an empty matrix.
-#' @param norm Numeric matrix of normalized abundance data.
-#'        Defaults to an empty matrix.
-#' @param meta Data.frame containing metadata for samples. Each row should correspond
-#'        to a sample and each column to an experimental variable. Defaults to an empty data frame.
-#' @param taxa Data.frame with additional information on taxa. Each row should correspond
-#'        to a taxa. Defaults to an empty data frame.
-#' @param netw An `igraph` object representing a network of taxa interactions. Defaults to an
-#'        empty graph.
-#' @param comm An object storing community detection results from `network`. Defaults
-#'        to the result of a fast greedy clustering on an empty graph.
+#' @details
+#' If an abundance matrix, `abun`, is provided and the relative abundance matrix is omitted, the constructor
+#' automatically calculates relative abundances and store them in `rela`.
 #'
-#' @return Returns an `mgnet` object encapsulating the provided metagenomic data.
-#'         If an error occurs during object creation, a custom error message is displayed and
-#'         the function execution is stopped.
-#'         
+#' @param abun Numeric matrix representing the abundance of taxa across samples, where rows correspond to
+#'        samples and columns to taxa (e.g., OTUs, species). Each element must be >=0, representing the
+#'        abundance count of a taxon in a sample. Defaults to an empty matrix.
+#' @param rela Numeric matrix representing the relative abundance of each taxon within each sample,
+#'        calculated as the proportion of a taxon's abundance relative to the total abundance in the sample.
+#'        Defaults to an empty matrix.
+#' @param norm Numeric matrix of normalized abundance data, suitable for comparative analyses across samples,
+#'        implementing normalization methods such as log-ratio transformations. Defaults to an empty matrix.
+#' @param meta Data frame containing metadata for samples. Each row should correspond to a sample,
+#'        with columns representing various experimental variables. Defaults to an empty data frame.
+#' @param taxa Data frame containing a broad range of metadata associated with each taxon, indexed by taxa IDs,
+#'        facilitating flexible integration of diverse ecological and genetic information. Defaults to an empty data frame.
+#' @param netw An `igraph` object representing the network of interactions among taxa, which can be used to
+#'        infer ecological relationships and community structures. Defaults to an empty graph created with
+#'        `make_empty_graph`.
+#' @param comm An object storing community detection results, typically obtained from network analysis.
+#'        Defaults to the result of `cluster_fast_greedy` applied to an empty graph.
+#'        
+#' @section Reserved Keywords:
+#' The `mgnet` class reserves the following keywords for internal use, which should not be used
+#' as column names in provided matrices or data frames: `sample_id`, `taxa_id`, `comm_id`,
+#' `abun`, `rela`, `norm`, `meta`, `taxa`, `netw`, `comm`, `.`, `mgnet`.
+#' These keywords are integral to the functioning of methods within the `mgnet` package, and using these as column identifiers cause errors.
+#'
+#' @return An `mgnet` object that encapsulates the provided metagenomic data. Errors during object creation
+#'         trigger custom error messages and halt function execution, ensuring data integrity and user guidance.
+#'
 #' @importFrom igraph make_empty_graph cluster_fast_greedy
 #' @importFrom methods new
 #'
 #' @examples
-#' # Assuming correct_matrix is a properly defined matrix and other necessary data are defined
-#' mgnet_obj <- mgnet(abun = otu_HMP2,
-#'                    sample = info_sample_HMP2,
-#'                    taxa = info_taxa_HMP2)
+#' # Creating an empty mgnet object
+#' empty_mgnet <- mgnet()
+#'
+#' # Creating a mgnet object with example data
+#' data(otu_HMP2, meta_HMP2, taxa_HMP2, package = "mgnet")
+#' HMP2 <- mgnet(abun = otu_HMP2, meta = meta_HMP2, taxa = taxa_HMP2)
+#' 
 #' @export
 mgnet <- function(abun = matrix(numeric(0), nrow=0,ncol=0),
                   rela = matrix(numeric(0), nrow=0,ncol=0),

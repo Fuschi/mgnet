@@ -5,51 +5,65 @@
 \alias{mgnet-class}
 \title{MetaGenomic NETwork (mgnet) Class}
 \description{
-An S4 class for comprehensive management and analysis of metagenomic networks.
-It encapsulates various types of microbial data, including abundances matrices,
-sample metadata, taxonomic information, and network analysis results.
-This class serves as a robust framework for analyzing microbial communities
-and their interactions, supporting advanced analysis workflows for metagenomics research.
+An S4 class designed for comprehensive management and analysis of metagenomic networks.
+It encapsulates a variety of microbial data including abundance matrices, sample metadata,
+taxonomic information, and results from network analysis. This class serves as a robust
+framework for exploring microbial communities and their interactions, supporting
+sophisticated workflows in metagenomics research. Designed to be compatible with the tidyverse,
+\code{mgnet} facilitates seamless integration with pipelines that leverage tidyverse packages
+for data manipulation, analysis, and visualization.
 }
 \section{Slots}{
 
 \describe{
 \item{\code{abun}}{A numeric matrix representing the raw abundance data from
 next-generation sequencing (NGS), where rows correspond to samples and columns
-to taxa. Each entry indicates the abundance of a taxon in a sample.}
+to taxa.}
 
 \item{\code{rela}}{A numeric matrix representing the relative abundance of each taxon
-within each sample, mirroring the structure of \code{abundance}. This is calculated as
-the proportion of each taxon's abundance relative to the total abundance in the sample.}
+within each sample. It is calculated as the proportion of each taxon's abundance
+relative to the total abundance in the sample, providing insights into the
+relative presence of taxa across samples.}
 
-\item{\code{norm}}{A numeric matrix of normalized abundance data, facilitating various
-types of analyses. While the default normalization applied is log-ratio transformation
-to address compositional data issues, this slot is versatile and can hold other types
-of normalized data, such as those obtained from rarefaction, DESeq normalization, etc.}
+\item{\code{norm}}{A numeric matrix of normalized abundance data, suitable for comparative
+analysis across samples. This includes transformations such as log-ratio transformation,
+rarefaction, or DESeq normalization, to address issues like compositional data biases.}
 
-\item{\code{meta}}{A data.frame containing metadata for samples, indexed by sample IDs.}
+\item{\code{meta}}{A data frame containing metadata for samples, indexed by sample IDs.
+Metadata can include sample collection details, experimental conditions,
+and clinical outcomes.}
 
-\item{\code{taxa}}{A data.frame with additional taxa information, indexed by taxa IDs.}
+\item{\code{taxa}}{A data frame containing a broad range of metadata associated with each taxon,
+indexed by taxa IDs. This metadata may encompass any relevant ecological, genetic,
+or phenotypic information pertinent to each taxon.}
 
-\item{\code{netw}}{An \code{igraph} object representing the network of taxa interactions.}
+\item{\code{netw}}{An \code{igraph} object that depicts the network of interactions among taxa
+based on their co-occurrence and other ecological metrics. This network can
+be used to infer ecological relationships and community structure.}
 
-\item{\code{comm}}{An object storing community detection results from network analysis.}
+\item{\code{comm}}{An object storing results from community detection analysis performed
+on the network. This can help identify clusters or groups of taxa that frequently
+interact or share similar ecological niches.}
 }}
 
 \section{Reserved Keywords}{
 
-The \code{mgnet} class reserves keywords for internal use, which should not be used
-as column names in the provided matrices or data.frames: \code{sample_id}, \code{taxa_id}, \code{comm_id},
-\code{abun},\code{rela}, \code{norm}.
-These keywords are utilized for specific functionalities and methods within the \code{mgnet} package.
-Using these names as column identifiers in your data may lead to unexpected behavior or errors.
+The \code{mgnet} class reserves the following keywords for internal use, which should not be used
+as column names in provided matrices or data frames: \code{sample_id}, \code{taxa_id}, \code{comm_id},
+\code{abun}, \code{rela}, \code{norm}, \code{meta}, \code{taxa}, \code{netw}, \code{comm}, \code{.}, \code{mgnet}.
+These keywords are integral to the functioning of methods within the \code{mgnet} package, and using these as column identifiers cause errors.
 }
 
 \examples{
 # Creating an empty mgnet object
 empty_mgnet <- mgnet()
 
+# Creating a mgnet object with example data
+data(otu_HMP2, meta_HMP2, taxa_HMP2, package = "mgnet")
+HMP2 <- mgnet(abun = otu_HMP2, meta = meta_HMP2, taxa = taxa_HMP2)
+
 }
 \seealso{
-\code{\link{mgnet}} for the constructor function.
+\link{mgnet} for the constructor function which details how to create an instance
+of this class.
 }

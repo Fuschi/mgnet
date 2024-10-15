@@ -14,18 +14,20 @@ comm_id(object, .fmt = "list")
 \item{.fmt}{The format of the output. Possible values are:
 \itemize{
 \item \code{"list"}: Returns a named list where each element is a character vector of community IDs.
-\item \code{"df"}: Returns a data frame where each row corresponds to a taxa ID and each column to a community ID.
-\item \code{"tbl"}: Returns a tibble where each row corresponds to a taxa ID and each column to a community ID.
+\item \code{"tbl"}: Returns a tibble with columns 'mgnet', 'taxa_id', and 'comm_id', representing the
+source \code{mgnet} object, taxa IDs, and their respective community IDs.
 }
-Default is \code{"list"}.}
-}
-\value{
-For a single \code{mgnet} object, the function returns the community IDs in the specified format.
-For an \code{mgnetList} object, it returns a list, data frame, or tibble, depending on the specified format,
-where each entry corresponds to the community IDs for each \code{mgnet} object in the list.
+The default is \code{"list"}.}
 }
 \description{
-This function retrieves the community IDs from an \code{mgnet} or \code{mgnetList} object. The community IDs are
-derived from the \code{community} slot of the \code{mgnet} object or from each \code{mgnet} object within an \code{mgnetList}.
-The function supports multiple output formats including list, data frame, and tibble.
+This function retrieves community IDs from an \code{mgnet} or \code{mgnetList} object, providing a flexible output
+format. For \code{mgnetList}, the community IDs can be output as either a list or a structured tibble.
+}
+\examples{
+data(subject_HMP2_netw, package = "mgnet")
+comm_id(subject_HMP2_netw)  
+
+data(subjects_HMP2_netw, package = "mgnet")
+comm_id(subjects_HMP2_netw, .fmt = "list")  
+comm_id(subjects_HMP2_netw, .fmt = "tbl")   
 }

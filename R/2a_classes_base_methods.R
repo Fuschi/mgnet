@@ -3,12 +3,20 @@
 #' Get Number of Samples
 #'
 #' Returns an integer indicating the number of samples in an `mgnet` object
-#' or a list of integers for each `mgnet` object within an `mgnetList`.
+#' or a named vector of integers for each `mgnet` object within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @return For an `mgnet` object, an integer representing the number of samples.
-#'         For an `mgnetList` object, a list of integers, each representing the number
+#'         For an `mgnetList` object, a named vector of integers, each representing the number
 #'         of samples in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' nsample(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' nsample(subjects_HMP2)  
+#' 
 #' @export
 #' @name nsample
 #' @aliases nsample,mgnet-method nsample,mgnetList-method
@@ -32,12 +40,20 @@ setMethod("nsample", "mgnetList", function(object) {
 #' Get Number of Taxa
 #'
 #' Returns an integer indicating the number of taxa in an `mgnet` object
-#' or a list of integers for each `mgnet` object within an `mgnetList`.
+#' or a named vector of integers for each `mgnet` object within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @return For an `mgnet` object, an integer representing the number of taxa.
-#'         For an `mgnetList` object, a list of integers, each representing the number
+#'         For an `mgnetList` object, a named vector of integers, each representing the number
 #'         of taxa in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' ntaxa(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' ntaxa(subjects_HMP2)  
+#' 
 #' @export
 #' @importFrom igraph vcount
 #' @name ntaxa
@@ -60,64 +76,119 @@ setMethod("ntaxa", "mgnetList", function(object) {
 
 # SAMPLE_ID
 #------------------------------------------------------------------------------#
-#' Get Sample IDs
+#' Get sample IDs from mgnet or mgnetList Objects
 #'
-#' Returns the names of samples as a character vector from an `mgnet` object
-#' or lists of sample IDs for each `mgnet` object within an `mgnetList`.
+#' Retrieves the IDs of sample from an `mgnet` object or lists of sample IDs for each 
+#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, this method can 
+#' output the results either as a list or as a organized tibble.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @return For an `mgnet` object, a character vector representing the IDs of samples.
-#'         For an `mgnetList` object, a list of character vectors, each representing the sample IDs
-#'         in the corresponding `mgnet` objects.
+#' @param object An `mgnet` or `mgnetList` object from which to extract sample IDs.
+#' @param .fmt Character; specifies the output format when retrieving sample IDs from 
+#'        an `mgnetList`. Accepted values are \code{"list"} for a list of character vectors, 
+#'        and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
+#'        returns a tibble with two columns: \code{"mgnet"}, indicating the name of the `mgnet` object
+#'        each sample ID originates from, and \code{"sample_id"}, listing the sample IDs themselves.
+#'        
+#' @importFrom purrr imap
+#' @importFrom dplyr bind_rows
+#' @importFrom tibble tibble
 #' @export
 #' @name sample_id
 #' @aliases sample_id,mgnet-method sample_id,mgnetList-method
-setGeneric("sample_id", function(object) standardGeneric("sample_id"))
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' sample_id(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' sample_id(subjects_HMP2, .fmt = "list")  
+#' sample_id(subjects_HMP2, .fmt = "tbl")  
+#' 
+#' @seealso \link{mgnet} and \link{mgnetList} for details on the classes.
+setGeneric("sample_id", function(object, .fmt = "list") standardGeneric("sample_id"))
 
-setMethod("sample_id", "mgnet", function(object) {
-  if(length(object@abun!=0)) return(rownames(object@abun))
-  else if(length(object@meta!=0)) return(rownames(object@meta))
-  else if(length(object@norm!=0)) return(rownames(object@norm))
-  else if(length(object@rela!=0)) return(rownames(object@rela))
-  else return(character(length=0))
+setMethod("sample_id", "mgnet", function(object, .fmt = "list") {
+  if(length(object@abun) != 0) return(rownames(object@abun))
+  else if(length(object@meta) != 0) return(rownames(object@meta))
+  else if(length(object@norm) != 0) return(rownames(object@norm))
+  else if(length(object@rela) != 0) return(rownames(object@rela))
+  else return(character(0))
 })
 
-setMethod("sample_id", "mgnetList", function(object) {
-  sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("sample_id", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "tbl"))
+  
+  if (.fmt == "list") {
+    
+    return(sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE))
+    
+  } else {
+    
+    sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE) %>%
+      purrr::imap(\(x,y) tibble::tibble("mgnet" = y, "sample_id" = x)) %>%
+      dplyr::bind_rows() %>%
+      return()
+    
+  }
 })
+
 
 
 # TAXA_ID
 #------------------------------------------------------------------------------#
-#' Get Taxa IDs
+#' Get Taxa IDs from mgnet or mgnetList Objects
 #'
 #' Retrieves the IDs of taxa from an `mgnet` object or lists of taxa IDs for each 
-#' `mgnet` object within an `mgnetList`. Taxa IDs represent unique identifiers 
-#' for the taxa present in the dataset.
+#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, this method can 
+#' output the results either as a list or as a organized tibble.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @return For an `mgnet` object, a character vector representing the IDs of taxa.
-#'         For an `mgnetList` object, a list of character vectors, each representing 
-#'         the taxa IDs in the corresponding `mgnet` objects.
+#' @param object An `mgnet` or `mgnetList` object from which to extract taxa IDs.
+#' @param .fmt Character; specifies the output format when retrieving taxa IDs from 
+#'        an `mgnetList`. Accepted values are \code{"list"} for a list of character vectors, 
+#'        and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
+#'        returns a tibble with two columns: \code{"mgnet"}, indicating the name of the `mgnet` object
+#'        each taxa ID originates from, and \code{"taxa_id"}, listing the taxa IDs themselves.
+#'        
+#' @importFrom purrr imap
+#' @importFrom dplyr bind_rows
+#' @importFrom tibble tibble
 #' @export
-#' @importFrom igraph V
 #' @name taxa_id
 #' @aliases taxa_id,mgnet-method taxa_id,mgnetList-method
-setGeneric("taxa_id", function(object) standardGeneric("taxa_id"))
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' taxa_id(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' taxa_id(subjects_HMP2, .fmt = "list")  
+#' taxa_id(subjects_HMP2, .fmt = "tbl")  
+#' 
+#' @seealso \link{mgnet} and \link{mgnetList} for details on the classes.
+setGeneric("taxa_id", function(object, .fmt = "list") standardGeneric("taxa_id"))
 
-setMethod("taxa_id", "mgnet", function(object) {
-  if(length(object@abun!=0)) return(colnames(object@abun))
-  else if(length(object@taxa)!=0) return(rownames(object@taxa))
-  else if(length(object@rela)!=0) return(colnames(object@rela))
-  else if(length(object@norm)!=0) return(colnames(object@norm))
-  else if(length(object@netw)!=0) return(V(object@netw)$name)
-  else return(character(length=0))
+setMethod("taxa_id", "mgnet", function(object, .fmt = "list") {
+  if(length(object@abun) != 0) return(colnames(object@abun))
+  else if(length(object@meta) != 0) return(colnames(object@meta))
+  else if(length(object@norm) != 0) return(colnames(object@norm))
+  else if(length(object@rela) != 0) return(colnames(object@rela))
+  else return(character(0))
 })
 
-setMethod("taxa_id", "mgnetList", function(object) {
-  sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("taxa_id", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "tbl"))
+  
+  if (.fmt == "list") {
+    
+    return(sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE))
+    
+  } else {
+    
+    sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE) %>%
+      purrr::imap(\(x,y) tibble::tibble("mgnet" = y, "taxa_id" = x)) %>%
+      dplyr::bind_rows() %>%
+      return()
+    
+  }
 })
-
 
 # INFO_SAMPLE_VARS
 #------------------------------------------------------------------------------#
@@ -130,6 +201,14 @@ setMethod("taxa_id", "mgnetList", function(object) {
 #' @return For an `mgnet` object, a character vector of metadata variable names.
 #'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
 #'         the metadata variable names in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' meta_vars(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' meta_vars(subjects_HMP2)  
+#' 
 #' @export
 #' @name meta_vars
 #' @aliases meta_vars,mgnet-method meta_vars,mgnetList-method
@@ -156,16 +235,25 @@ setMethod("meta_vars", "mgnetList", function(object) {
 #'
 #' @description
 #' This function returns an integer indicating the number of communities detected in a network analysis represented by an `mgnet` object, 
-#' or a vector of integers for an `mgnetList` object, where each element corresponds to the number of communities in each respective `mgnet` object.
+#' or a named vector of integers for an `mgnetList` object, where each element corresponds to the number of communities in each respective `mgnet` object.
 #' For `mgnet` objects without any communities, the function returns 0. For `mgnetList` objects, it iteratively applies this logic to each contained `mgnet` object.
 #'
 #' @param object An object of class `mgnet` or `mgnetList`. For `mgnet`, it calculates the number of communities directly from the `comm` slot.
 #' For `mgnetList`, it applies the calculation to each `mgnet` object within the list and returns a vector of results.
 #'
 #' @return For an `mgnet` object, returns an integer representing the number of communities.
-#' For an `mgnetList` object, returns a numeric vector with each element representing the number of communities in each `mgnet` object.
+#' For an `mgnetList` object, returns a numeric named vector with each element representing the number of communities in each `mgnet` object.
+#' 
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' ncomm(HMP2)  
 #'
+#' data(subjects_HMP2, package = "mgnet")
+#' ncomm(subjects_HMP2)  
+#' 
 #' @export
+#' @name ncomm
+#' @aliases ncomm,mgnet-method ncomm,mgnetList-method
 #' @importFrom igraph sizes
 #' @aliases ncomm,mgnet-method ncomm,mgnetList-method
 #' @export
@@ -204,6 +292,14 @@ setMethod("ncomm","mgnetList",
 #' @return For an `mgnet` object, a character vector of metadata variable names.
 #'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
 #'         the metadata variable names in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(HMP2, package = "mgnet")
+#' taxa_vars(HMP2)  
+#'
+#' data(subjects_HMP2, package = "mgnet")
+#' taxa_vars(subjects_HMP2) 
+#' 
 #' @export
 #' @name taxa_vars
 #' @aliases taxa_vars,mgnet-method taxa_vars,mgnetList-method
@@ -227,32 +323,36 @@ setMethod("taxa_vars", "mgnetList", function(object) {
   sapply(object@mgnets, taxa_vars, simplify = FALSE, USE.NAMES = TRUE)
 })
 
-# comm_id
+# COMM_ID
 #------------------------------------------------------------------------------#
 #' Retrieve Community IDs from mgnet or mgnetList Objects
 #'
-#' @description
-#' This function retrieves the community IDs from an `mgnet` or `mgnetList` object. The community IDs are
-#' derived from the `community` slot of the `mgnet` object or from each `mgnet` object within an `mgnetList`.
-#' The function supports multiple output formats including list, data frame, and tibble.
+#' This function retrieves community IDs from an `mgnet` or `mgnetList` object, providing a flexible output
+#' format. For `mgnetList`, the community IDs can be output as either a list or a structured tibble.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @param .fmt The format of the output. Possible values are:
-#' \itemize{
-#'        \item `"list"`: Returns a named list where each element is a character vector of community IDs.
-#'        \item `"df"`: Returns a data frame where each row corresponds to a taxa ID and each column to a community ID.
-#'        \item `"tbl"`: Returns a tibble where each row corresponds to a taxa ID and each column to a community ID.
-#'}
-#'        Default is `"list"`.
-#' @return For a single `mgnet` object, the function returns the community IDs in the specified format. 
-#'         For an `mgnetList` object, it returns a list, data frame, or tibble, depending on the specified format, 
-#'         where each entry corresponds to the community IDs for each `mgnet` object in the list.
-#'         
+#'   \itemize{
+#'     \item `"list"`: Returns a named list where each element is a character vector of community IDs.
+#'     \item `"tbl"`: Returns a tibble with columns 'mgnet', 'taxa_id', and 'comm_id', representing the 
+#'           source `mgnet` object, taxa IDs, and their respective community IDs.
+#'   }
+#'   The default is `"list"`.
+#'
 #' @importFrom igraph membership
+#' @importFrom tibble tibble
+#' @importFrom purrr imap_dfr
 #' @importFrom stats setNames
-#' @importFrom tibble rownames_to_column tibble
-#' @aliases comm_id,mgnet-method comm_id,mgnetList-method
 #' @export
+#' @name comm_id
+#' @aliases comm_id,mgnet-method comm_id,mgnetList-method
+#' @examples
+#' data(subject_HMP2_netw, package = "mgnet")
+#' comm_id(subject_HMP2_netw)  
+#'
+#' data(subjects_HMP2_netw, package = "mgnet")
+#' comm_id(subjects_HMP2_netw, .fmt = "list")  
+#' comm_id(subjects_HMP2_netw, .fmt = "tbl")   
 setGeneric("comm_id", function(object, .fmt = "list") standardGeneric("comm_id"))
 
 setMethod("comm_id", "mgnet", function(object, .fmt = "list"){
@@ -260,7 +360,7 @@ setMethod("comm_id", "mgnet", function(object, .fmt = "list"){
   if(length(object@comm) != 0){
     
     result <- switch(.fmt,
-                     list = setNames(as.character(membership(object@comm)), taxa_id(object)),
+                     list = stats::setNames(as.character(igraph::membership(object@comm)), taxa_id(object)),
                      df = data.frame("comm_id" = as.character(membership(object@comm)), row.names = taxa_id(object)),
                      tbl = tibble("taxa_id" = taxa_id(object), "comm_id" = as.character(membership(object@comm))))
     return(result)
@@ -272,31 +372,30 @@ setMethod("comm_id", "mgnet", function(object, .fmt = "list"){
   }
 })
 
-setMethod("comm_id", "mgnetList", function(object, .fmt = "list"){
-  .fmt <- match.arg(.fmt, choices = c("list", "df", "tbl"))
+setMethod("comm_id", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "tbl"))
   
-  if(.fmt == "list"){
-    return(sapply(object@mgnets, function(x) comm_id(x), 
+  if (.fmt == "list") {
+    
+    # Return a list with each element being the community IDs from one `mgnet` object
+    return(sapply(object@mgnets, function(x) comm_id(x, .fmt = "list"), 
                   simplify = FALSE, USE.NAMES = TRUE))
+    
   } else {
-    taxa.merge <- unique(unlist(lapply(object@mgnets, taxa_id)))
-    res <- matrix(NA_character_, nrow = length(taxa.merge), ncol = length(object@mgnets),
-                  dimnames = list(taxa.merge, names(object@mgnets)))
     
-    for(n in names(object@mgnets)){
-      res[taxa_id(object@mgnets[[n]]), n] <- comm_id(object@mgnets[[n]])
-    }
+    # Create a tibble with columns 'mgnet', 'taxa_id', and 'comm_id'
+    results <- purrr::imap_dfr(object@mgnets, function(mgnet_obj, name) {
+      tibble(
+        mgnet = name,
+        taxa_id = taxa_id(mgnet_obj),
+        comm_id = as.character(membership(mgnet_obj@comm))
+      )
+    }, .id = "mgnet")
     
-    if(.fmt == "df"){
-      return(data.frame(res, stringsAsFactors = FALSE))
-    } else if(.fmt == "tbl"){
-      # Convert to tibble with taxa_id as the first column
-      res_df <- data.frame(res, stringsAsFactors = FALSE)
-      res_tbl <- tibble::rownames_to_column(res_df, var = "taxa_id")
-      return(res_tbl)
-    }
+    return(results)
   }
 })
+
 
 
 # MGNETLIST ONLY METHODS

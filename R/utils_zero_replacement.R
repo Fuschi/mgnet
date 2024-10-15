@@ -42,7 +42,7 @@
 #'  \item deepImp-package
 #' }
 #' 
-zero_dealing <- function(X, method = "unif"){
+zero_dealing <- function(X, method = "const"){
   
   # Checks
   if(!is.matrix(X) || !is.numeric(X)) stop("X must be a numeric matrix.")

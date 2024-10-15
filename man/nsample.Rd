@@ -13,10 +13,18 @@ nsample(object)
 }
 \value{
 For an \code{mgnet} object, an integer representing the number of samples.
-For an \code{mgnetList} object, a list of integers, each representing the number
+For an \code{mgnetList} object, a named vector of integers, each representing the number
 of samples in the corresponding \code{mgnet} objects.
 }
 \description{
 Returns an integer indicating the number of samples in an \code{mgnet} object
-or a list of integers for each \code{mgnet} object within an \code{mgnetList}.
+or a named vector of integers for each \code{mgnet} object within an \code{mgnetList}.
+}
+\examples{
+data(HMP2, package = "mgnet")
+nsample(HMP2)  
+
+data(subjects_HMP2, package = "mgnet")
+nsample(subjects_HMP2)  
+
 }

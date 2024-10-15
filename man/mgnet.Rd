@@ -15,41 +15,59 @@ mgnet(
 )
 }
 \arguments{
-\item{abun}{Numeric matrix with all elements >=0 representing the abundance data
-where rows are samples and columns are taxa (OTUs, Species, ...). Defaults to an empty matrix.}
+\item{abun}{Numeric matrix representing the abundance of taxa across samples, where rows correspond to
+samples and columns to taxa (e.g., OTUs, species). Each element must be >=0, representing the
+abundance count of a taxon in a sample. Defaults to an empty matrix.}
 
-\item{rela}{Numeric matrix representing the relative abundance of each taxon within each sample.
+\item{rela}{Numeric matrix representing the relative abundance of each taxon within each sample,
+calculated as the proportion of a taxon's abundance relative to the total abundance in the sample.
 Defaults to an empty matrix.}
 
-\item{norm}{Numeric matrix of normalized abundance data.
-Defaults to an empty matrix.}
+\item{norm}{Numeric matrix of normalized abundance data, suitable for comparative analyses across samples,
+implementing normalization methods such as log-ratio transformations. Defaults to an empty matrix.}
 
-\item{meta}{Data.frame containing metadata for samples. Each row should correspond
-to a sample and each column to an experimental variable. Defaults to an empty data frame.}
+\item{meta}{Data frame containing metadata for samples. Each row should correspond to a sample,
+with columns representing various experimental variables. Defaults to an empty data frame.}
 
-\item{taxa}{Data.frame with additional information on taxa. Each row should correspond
-to a taxa. Defaults to an empty data frame.}
+\item{taxa}{Data frame containing a broad range of metadata associated with each taxon, indexed by taxa IDs,
+facilitating flexible integration of diverse ecological and genetic information. Defaults to an empty data frame.}
 
-\item{netw}{An \code{igraph} object representing a network of taxa interactions. Defaults to an
-empty graph.}
+\item{netw}{An \code{igraph} object representing the network of interactions among taxa, which can be used to
+infer ecological relationships and community structures. Defaults to an empty graph created with
+\code{make_empty_graph}.}
 
-\item{comm}{An object storing community detection results from \code{network}. Defaults
-to the result of a fast greedy clustering on an empty graph.}
+\item{comm}{An object storing community detection results, typically obtained from network analysis.
+Defaults to the result of \code{cluster_fast_greedy} applied to an empty graph.}
 }
 \value{
-Returns an \code{mgnet} object encapsulating the provided metagenomic data.
-If an error occurs during object creation, a custom error message is displayed and
-the function execution is stopped.
+An \code{mgnet} object that encapsulates the provided metagenomic data. Errors during object creation
+trigger custom error messages and halt function execution, ensuring data integrity and user guidance.
 }
 \description{
-This function constructs an \code{mgnet} object, encapsulating various types of metagenomic data
-including abundances data, sample metadata, taxonomic information, network analysis results, etc.,
-providing a comprehensive framework for the analysis of microbial communities and their interactions.
-It handles object creation with custom error handling for improved user experience.
+This function constructs an \code{mgnet} object, encapsulating a comprehensive range of metagenomic data.
+It integrates abundance data, sample metadata, taxonomic details, and network analysis results into a single
+structure, providing a robust platform for analyzing microbial communities and their interactions.
+Enhanced error handling is implemented to ensure a smooth user experience by providing clear feedback
+on input errors.
 }
+\details{
+If an abundance matrix, \code{abun}, is provided and the relative abundance matrix is omitted, the constructor
+automatically calculates relative abundances and store them in \code{rela}.
+}
+\section{Reserved Keywords}{
+
+The \code{mgnet} class reserves the following keywords for internal use, which should not be used
+as column names in provided matrices or data frames: \code{sample_id}, \code{taxa_id}, \code{comm_id},
+\code{abun}, \code{rela}, \code{norm}, \code{meta}, \code{taxa}, \code{netw}, \code{comm}, \code{.}, \code{mgnet}.
+These keywords are integral to the functioning of methods within the \code{mgnet} package, and using these as column identifiers cause errors.
+}
+
 \examples{
-# Assuming correct_matrix is a properly defined matrix and other necessary data are defined
-mgnet_obj <- mgnet(abun = otu_HMP2,
-                   sample = info_sample_HMP2,
-                   taxa = info_taxa_HMP2)
+# Creating an empty mgnet object
+empty_mgnet <- mgnet()
+
+# Creating a mgnet object with example data
+data(otu_HMP2, meta_HMP2, taxa_HMP2, package = "mgnet")
+HMP2 <- mgnet(abun = otu_HMP2, meta = meta_HMP2, taxa = taxa_HMP2)
+
 }

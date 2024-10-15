@@ -20,3 +20,11 @@ the metadata variable names in the corresponding \code{mgnet} objects.
 Retrieves the names of metadata variables available in the \code{meta} slot of an \code{mgnet} object,
 or for each \code{mgnet} object within an \code{mgnetList}.
 }
+\examples{
+data(HMP2, package = "mgnet")
+meta_vars(HMP2)  
+
+data(subjects_HMP2, package = "mgnet")
+meta_vars(subjects_HMP2)  
+
+}

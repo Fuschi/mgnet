@@ -21,5 +21,7 @@ Depends:
   stringr (>= 1.4),
   qualpalr (>= 0.4),
   purrr (>= 0.3.4),
-  magrittr (>= 2.0.3),
   tidyselect
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

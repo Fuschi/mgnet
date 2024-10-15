@@ -151,3 +151,33 @@ check_forbidden_expressions <- function(expressions) {
     }
   }
 }
+
+
+#' Check for Exclusive Keyword Usage in Expressions
+#'
+#' This internal function checks each expression to ensure that reserved keywords
+#' ('.', 'netw', 'comm') are used exclusively. If any of these keywords are present,
+#' no other variables or keywords should be present in the expression.
+#'
+#' @param expressions A list of quosured expressions.
+#'
+#' @return Throws an error if any expression contains exclusive keywords along with other variables.
+#' @keywords internal
+check_exclusive_keyword_usage <- function(expressions) {
+  for (i in seq_along(expressions)) {
+    
+    exclusive_keys <- c(".", "netw", "comm")
+    expr <- rlang::quo_get_expr(expressions[[i]])
+    all_vars <- all.vars(expr)
+    
+    # Find intersection of all variables in the expression with the list of exclusive keys
+    exclusive_used <- intersect(all_vars, exclusive_keys)
+    
+    # Check if any exclusive keys are used and if there are any other variables present
+    if (length(exclusive_used) > 0) {
+      if (length(all_vars) > length(exclusive_used)) {
+        stop(sprintf("Error: Exclusive keyword '%s' used with other variables. It must be used alone.", toString(exclusive_used)))
+      }
+    }
+  }
+}

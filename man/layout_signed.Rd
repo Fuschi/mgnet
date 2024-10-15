@@ -4,20 +4,44 @@
 \alias{layout_signed}
 \alias{layout_signed,igraph-method}
 \alias{layout_signed,mgnet-method}
-\title{Signed-Weighted Graph Layout}
+\alias{layout_signed,mgnetList-method}
+\title{Compute Signed Layout for Graphs Considering Only Positive Edges}
 \usage{
-layout_signed(object)
+layout_signed(object, layout = igraph::with_fr())
 }
 \arguments{
-\item{object}{A network object belonging to either the \code{igraph} or \code{mgnet} class.
-The graph must be weighted and contain at least one positive-weighted edge.}
+\item{object}{An \code{igraph} or \code{mgnet} or \code{mgnetList} object. If the input is an \code{mgnet} object, the layout is applied to the network (\code{netw}) slot. If the input is an \code{mgnetList} the method returns an named list with all the layouts.}
+
+\item{layout}{A layout specification to be used for computing the graph layout. Defaults to the \code{Fruchterman-Reingold} layout
+(\code{with_fr()}), but any layout function from \code{igraph} can be provided.}
 }
 \value{
-A matrix of vertex coordinates determined by the Fruchterman-Reingold layout algorithm,
-considering only positive-weighted edges.
+A matrix with two columns (for 2D layouts) or three columns (for 3D layouts), containing the coordinates of each vertex.
 }
 \description{
-Generates layout coordinates for a graph by considering only positive-weighted edges.
-This function is applicable to graphs of the \code{igraph} and \code{mgnet} classes. It emphasizes
-the structure formed by positive interactions by ignoring edges with non-positive weights.
+This function generates a graph layout that only considers positive-weighted edges from a given \code{igraph} or \code{mgnet} object.
+By default, the layout uses the Fruchterman-Reingold algorithm (\code{with_fr()}), but it can accept other layout functions from \code{igraph}.
+}
+\details{
+This function focuses on positive-weighted edges in the graph, generating a layout based only on these connections.
+If the graph is weighted, edges with positive weights are retained, and negative or zero-weight edges are ignored.
+If the graph is unweighted, the function treats all edges as positive.
+
+When no layout function is provided, the Fruchterman-Reingold algorithm is used. However, the user can specify
+any valid layout from \code{igraph} to control how the layout is computed.
+
+This function is useful for visualizing graphs where positive interactions (e.g., cooperation, mutualism)
+are of primary interest.
+}
+\examples{
+# Create an example igraph object
+g <- igraph::make_ring(10)
+E(g)$weight <- c(1, -1, 1, 1, -1, 1, 1, -1, 1, 1)
+
+# Compute layout with only positive edges
+coords <- layout_signed(g)
+
+# Plot the graph using the computed layout
+plot(g, layout = coords)
+
 }

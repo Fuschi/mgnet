@@ -1,4 +1,4 @@
-#' Filter `mgnet` or `mgnetList` Objects Based on Sample and Abundance Data
+#' Filter `mgnet` or `mgnetList` Objects Based on Sample Metadata and Abundances Criteria
 #'
 #' This function filters entire `mgnet` or `mgnetList` objects, including their sample and abundance data,
 #' based on user-specified conditions. It leverages the full suite of `tidyverse` tools, particularly
@@ -33,16 +33,17 @@
 #'         The structure outside the targeted data fields remains unchanged, preserving the integrity of the objects.
 #'
 #' @export
-#' @aliases filter_sample,mgnet-method filter_sample,mgnetList-method
+#' @aliases filter_meta,mgnet-method filter_meta,mgnetList-method
 #' @importFrom dplyr filter group_by ungroup distinct relocate semi_join
-#' @importFrom tidyr expand_grid any_of pivot_longer
+#' @importFrom tidyr expand_grid pivot_longer
+#' @importFrom tidyselect any_of all_of
 #' @importFrom rlang enquos syms quo_get_expr eval_tidy
 #' @importFrom purrr reduce map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("filter_sample", function(object, ..., .by) {standardGeneric("filter_sample")})
+setGeneric("filter_meta", function(object, ..., .by) {standardGeneric("filter_meta")})
 
-setMethod("filter_sample", "mgnet", function(object, ..., .by = "sample_id") {
+setMethod("filter_meta", "mgnet", function(object, ..., .by = "sample_id") {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -158,7 +159,7 @@ setMethod("filter_sample", "mgnet", function(object, ..., .by = "sample_id") {
 
 
 #------------------------------------------------------------------------------#
-setMethod("filter_sample", "mgnetList", function(object, ..., .by = c("mgnet", "sample_id")) {
+setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sample_id")) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -321,7 +322,8 @@ setMethod("filter_sample", "mgnetList", function(object, ..., .by = c("mgnet", "
 #' @export
 #' @aliases filter_taxa,mgnet-method filter_taxa,mgnetList-method
 #' @importFrom dplyr filter group_by ungroup distinct relocate semi_join
-#' @importFrom tidyr expand_grid any_of pivot_longer
+#' @importFrom tidyr expand_grid pivot_longer
+#' @importFrom tidyselect any_of all_of
 #' @importFrom rlang enquos syms quo_get_expr eval_tidy
 #' @importFrom purrr reduce map imap list_rbind
 #' @importFrom methods slot

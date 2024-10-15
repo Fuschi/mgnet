@@ -14,13 +14,21 @@ For \code{mgnetList}, it applies the calculation to each \code{mgnet} object wit
 }
 \value{
 For an \code{mgnet} object, returns an integer representing the number of communities.
-For an \code{mgnetList} object, returns a numeric vector with each element representing the number of communities in each \code{mgnet} object.
+For an \code{mgnetList} object, returns a numeric named vector with each element representing the number of communities in each \code{mgnet} object.
 }
 \description{
 This function returns an integer indicating the number of communities detected in a network analysis represented by an \code{mgnet} object,
-or a vector of integers for an \code{mgnetList} object, where each element corresponds to the number of communities in each respective \code{mgnet} object.
+or a named vector of integers for an \code{mgnetList} object, where each element corresponds to the number of communities in each respective \code{mgnet} object.
 For \code{mgnet} objects without any communities, the function returns 0. For \code{mgnetList} objects, it iteratively applies this logic to each contained \code{mgnet} object.
 }
 \details{
 Retrieves the number of communities present in the \code{comm} slot of an \code{mgnet} object or each \code{mgnet} object within an \code{mgnetList}.
+}
+\examples{
+data(HMP2, package = "mgnet")
+ncomm(HMP2)  
+
+data(subjects_HMP2, package = "mgnet")
+ncomm(subjects_HMP2)  
+
 }

@@ -13,10 +13,18 @@ ntaxa(object)
 }
 \value{
 For an \code{mgnet} object, an integer representing the number of taxa.
-For an \code{mgnetList} object, a list of integers, each representing the number
+For an \code{mgnetList} object, a named vector of integers, each representing the number
 of taxa in the corresponding \code{mgnet} objects.
 }
 \description{
 Returns an integer indicating the number of taxa in an \code{mgnet} object
-or a list of integers for each \code{mgnet} object within an \code{mgnetList}.
+or a named vector of integers for each \code{mgnet} object within an \code{mgnetList}.
+}
+\examples{
+data(HMP2, package = "mgnet")
+ntaxa(HMP2)  
+
+data(subjects_HMP2, package = "mgnet")
+ntaxa(subjects_HMP2)  
+
 }
