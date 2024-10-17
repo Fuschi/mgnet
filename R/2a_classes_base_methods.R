@@ -167,7 +167,7 @@ setGeneric("taxa_id", function(object, .fmt = "list") standardGeneric("taxa_id")
 
 setMethod("taxa_id", "mgnet", function(object, .fmt = "list") {
   if(length(object@abun) != 0) return(colnames(object@abun))
-  else if(length(object@meta) != 0) return(colnames(object@meta))
+  else if(length(object@taxa) != 0) return(rownames(object@taxa))
   else if(length(object@norm) != 0) return(colnames(object@norm))
   else if(length(object@rela) != 0) return(colnames(object@rela))
   else return(character(0))
