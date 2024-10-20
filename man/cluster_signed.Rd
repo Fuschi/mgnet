@@ -7,7 +7,13 @@
 \alias{cluster_signed,mgnetList-method}
 \title{Community Detection in Signed Weighted Graphs}
 \usage{
-cluster_signed(object, resistance = 0, penalty = 1, add.names = FALSE)
+cluster_signed(
+  object,
+  resistance = 0,
+  penalty = 1,
+  add.names = FALSE,
+  cores = 1
+)
 }
 \arguments{
 \item{object}{An \code{igraph} object representing a weighted undirected network or
@@ -25,6 +31,9 @@ how strongly the algorithm penalizes or favors the formation of communities.}
 \item{add.names}{(Default: FALSE) Determines whether vertex names (if available)
 are used in the output, associating each node with its community assignment.
 When FALSE, community assignments are returned as numerical indices only.}
+
+\item{cores}{Number of cores to use for parallel processing; default is 1 (no parallel execution).
+This parameter is only applicable for \code{mgnetList} objects and is ignored for \code{mgnet} objects.}
 }
 \value{
 An object of class \code{communities} as defined in the \code{igraph} package.

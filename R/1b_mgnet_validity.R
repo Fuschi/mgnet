@@ -78,7 +78,7 @@
     foundKeywords <- reservedKeywords[reservedKeywords %in% namesToCheck]
     if (length(foundKeywords) > 0) {
       targetType <- ifelse(is.matrix(slotData) || is.data.frame(slotData), "column names", "vertex names")
-      message <- sprintf("The following reserved keywords are used as %s and cannot be used: %s. Please rename these to avoid conflicts with internal functionality.",
+      message <- sprintf("The following reserved keywords are used as %s in %s slot and cannot be used: {%s}. Please rename these to avoid conflicts with internal functionality.",
                          targetType, slotName, paste(foundKeywords, collapse=", "))
       errors <- c(errors, message)
     }

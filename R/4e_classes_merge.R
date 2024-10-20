@@ -151,3 +151,95 @@ merge_mgnets <- function(...,
   
 }
 
+
+#' Collapse Specified Combinations within an mgnetList
+#'
+#' @description
+#' Merges specific combinations of `mgnet` objects within an `mgnetList` according to user-defined rules,
+#' allowing for targeted merging of subsets within the list. This function facilitates focused analyses
+#' by enabling the aggregation of related data into meaningful groups.
+#'
+#' @param object An `mgnetList` containing multiple `mgnet` objects.
+#' @param by A list specifying the combinations of `mgnet` object names to be merged. Each element in
+#'           the list should be a character vector containing the names of the `mgnet` objects to merge.
+#'           If NULL, all `mgnet` objects in the list are merged into a single `mgnet` object.
+#' @param abun A function to merge the 'abun' (abundance) slots from the selected `mgnet` objects, or
+#'             NULL if no merging is required for this slot.
+#' @param rela A function to merge the 'rela' (relative abundance) slots, or NULL if not required.
+#' @param norm A function to merge the 'norm' (normalized abundance) slots, or NULL if not required.
+#' @param meta A function to merge the 'meta' (metadata) slots, or NULL if not required.
+#' @param taxa A function to merge the 'taxa' (taxonomic data) slots, or NULL if not required.
+#' @param netw A function to merge the 'netw' (network) slots, or NULL if not required.
+#' @param comm A function to merge the 'comm' (community structure) slots, or NULL if not required.
+#'
+#' @return An `mgnetList` containing the merged `mgnet` objects. Each entry in the returned `mgnetList`
+#'         corresponds to a merged group as defined in the `by` parameter. The names of the entries
+#'         reflect the groups specified in `by` or are derived by concatenating the names of the merged
+#'         `mgnet` objects with dashes if `by` is unnamed.
+#'
+#' @details
+#' The function checks for the validity of names specified in the `by` parameter against the names
+#' of `mgnet` objects in the `mgnetList`. It ensures that all specified groups contain valid `mgnet`
+#' object names and that each group's name is unique. This function is useful for scenarios where
+#' specific subsets of data within an `mgnetList` need to be aggregated based on certain criteria
+#' or experimental conditions.
+#'
+#' If `by` is NULL, a default merge of all `mgnet` objects in the list is performed, resulting in a
+#' single `mgnet` object.
+#'
+#' Example usage:
+#' \dontrun{
+#'   # Assuming list1 contains several mgnet objects named 'A', 'B', 'C', etc.
+#'   result <- mgnet_collapse(list1, by = list(Group1 = c("A", "B"), Group2 = c("C")),
+#'                            meta = function(x) dplyr::bind_rows(x),
+#'                            netw = igraph::graph.union)
+#' }
+#'
+#' @importFrom stats setNames
+#' @name mgnet_collapse
+#' @aliases mgnet_collapse,mgnetList-method
+#' @export
+setGeneric("mgnet_collapse", function(object, by = NULL,
+                                      abun = NULL, rela = NULL, norm = NULL, 
+                                      meta = NULL, taxa = NULL, 
+                                      netw = NULL, comm = NULL) {
+  standardGeneric("mgnet_collapse")
+})
+
+setMethod("mgnet_collapse", "mgnetList", function(object, by = NULL,
+                                                  abun = NULL, rela = NULL, norm = NULL, 
+                                                  meta = NULL, taxa = NULL, 
+                                                  netw = NULL, comm = NULL) {
+  
+  if(is.null(by)){
+    return(merge_mgnets(as.list(object), 
+                        abun = abun, rela = rela, norm = norm,
+                        meta = meta, taxa = taxa, 
+                        netw = netw, comm = comm))
+  } 
+  
+  if (!is.list(by)) {
+    stop("'by' must be a list of character vectors specifying combinations of mgnet names.")
+  }
+  
+  # Check the validity of elements in 'by'
+  if (!all(sapply(by, \(x) is.character(x) && all(x %in% names(object))))) {
+    stop("All elements in 'by' must be character vectors containing valid names of mgnet objects within the mgnetList.")
+  }
+  
+  # Prepare names for the output based on 'by' or create descriptive names
+  names(by) <- ifelse(nzchar(names(by)), names(by), sapply(by, \(x) paste(x, collapse = "-")))
+  
+  # Merge specified mgnet combinations
+  results <- stats::setNames(vector("list", length(by)), names(by))
+  for (i in seq_along(by)) {
+    sub_object <- mgnets(object)[by[[i]]]
+    results[[i]] <- merge_mgnets(sub_object, 
+                                 abun = abun, rela = rela, norm = norm,
+                                 meta = meta, taxa = taxa, 
+                                 netw = netw, comm = comm)
+  }
+  
+  return(mgnetList(results))
+})
+

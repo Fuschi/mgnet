@@ -245,7 +245,7 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-tidyr::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
+        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
         dplyr::distinct() 
       
       
@@ -308,7 +308,7 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
 #' @export
 #' @aliases mutate_taxa,mgnet-method mutate_taxa,mgnetList-method
 #' @importFrom dplyr mutate group_by ungroup distinct relocate arrange
-#' @importFrom tidyr expand_grid any_of
+#' @importFrom tidyr expand_grid
 #' @importFrom tidyselect any_of
 #' @importFrom rlang enquos syms quo_get_expr eval_tidy
 #' @importFrom purrr map imap list_rbind
@@ -452,11 +452,6 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   # Store needed abundances keys
   needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
   
-  # Check the variables needed
-  #lapply(object, \(x){
-  #  validate_required_variables(x, keys_required, "taxa")})
-  
-  
   # Validate the .by argument
   if (missing(.by)) {
     .by <- c("mgnet","taxa_id")
@@ -525,7 +520,7 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
-        dplyr::select(-tidyr::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
+        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
         dplyr::distinct() 
       
       

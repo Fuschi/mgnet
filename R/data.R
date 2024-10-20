@@ -66,32 +66,6 @@
 #' @usage data(HMP2)
 "HMP2"
 
-#' Filtered Subject-specific MGNet List from HMP2 Dataset
-#'
-#' This `mgnetList` object contains filtered `mgnet` objects for two specific subjects
-#' from the Human Microbiome Project Phase 2 (HMP2), focusing on their gut microbiome samples.
-#' The dataset is specifically filtered to include only subjects "69-053" and "69-001"
-#' and further processed to exclude taxa with zero abundance across samples.
-#'
-#' Each `mgnet` object in the list represents comprehensive metagenomic data for one subject,
-#' including abundance data, sample metadata, and taxonomic information. This structure is
-#' ideal for detailed, subject-specific analysis of microbial communities. The list simplifies
-#' comparative studies between subjects under similar experimental conditions.
-#'
-#' @format A `mgnetList` object containing 2 `mgnet` instances:
-#' \describe{
-#'   \item{69-001}{An `mgnet` object with 185 samples and 977 taxa.}
-#'   \item{69-053}{An `mgnet` object with 40 samples and 793 taxa.}
-#' }
-#'
-#' @details The `mgnet` objects within the list do not contain network or community detection results,
-#' which allows for custom analyses to be conducted by the user. This data can be used to explore
-#' microbial diversity, abundance patterns, and potential interactions within and between the microbial
-#' communities of the two subjects.
-#'
-#' @usage data(subjects_HMP2)
-"subjects_HMP2"
-
 #' MGNet Object with Network Data for Subject HMP2
 #'
 #' This `mgnet` object contains metagenomic data for a specific subject from the Human Microbiome Project Phase 2 (HMP2),
@@ -111,7 +85,7 @@
 #' 
 #' @source Human Microbiome Project Phase 2
 #' @usage data(subject_HMP2_netw)
-"subject_HMP2_netw"
+"mg"
 
 #' MGNet List with Network Data for Selected Subjects from HMP2 Dataset
 #'
@@ -130,5 +104,5 @@
 #' an in-depth look at the microbial ecosystem of each subject under study.
 #'
 #' @source Human Microbiome Project Phase 2
-#' @usage data(subjects_HMP2_netw)
-"subjects_HMP2_netw"
+#' @usage data(mgl)
+"mgl"

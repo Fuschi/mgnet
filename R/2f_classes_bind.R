@@ -21,6 +21,7 @@
 #' allowing you to augment the sample metadata with additional data.
 #'
 #' @importFrom dplyr bind_cols
+#' @importFrom tidyselect all_of
 #' @export
 #' @name bind_meta
 #' @aliases bind_meta,mgnet-method bind_meta,mgnetList-method
@@ -63,7 +64,7 @@ setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
       purrr::imap(function(df, mgnet_name) {
         df %>%
           dplyr::arrange(match(sample_id, sample_id(object@mgnets[[mgnet_name]]))) %>%
-          dplyr::select(-mgnet) %>%
+          dplyr::select(-tidyselect::all_of(mgnet)) %>%
           tibble::column_to_rownames("sample_id")
       })
     
@@ -98,13 +99,16 @@ setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
 #' allowing you to augment the taxa metadata with additional data.
 #'
 #' @importFrom dplyr bind_cols
+#' @importFrom tidyselect any_of
 #' @export
 #' @name bind_taxa
 #' @aliases bind_taxa,mgnet-method bind_taxa,mgnetList-method
 setGeneric("bind_taxa", function(object, ...) standardGeneric("bind_taxa"))
 
 setMethod("bind_taxa", signature(object = "mgnet"), function(object, ...) {
-  new_taxa <- dplyr::bind_cols(taxa(object), ...)
+  new_taxa <- taxa(object) %>%
+    dplyr::select(tidyselect::any_of(comm_id)) %>%
+    dplyr::bind_cols(...)
   taxa(object) <- new_taxa
   object
 })
@@ -140,7 +144,7 @@ setMethod("bind_taxa", signature(object = "mgnetList"), function(object, ...) {
       purrr::imap(function(df, mgnet_name) {
         df %>%
           dplyr::arrange(match(taxa_id, taxa_id(object@mgnets[[mgnet_name]]))) %>%
-          dplyr::select(-mgnet) %>%
+          dplyr::select(-tidyselect::any_of(mgnet, comm_id)) %>%
           tibble::column_to_rownames("taxa_id")
       })
     

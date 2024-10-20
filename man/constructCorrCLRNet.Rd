@@ -8,12 +8,13 @@
 \usage{
 constructCorrCLRNet(
   object,
-  zero_strategy = "unif",
+  zero_strategy = "const",
   clr_method = NULL,
   cor_method = "pearson",
   thresh_method = NULL,
   thresh_value = NULL,
-  padj_method = NULL
+  padj_method = NULL,
+  cores = 1
 )
 }
 \arguments{
@@ -53,6 +54,9 @@ network. For "density", this represents the desired edge density.}
 \item{padj_method}{Method for adjusting p-values when \code{thresh_method} is "p-value". Options
 include "holm", "hochberg", "hommel", "bonferroni", "BH" (Benjamini-Hochberg), "BY"
 (Benjamini-Yekutieli), "fdr" (false discovery rate), and "none" (no adjustment). Default is "none".}
+
+\item{cores}{Number of cores to use for parallel processing; default is 1 (no parallel execution).
+This parameter is only applicable for \code{mgnetList} objects and is ignored for \code{mgnet} objects.}
 }
 \value{
 The input \code{mgnet} or \code{mgnetList} object with an updated \code{netw} slot containing the
@@ -85,9 +89,6 @@ correlations are considered significant enough to constitute edges in the networ
 \item \strong{Network Construction:} The adjacency matrix is used to construct a weighted, undirected
 correlation network, represented as an \code{igraph} object.
 }
-
-This approach enables the construction of meaningful correlation networks from compositional
-data, facilitating the exploration of complex microbial community interactions and structure.
 }
 \seealso{
 \code{\link[mgnet]{clr}}, \code{\link[mgnet]{iclr}} for centered-log ratio details.

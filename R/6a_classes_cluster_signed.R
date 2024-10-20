@@ -19,6 +19,8 @@
 #' @param add.names (Default: FALSE) Determines whether vertex names (if available)
 #' are used in the output, associating each node with its community assignment.
 #' When FALSE, community assignments are returned as numerical indices only.
+#' @param cores Number of cores to use for parallel processing; default is 1 (no parallel execution).
+#'              This parameter is only applicable for `mgnetList` objects and is ignored for `mgnet` objects.
 #'
 #' @return An object of class `communities` as defined in the `igraph` package.
 #' This object contains community assignments for each node in the input graph.
@@ -34,7 +36,7 @@
 #' (antagonistic) connotations.
 #'
 #' @references
-#' Gomez, S. et al. (2009). Analysis of community structure in networks of correlated data. Phys. Rev. E. 
+#' Gomez, S. et al. (2009). Analysis of community structure in networks of correlated data. Phys. Rev. E.
 #'
 #' @seealso
 #' \code{\link[igraph]{communities}}, for information on handling community objects in `igraph`.
@@ -44,13 +46,13 @@
 #' @importFrom stringr str_split
 #' @name cluster_signed
 #' @aliases cluster_signed,igraph-method cluster_signed,mgnet-method cluster_signed,mgnetList-method
-setGeneric("cluster_signed", 
-           function(object, resistance=0, penalty=1, add.names=FALSE) standardGeneric("cluster_signed"))
+setGeneric("cluster_signed",
+           function(object, resistance=0, penalty=1, add.names=FALSE, cores = 1) standardGeneric("cluster_signed"))
 
 
-setMethod("cluster_signed", "igraph", 
-          function(object, resistance=0, penalty=1, add.names=FALSE){
-  
+setMethod("cluster_signed", "igraph",
+          function(object, resistance=0, penalty=1, add.names=FALSE, cores = 1){
+
   # Automatically detect the operating system
   detectedOS <- Sys.info()["sysname"]
   if (detectedOS == "Windows") {
@@ -63,7 +65,7 @@ setMethod("cluster_signed", "igraph",
   } else {
     stop("What operating system are you using??")
   }
-  
+
   #Check Graph
   if( !(is_weighted(object) && !is_directed(object)) ) stop("graph must be weighted unidrected graph")
   if(file.exists("graph.net")) file.remove("graph.net")
@@ -71,23 +73,23 @@ setMethod("cluster_signed", "igraph",
   if(!is.numeric(penalty)) stop("penalty must be a number >= 0")
   if(penalty<0) stop("penalty must be a number >= 0")
   if(add.names & !igraph::is_named(object)) stop("graph has not vertices names attribute")
-  
+
   adj <- as_adjacency_matrix(object, attr="weight", sparse=FALSE)
   #End Checks
-  
+
   #get path of executable Communities_Detection.exe
   path <- system.file("exec", package="mgnet", mustWork=TRUE)
   path <- paste(path,"/",sep="")
-  
+
   #write graph in pajek format as request from executable
   write_graph(graph  = graph_from_adjacency_matrix(adjmatrix=adj, mode="undirected", weighted=TRUE),
               file   = paste(path,"graph.net",sep=""),
               format ="pajek")
-  
+
   #path for graph and results files
   path.graph <- paste(path,"graph.net",sep="")
   path.result <- paste(path, "res.txt", sep="")
-  
+
   #save command for the execution
   if(OS=="Linux"){
     cmd <- paste(path,"Communities_Detection_Linux.exe none WS l 1",sep="")
@@ -97,7 +99,7 @@ setMethod("cluster_signed", "igraph",
     cmd <- paste(path,"Communities_Detection_Mac.exe none WS l 1",sep="")
   }
   cmd <- paste(cmd, resistance, penalty, path.graph, path.result)
-  
+
   #make communities detection
   if(OS=="Windows"){
     system(cmd,ignore.stdout=TRUE)
@@ -106,66 +108,80 @@ setMethod("cluster_signed", "igraph",
   }
   #open file of results
   res.file = file(path.result, "r")
-  
+
   #read and store results
   file.lines <- readLines(res.file)
   info <- file.lines[2]
   modularity <- as.numeric(str_split(file.lines[3]," ")[[1]][3])
-  
+
   vertex.num <- as.numeric(str_split(file.lines[5]," ")[[1]][4])
   comm.num <- as.numeric(str_split(file.lines[6]," ")[[1]][4])
   comm.vert <- vector(mode="list",length=comm.num)
-  
+
   for(line in 8:(7+comm.num)){
-    
+
     i <- line-7
     #comm[[i]]
     tmp <- unlist(str_split(file.lines[line]," "))
     tmp <- as.numeric(tmp[2:length(tmp)])
-    
+
     comm.vert[[i]] <- tmp
   }
-  
+
   comm <- vector(mode="integer", length=vertex.num)
   for(c in 1:comm.num){comm[comm.vert[[c]]] <- c}
-  
+
   #close connection
   close(res.file)
-  
+
   #remove files
   file.remove(path.graph)
   file.remove(path.result)
-  
+
   res <- make_clusters(graph = object,
                        membership = comm,
                        algorithm = "signed weights louvain",
                        modularity = modularity)
-  
+
   if(add.names) names(res$membership) <- V(object)$name
-  
+
   #return the results as communities structure of igraph package
   return(res)
 })
 
 setMethod("cluster_signed", "mgnet",
-          function(object, resistance=0, penalty=1, add.names=TRUE){
-            
+          function(object, resistance=0, penalty=1, add.names=TRUE, cores = 1){
+
             if(length(object@netw)==0) stop("network missing")
-            comm(object) <- cluster_signed(netw(object), 
-                                           resistance=resistance, penalty=penalty, 
+            comm(object) <- cluster_signed(netw(object),
+                                           resistance=resistance, penalty=penalty,
                                            add.names=add.names)
             validObject(object)
             return(object)
-            
+
           })
 
 setMethod("cluster_signed", "mgnetList",
-          function(object, resistance=0, penalty=1, add.names=FALSE){
+          function(object, resistance=0, penalty=1, add.names=FALSE, cores = 1){
             
-           object@mgnets <- sapply(object@mgnets, function(x) cluster_signed(x, 
-                                                               resistance=resistance, penalty=penalty, 
-                                                               add.names=add.names), 
-                            simplify = FALSE, USE.NAMES = TRUE)
+            if (cores > 1) {
+              
+              cl <- makeCluster(min(cores, detectCores()))
+              on.exit(stopCluster(cl))
+
+              object@mgnets <- parLapply(cl, object@mgnets, cluster_signed,
+                                                   resistance = resistance, penalty = penalty,
+                                                   add.names = add.names)
+            } else {
+              
+              object@mgnets <- sapply(object@mgnets, \(x){
+                cluster_signed(x,
+                               resistance=resistance, penalty=penalty,
+                               add.names=add.names
+                               )},
+                               simplify = FALSE, USE.NAMES = TRUE)
+            }
+
            validObject(object)
            return(object)
            })
