@@ -6,7 +6,7 @@
 \alias{top_sample,mgnetList-method}
 \title{Rank Sample Based on Custom Criteria in \code{mgnet} Objects}
 \usage{
-top_sample(object, expression, by = NULL, decreasing = TRUE)
+top_sample(object, expression, by = NULL, decreasing = TRUE, mode = "merged")
 }
 \arguments{
 \item{object}{An \code{mgnet} object.}
@@ -16,21 +16,24 @@ sorting samples. This should involve only the abundance variables \code{abun}, \
 \code{norm} or grouping functions from \code{dplyr}. The expression should not reference
 other data keys directly.}
 
-\item{by}{Optional character string specifying the samples metadata column to group by
+\item{by}{Optional character string specifying the sample metadata column to group by
 before applying the ranking expression. Default is \code{"sample_id"}.}
 
 \item{decreasing}{Logical indicating whether sorting should be in decreasing order.
 Default is \code{TRUE}.}
+
+\item{mode}{For \code{mgnetList} objects, specifies whether to evaluate the expression on the merged objects (\code{"merged"})
+or evaluate each object separately (\code{"separate"}). This parameter is ignored for \code{mgnet} objects.}
 }
 \value{
 A vector containing the \code{by} column, sorted according to the specified
 \code{expression}.
 }
 \description{
-This function sorts and ranks samples based on a specified aggregation or calculation
+This function sorts and ranks taxa based on a specified aggregation or calculation
 applied to abundance-related variables (\code{abun}, \code{rela}, \code{norm}) or other grouping
-functions. It is designed for \code{mgnet} objects to facilitate focused analyses on
-grouped or aggregated data.
+functions. It is designed for \code{mgnet} or \code{mgnetList} objects to facilitate focused
+analyses on grouped or aggregated data.
 }
 \details{
 \code{top_sample} allows users to specify complex sorting and ranking expressions that
@@ -41,5 +44,5 @@ functions like \code{n()}, ensuring the expression's appropriateness for the ope
 This function dynamically constructs a data frame from the \code{mgnet} object's slots,
 performs the necessary transformations and aggregations, and then sorts the results.
 If no \code{abun}, \code{rela}, or \code{norm} keys are needed for the expression, it simply sorts the
-sample metadata. Otherwise, it performs left joins to include the necessary abundance data.
+taxa metadata. Otherwise, it performs left joins to include the necessary abundance data.
 }

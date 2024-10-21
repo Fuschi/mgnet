@@ -6,7 +6,7 @@
 \alias{top_taxa,mgnetList-method}
 \title{Rank Taxa Based on Custom Criteria in \code{mgnet} Objects}
 \usage{
-top_taxa(object, expression, by = NULL, decreasing = TRUE)
+top_taxa(object, expression, by = NULL, decreasing = TRUE, mode = "merged")
 }
 \arguments{
 \item{object}{An \code{mgnet} object.}
@@ -21,6 +21,9 @@ before applying the ranking expression. Default is \code{"taxa_id"}.}
 
 \item{decreasing}{Logical indicating whether sorting should be in decreasing order.
 Default is \code{TRUE}.}
+
+\item{mode}{For \code{mgnetList} objects, specifies whether to evaluate the expression on the merged objects (\code{"merged"})
+or evaluate each object separately (\code{"separate"}). This parameter is ignored for \code{mgnet} objects.}
 }
 \value{
 A vector containing the \code{by} column, sorted according to the specified
@@ -29,8 +32,8 @@ A vector containing the \code{by} column, sorted according to the specified
 \description{
 This function sorts and ranks taxa based on a specified aggregation or calculation
 applied to abundance-related variables (\code{abun}, \code{rela}, \code{norm}) or other grouping
-functions. It is designed for \code{mgnet} objects to facilitate focused analyses on
-grouped or aggregated data.
+functions. It is designed for \code{mgnet} or \code{mgnetList} objects to facilitate focused
+analyses on grouped or aggregated data.
 }
 \details{
 \code{top_taxa} allows users to specify complex sorting and ranking expressions that
