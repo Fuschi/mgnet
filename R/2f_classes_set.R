@@ -17,20 +17,13 @@
 setGeneric("set_abun", function(object, value) standardGeneric("set_abun"))
 
 setMethod("set_abun", "mgnet", function(object, value) {
-  object@abun <- value
-  validObject(object)
+  abun(object) <- value
   return(object)
 })
 
 setMethod("set_abun", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_abun(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  abun(object) <- value
   return(object)
 })
 
@@ -54,20 +47,13 @@ setMethod("set_abun", "mgnetList", function(object, value) {
 setGeneric("set_rela", function(object, value) standardGeneric("set_rela"))
 
 setMethod("set_rela", "mgnet", function(object, value) {
-  object@rela <- value
-  validObject(object)
+  rela(object) <- value
   return(object)
 })
 
 setMethod("set_rela", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_rela(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  rela(object) <- value
   return(object)
 })
 
@@ -90,24 +76,17 @@ setMethod("set_rela", "mgnetList", function(object, value) {
 setGeneric("set_norm", function(object, value) standardGeneric("set_norm"))
 
 setMethod("set_norm", "mgnet", function(object, value) {
-  object@norm <- value
-  validObject(object)
+  norm(object) <- value
   return(object)
 })
 
 setMethod("set_norm", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_norm(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  norm(object) <- value
   return(object)
 })
 
-# SET norm_CLR
+# SET NORM CLR
 #------------------------------------------------------------------------------#
 #' Store clr-transformed data in `norm` Slot in `mgnet` Objects
 #'
@@ -136,7 +115,7 @@ setGeneric("set_norm_CLR", function(object, clr_variant = "clr", zero_strategy =
 setMethod("set_norm_CLR", "mgnet", function(object, clr_variant = "clr", zero_strategy = "const") {
   
   clr_variant <- match.arg(clr_variant, c("clr", "iclr"))
-  zero_strategy <- match.arg(zero_strategy, c("unif", "const"))
+  zero_strategy <- match.arg(zero_strategy, c("const", "unif"))
   if(length(object@abun) == 0 & length(object@rela)) stop("abundance and relative data missing; cannot calculate log-ratio abundance.")
   
   if(length(object@abun) != 0){
@@ -145,37 +124,40 @@ setMethod("set_norm_CLR", "mgnet", function(object, clr_variant = "clr", zero_st
     abundance <- rela(object, .fmt = "mat")
   }
   
-  abundance_nozero <- zero_dealing(X = abundance,
-                                   method = zero_strategy)
-  
-  if(clr_variant == "clr") {
-    object@norm <- clr(abundance_nozero)
-  } else {
-    object@norm <- iclr(abundance_nozero)
-  }
-  
-  validObject(object)
+  norm(object) <- clr_zero_handle(X = abundance, clr_variant = clr_variant, zero_strategy = zero_strategy)
   return(object)
 })
 
 setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zero_strategy = "const") {
-  object <- mgnetList(lapply(object@mgnets, function(mgnet) {
-    set_norm_CLR(mgnet, clr_variant, zero_strategy)
-  }))
-  validObject(object)
+  norm(object) <- sapply(object, \(x){
+    
+    clr_variant <- match.arg(clr_variant, c("clr", "iclr"))
+    zero_strategy <- match.arg(zero_strategy, c("const", "unif"))
+    if(length(object@abun) == 0 & length(object@rela)) stop("abundance and relative data missing; cannot calculate log-ratio abundance.")
+    
+    if(length(x) != 0){
+      abundance <- abun(x, .fmt = "mat")
+    } else {
+      abundance <- rela(x, .fmt = "mat")
+    }
+    
+    norm(x) <- clr_zero_handle(X = abundance, clr_variant = clr_variant, zero_strategy = zero_strategy)
+    return(x)
+    
+  })
   return(object)
 })
 
-# SET sample
+# SET META
 #------------------------------------------------------------------------------#
-#' Set `sample` Slot in `mgnet` Objects
+#' Set `meta` Slot in `mgnet` Objects
 #'
 #' @description
-#' This function sets the sample data for an `mgnet` object or each `mgnet` object 
+#' This function sets the sample metadata for an `mgnet` object or each `mgnet` object 
 #' within an `mgnetList`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new sample data to be set, a numeric matrix for `mgnet` objects 
+#' @param value The new sample metadata data to be set, a data.frame for `mgnet` objects 
 #' or a list of numeric matrices for `mgnetList` objects.
 #' @return The modified `mgnet` or `mgnetList` object with the updated sample data.
 #' @export
@@ -193,7 +175,7 @@ setMethod("set_sample", "mgnet", function(object, value) {
 setMethod("set_sample", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
-  for (i in seq_along(object@mgnets)) {
+  for (i in names(object)) {
     object@mgnets[[i]] <- set_sample(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
@@ -222,23 +204,15 @@ setMethod("set_sample", "mgnetList", function(object, value) {
 setGeneric("set_taxa", function(object, value) standardGeneric("set_taxa"))
 
 setMethod("set_taxa", "mgnet", function(object, value) {
-  object@taxa <- value
-  validObject(object)
+  taxa(object) <- value
   return(object)
 })
 
 setMethod("set_taxa", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_taxa(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  taxa(object) <- value
   return(object)
 })
-
 
 
 # SET netw
@@ -260,20 +234,13 @@ setMethod("set_taxa", "mgnetList", function(object, value) {
 setGeneric("set_netw", function(object, value) standardGeneric("set_netw"))
 
 setMethod("set_netw", "mgnet", function(object, value) {
-  object@netw <- value
-  validObject(object)
+  netw(object) <- value
   return(object)
 })
 
 setMethod("set_netw", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_netw(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  netw(object) <- value
   return(object)
 })
 
@@ -297,19 +264,12 @@ setMethod("set_netw", "mgnetList", function(object, value) {
 setGeneric("set_comm", function(object, value) standardGeneric("set_comm"))
 
 setMethod("set_comm", "mgnet", function(object, value) {
-  object@comm <- value
-  validObject(object)
+  comm(object) <- value
   return(object)
 })
 
 setMethod("set_comm", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  
-  for (i in seq_along(object@mgnets)) {
-    object@mgnets[[i]] <- set_comm(object@mgnets[[i]], value[[i]])
-    validObject(object@mgnets[[i]])
-  }
-  
-  validObject(object)
+  comm(object) <- value
   return(object)
 })

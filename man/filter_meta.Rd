@@ -6,7 +6,7 @@
 \alias{filter_meta,mgnetList-method}
 \title{Filter \code{mgnet} or \code{mgnetList} Objects Based on Sample Metadata and Abundances Criteria}
 \usage{
-filter_meta(object, ..., .by)
+filter_meta(object, ..., .by = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.

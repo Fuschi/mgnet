@@ -12,7 +12,7 @@ set_categorical_color(
   vars,
   decreasing = TRUE,
   mode = "merged",
-  distinct_colors = 20,
+  n = 20,
   colorspace = "pretty",
   alpha = 1,
   extraColor = "#FFFFFF"
@@ -29,7 +29,7 @@ Each variable specified must be present in the taxa data.}
 
 \item{decreasing}{Logical; whether to sort the categories within each group in decreasing order based on the expression evaluation.}
 
-\item{distinct_colors}{Integer; the maximum number of distinct colors to generate for the categories. Defaults to 20.}
+\item{n}{Integer; the maximum number of distinct colors to generate for the categories. Defaults to 20.}
 
 \item{colorspace}{Character or list; the color palette to use, which can be a predefined palette name or a list specifying
 hue, saturation, and lightness ranges. Supported names are 'pretty', 'pretty_dark', 'rainbow', and 'pastels'.
@@ -48,6 +48,8 @@ of defined grouping variables. It allows for the dynamic creation of color-coded
 in subsequent visualizations.
 }
 \details{
+Documentation Not Completed
+
 \code{set_categorical_color} dynamically generates colors based on the results of specified expressions, applying these colors
 to the taxa metadata. This method is useful for preparing data for visualization, where colors can help in distinguishing
 taxa based on categorical attributes derived from the data.
@@ -57,10 +59,6 @@ corresponding to each grouping variable and expression combination.
 
 If any existing columns in the taxa data conflict with the newly generated color column names, they will be overwritten
 with the new color data, and a warning will be issued.
-}
-\examples{
-# Assuming `mg` is an `mgnet` object with taxa metadata containing `genus` and abundance data
-mg <- set_categorical_color(mg, sum_abun = sum(abun), vars = "genus")
 }
 \seealso{
 \code{\link[qualpalr]{qualpalr}} for details on generating qualitative color palettes.

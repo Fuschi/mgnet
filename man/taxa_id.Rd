@@ -2,33 +2,28 @@
 % Please edit documentation in R/2a_classes_base_methods.R
 \name{taxa_id}
 \alias{taxa_id}
-\alias{taxa_id,mgnet-method}
-\alias{taxa_id,mgnetList-method}
-\title{Get Taxa IDs from mgnet or mgnetList Objects}
+\alias{sample_id,mgnet-method}
+\alias{sample_id,mgnetList-method}
+\title{Get taxa IDs from mgnet or mgnetList Objects}
 \usage{
 taxa_id(object, .fmt = "list")
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object from which to extract taxa IDs.}
-
-\item{.fmt}{Character; specifies the output format when retrieving taxa IDs from
-an \code{mgnetList}. Accepted values are \code{"list"} for a list of character vectors,
-and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
-returns a tibble with two columns: \code{"mgnet"}, indicating the name of the \code{mgnet} object
-each taxa ID originates from, and \code{"taxa_id"}, listing the taxa IDs themselves.}
+}
+\value{
+Retrieves the IDs of taxa from an \code{mgnet} object or lists of taxa IDs for each
+\code{mgnet} object within an \code{mgnetList}.
 }
 \description{
-Retrieves the IDs of taxa from an \code{mgnet} object or lists of taxa IDs for each
-\code{mgnet} object within an \code{mgnetList}. For \code{mgnetList} objects, this method can
-output the results either as a list or as a organized tibble.
+Get taxa IDs from mgnet or mgnetList Objects
 }
 \examples{
-data(HMP2, package = "mgnet")
-taxa_id(HMP2)  
+data(mg, package = "mgnet")
+taxa_id(mgl)  
 
-data(subjects_HMP2, package = "mgnet")
-taxa_id(subjects_HMP2, .fmt = "list")  
-taxa_id(subjects_HMP2, .fmt = "tbl")  
+data(mgl, package = "mgnet")
+taxa_id(mgl)  
 
 }
 \seealso{

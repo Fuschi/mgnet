@@ -28,27 +28,69 @@ setClass(
   slots = c(mgnets = "list"),
   prototype = prototype(mgnets = list()),
   validity = function(object) {
+    errors <- character()
+    mgnet_errors <- character()
     
+    # Global mgnetList checks
     if (length(object@mgnets) != 0) {
       # Ensure all elements are instances of mgnet
       if (!all(sapply(object@mgnets, inherits, "mgnet"))) {
-        return("All elements of `mgnets` must be instances of the `mgnet` class.")
+        errors <- c(errors, "All elements of `mgnets` must be instances of the `mgnet` class.")
       }
       
       # Ensure all elements are named
       if (is.null(names(object@mgnets)) || any(!nzchar(names(object@mgnets)))) {
-        return("All elements in `mgnets` must be named.")
+        errors <- c(errors, "All elements in `mgnets` must be named.")
       }
       
       # Ensure names are unique
       if (length(unique(names(object@mgnets))) != length(object@mgnets)) {
-        return("All element names must be unique.")
+        errors <- c(errors, "All element names must be unique.")
+      }
+      
+      # Validate each mgnet object individually
+      for (i in seq_along(object@mgnets)) {
+        mgnet_obj <- object@mgnets[[i]]
+        mgnet_name <- names(object@mgnets)[i]
+        
+        # Check if the individual mgnet object passes validation
+        mgnet_validity <- tryCatch(
+          {
+            validObject(mgnet_obj, test = TRUE)
+            TRUE  # Return TRUE if validObject passes without error
+          },
+          error = function(e) {
+            e$message  # Capture error message if validity fails
+          }
+        )
+        
+        # If validation fails for mgnet, accumulate the error
+        if (mgnet_validity != TRUE) {
+          if (is.null(mgnet_name) || !nzchar(mgnet_name)) mgnet_name <- "NA"
+          mgnet_errors <- c(mgnet_errors, sprintf("==== '%s' error report ====", mgnet_name), mgnet_validity)
+        }
+      }
+      
+      # Combine global errors and mgnet-specific errors
+      all_errors <- character()
+      if (length(errors) > 0) {
+        errors <- lapply(errors, function(x) paste("- ", x, sep = ""))
+        all_errors <- c("\n==== mgnetList error report ====", paste(errors, collapse = "\n"))
+      }
+      if (length(mgnet_errors) > 0) {
+        all_errors <- c(all_errors, mgnet_errors)
+      }
+      
+      # Return the combined error messages if any errors were found
+      if (length(all_errors) > 0) {
+        return(paste(all_errors, collapse = "\n"))
       }
     }
-    
     TRUE
   }
 )
+
+
 
 # Define constructor for mgnetList
 #------------------------------------------------------------------------------#
@@ -72,17 +114,17 @@ setClass(
 #' @name mgnetList
 mgnetList <- function(...) {
   mgnets <- list(...)
-  
+
   # Check if the first argument is a list of mgnet objects
   if (length(mgnets) == 1 && is.list(mgnets[[1]]) && all(sapply(mgnets[[1]], inherits, "mgnet"))) {
     mgnets <- mgnets[[1]]
   }
-  
+
   # Ensure all provided mgnet objects are named
   if (length(mgnets) != 0 && (is.null(names(mgnets)) || any(!nzchar(names(mgnets))))) {
     stop("All mgnet objects must be named.")
   }
-  
+
   new("mgnetList", mgnets = mgnets)
 }
 
@@ -104,3 +146,69 @@ as.list.mgnetList <- function(x, ...) {
 #------------------------------------------------------------------------------#
 #' @export
 setAs("mgnetList", "list", function(from) from@mgnets)
+
+
+
+#------------------------------------------------------------------------------#
+#' Access or Assign Elements in an mgnetList Object
+#'
+#' These methods allow accessing or assigning individual `mgnet` objects within an `mgnetList` 
+#' using the `$` and `$<-` operators, providing list-like behavior for the `mgnetList` class.
+#'
+#' @section Usage:
+#' \preformatted{
+#' mgl$name
+#' mgl$name <- value
+#' }
+#'
+#' @param x An `mgnetList` object.
+#' @param name A character string representing the name of the `mgnet` object to extract or assign.
+#' @param value A `mgnet` object to be assigned to the `mgnetList`.
+#' 
+#' @details
+#' \code{mgl$name} extracts the `mgnet` object from the `mgnetList` named \code{name}. If no 
+#' such object exists, an error is thrown.
+#' 
+#' \code{mgl$name <- value} assigns a new `mgnet` object to the element named \code{name} in 
+#' the `mgnetList`. If the value is not a valid `mgnet` object, an error is thrown. After the 
+#' assignment, the validity of the entire `mgnetList` object is checked to ensure it adheres 
+#' to the defined constraints.
+#'
+#' @return
+#' - For `$`, the method returns the `mgnet` object corresponding to \code{name}.
+#' - For `$<-`, the method assigns a new `mgnet` object to the list and returns the modified `mgnetList`.
+#'
+#' @examples
+#' data(mgl, package = "mgnet")
+#' 
+#' # Access a specific mgnet object
+#' mgnet_obj <- mgl$`69-001`
+#' 
+#' # Assign a new mgnet object to the mgnetList
+#' mgl$new_sample <- mgnet()
+#' 
+#' @name mgnetList-access
+#' @rdname mgnetList-access
+#' @aliases $,mgnetList-method $<-,mgnetList-method
+#' @export
+setMethod("$", "mgnetList", function(x, name) {
+  if (!name %in% names(x@mgnets)) {
+    stop(sprintf("No mgnet object named '%s' found.", name))
+  }
+  x@mgnets[[name]]
+})
+
+#' @rdname mgnetList-access
+#' @export
+setMethod("$<-", "mgnetList", function(x, name, value) {
+  if (!inherits(value, "mgnet")) {
+    stop("Assigned value must be an `mgnet` object.")
+  }
+  
+  x@mgnets[[name]] <- value
+  
+  # Re-validate the object after assignment
+  validObject(x)
+  
+  x
+})

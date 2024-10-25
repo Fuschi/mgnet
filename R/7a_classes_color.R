@@ -1,6 +1,8 @@
 # SET CATEGORICAL COLOR
 #------------------------------------------------------------------------------#
 #' Set Categorical Colors in `mgnet` or `mgnetList` Objects
+#' 
+#' Documentation Not Completed
 #'
 #' @description
 #' This function assigns colors to taxa based on the results of specified expressions evaluated within the context
@@ -13,7 +15,7 @@
 #' @param vars Character vector specifying one or more grouping variables by which taxa are categorized before coloring.
 #'        Each variable specified must be present in the taxa data.
 #' @param decreasing Logical; whether to sort the categories within each group in decreasing order based on the expression evaluation.
-#' @param distinct_colors Integer; the maximum number of distinct colors to generate for the categories. Defaults to 20.
+#' @param n Integer; the maximum number of distinct colors to generate for the categories. Defaults to 20.
 #' @param colorspace Character or list; the color palette to use, which can be a predefined palette name or a list specifying
 #'        hue, saturation, and lightness ranges. Supported names are 'pretty', 'pretty_dark', 'rainbow', and 'pastels'.
 #'        For a detailed explanation of these options, see the `qualpalr` package documentation or enter `??qualpalr` in the R console.
@@ -35,11 +37,7 @@
 #'
 #' @seealso
 #' \code{\link[qualpalr]{qualpalr}} for details on generating qualitative color palettes.
-#'
-#' @examples
-#' # Assuming `mg` is an `mgnet` object with taxa metadata containing `genus` and abundance data
-#' mg <- set_categorical_color(mg, sum_abun = sum(abun), vars = "genus")
-#' @export
+#' 
 #' @importFrom dplyr mutate group_by arrange
 #' @importFrom tidyr expand_grid
 #' @importFrom purrr map_chr
@@ -49,12 +47,12 @@
 #' @importFrom dplyr mutate %>%
 #' @aliases set_categorical_color,mgnet-method set_categorical_color,mgnetList-method
 setGeneric("set_categorical_color", function(object, ..., vars, decreasing = TRUE, mode = "merged",
-                                             distinct_colors = 20, colorspace = "pretty",
+                                             n = 20, colorspace = "pretty",
                                              alpha = 1, extraColor = "#FFFFFF"
                                              ) standardGeneric("set_categorical_color"))
 
 setMethod("set_categorical_color", signature = "mgnet", function(object, ..., vars, decreasing = TRUE, mode = "merged",
-                                                                 distinct_colors = 20, colorspace = "pretty",
+                                                                 n = 20, colorspace = "pretty",
                                                                  alpha = 1, extraColor = "#FFFFFF"){
 
     # CHECKS
@@ -64,40 +62,18 @@ setMethod("set_categorical_color", signature = "mgnet", function(object, ..., va
     expressions <- rlang::enquos(...)
     expr_names <- names(expressions)
     
-    # Check if any of the expressions are unnamed
-    if (any(nzchar(expr_names) == 0)) {
-      stop("All the expressions must be named.")
-    }
+    # Check all expressions have unique names
+    if(any(nzchar(expr_names)==0) | any(duplicated(expr_names)))stop("All the expressions must have an unique name")
 
     # Check the reserved keywords
     check_reserved_keywords(expressions)
 
-    # Check all expressions are named
-    if(any(nzchar(expr_names)==0) | any(duplicated(expr_names))){
-      stop("All the expressions must have an unique name")
-    }
-
-    # Capture required keys from expressions
-    keys_required <- expressions %>%
-      purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-      unlist() %>%
-      unique()
-
-    # Store needed abundances keys
-    needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-
     # Check the variables needed
-    validate_required_variables(object, keys_required, "taxa")
-
-    if (!is.character(vars) || "sample_id" %in% vars) {
-      stop("Error: 'vars' must be a character vector and cannot include 'sample_id'.")
-    }
+    needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
+    vars <- validate_required_groups(object, vars, "taxa")
 
     # Forbidden functions and disallowed variables
     check_forbidden_expressions(expressions)
-    
-    # Check the variables needed
-    validate_required_variables(object, keys_required, "taxa")
     
     # Generate new column names by combining variable elements with expression names
     new_column_names <- purrr::map2_chr(vars, expr_names, ~ paste("color", .x, .y, sep = "_"))
@@ -109,129 +85,46 @@ setMethod("set_categorical_color", signature = "mgnet", function(object, ..., va
       warning("The following column names in taxa data will be overwritten: ", paste(conflicting_names, collapse = ", "))
     }
     
-    if(distinct_colors > 99 || distinct_colors < 0){
-      stop("Error: Ddstinct_colors must be in range [0,99].")
-    }
-    
-    if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {
-      stop("Error: alpha must be in the range [0,1].")
-    }
-    
-    if(!is.character(colorspace) && !is.list(colorspace)) {
-      stop("Error: colorspace must be a character or a list.")
-    }
-    
-    if(is.character(colorspace)){
-      if(!colorspace %in% c("pretty", "pretty_dark", "rainbow", "pastels")){
-        stop("Error: when colorspace is a character, it must be one of 'pretty', 'pretty_dark', 'rainbow', 'pastels'.")
-      }
-    }
-    
-    if(is.list(colorspace) && !all(names(colorspace) %in% c("h", "s", "l"))) {
-      stop("Error: when colorspace is a list, it must contain 'h', 's', and 'l' elements as required by qualpalr.")
-    }
-    
     if(!is.logical(decreasing)) stop("Error: decreasing must be logical.")
     
-    # Compile list of valid variables including "taxa_id" and additional taxa variables
-    valid_vars <- c("taxa_id", taxa_vars(object))
-    
-    # Check if all elements of 'var' are in 'valid_vars'
-    if (!all(vars %in% valid_vars)) {
-      missing_vars <- vars[!vars %in% valid_vars]
-      stop("Error: The following grouping 'vars' elements are not valid or missing in the taxa data: ", 
-           paste(missing_vars, collapse = ", "))
-    }
-
     # END CHECKS
     #----------------------------------------------------------------------------#
 
     # CREATE THE BASE FOR THE SOLUTION
     #----------------------------------------------------------------------------#
-    # Initialize sample_info_mutated
-    if (length(taxa(object)) != 0) {
-      taxa_info_mutated <- taxa(object, .fmt = "tbl")
-    } else {
-      taxa_info_mutated <- tibble::tibble(taxa_id = taxa_id(object))
-    }
-
-    # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
-    #----------------------------------------------------------------------------#
-    if (length(needed_abundance_keys) > 0) {
-      # Create the grid of sample_id and taxa_id combinations
-      long_abun <- tidyr::expand_grid(
-        sample_id = sample_id(object),
-        taxa_id = taxa_id(object)
-      )
-
-      # Left join all abundance variables needed
-      for (abundance_key in needed_abundance_keys) {
-        long_abun <- long_abun %>%
-          dplyr::left_join(
-            methods::slot(object, abundance_key) %>%
-              tibble::as_tibble(rownames = "sample_id") %>%
-              tidyr::pivot_longer(-sample_id,
-                                  names_to = "taxa_id",
-                                  values_to = abundance_key),
-            by = c("sample_id", "taxa_id")
-          )
-      }
-      
-      if(length(taxa(object))!=0) long_abun <- dplyr::left_join(long_abun, taxa(object, "tbl"), by = "taxa_id")
-    }
+    taxa_mutated <- initialize_taxa(object)
+    long_abun <- long_abundance_join(object, needed_keys$abundance) %>%
+      left_join(taxa_mutated, by = "taxa_id")
 
     # LOOP OVER THE EXPRESSIONS AND GROUPING VARIABLES
     #----------------------------------------------------------------------------#
     for (i in seq_along(expressions)) {
       for(var in vars){
-        
-        expr_vars <- all.vars(expressions[[i]])
-        expr_name <- names(expressions)[i]
-        new_columns_name <- paste("color", var, expr_name, sep = "_")
 
-        if (any(expr_vars %in% c("abun", "rela", "norm"))) {
-          
-          var_sorted <- long_abun %>%
-            group_by(!!!rlang::syms(var)) %>%
-            reframe(!!expressions[[i]]) %>%
-            as.data.frame()
-          
-          var_sorted <- var_sorted[order(var_sorted[, ncol(var_sorted)], decreasing = decreasing), ]
-          var_sorted <- pull(var_sorted, {{var}})
-          
-        } else {
-          
-          var_sorted <- taxa_info_mutated %>%
-            group_by(!!!rlang::syms(var)) %>%
-            reframe(!!expressions[[i]]) %>%
-            as.data.frame()
-          
-          var_sorted <- var_sorted[order(var_sorted[, ncol(var_sorted)], decreasing = decreasing), ]
-          var_sorted <- pull(var_sorted, {{var}})
-          
-        }
+        result <- apply_expr_var_sort(taxa_mutated, long_abun, expressions[[i]], var, decreasing, n)
         
-        distinct_color_var <- min(distinct_colors, length(var_sorted))
-        palette_colors_var_expri <- colormap_categories(var_sorted,
-                                                        distinct_colors = distinct_color_var,
+        palette_colors_var_expri <- colormap_categories(as.character(result$var_sorted),
+                                                        distinct_colors = result$n,
                                                         colorspace = colorspace,
                                                         extraColor = extraColor,
                                                         alpha = alpha)
         
-        taxa_info_mutated <- taxa_info_mutated %>%
-          mutate(!!new_columns_name := palette_colors_var_expri[taxa_info_mutated[[{{var}}]]])
+        new_columns_name <- paste("color", var, names(expressions)[i], sep = "_")
+        taxa_mutated <- taxa_mutated %>%
+          mutate(!!new_columns_name := palette_colors_var_expri[taxa_mutated[[{{var}}]]])
         
     }} # end i,var
     
-    taxa(object) <- taxa_info_mutated %>%
+    taxa(object) <- taxa_mutated %>%
       dplyr::select(-tidyselect::any_of("comm_id")) %>%
       column_to_rownames("taxa_id")
+    
     return(object)
   })
 
 
 setMethod("set_categorical_color", signature = "mgnetList", function(object, ..., vars, decreasing = TRUE, mode = "merged",
-                                                                     distinct_colors = 20, colorspace = "pretty",
+                                                                     n = 20, colorspace = "pretty",
                                                                      alpha = 1, extraColor = "#FFFFFF"){
   
   # CHECKS
@@ -241,46 +134,22 @@ setMethod("set_categorical_color", signature = "mgnetList", function(object, ...
   expressions <- rlang::enquos(...)
   expr_names <- names(expressions)
   
-  # Check if any of the expressions are unnamed
-  if (any(nzchar(expr_names) == 0)) {
-    stop("All the expressions must be named.")
-  }
+  # Check all expressions have unique names
+  if(any(nzchar(expr_names)==0) | any(duplicated(expr_names)))stop("All the expressions must have an unique name")
   
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Check all expressions are named
-  if(any(nzchar(expr_names)==0) | any(duplicated(expr_names))){
-    stop("All the expressions must have an unique name")
-  }
-  
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
-  
-  # Store needed abundances keys
-  needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
   # Check the variables needed
-  sapply(object, \(x) validate_required_variables(x, keys_required, "taxa"))
-  
-  if (!is.character(vars) || "sample_id" %in% vars) {
-    stop("Error: 'vars' must be a character vector and cannot include 'sample_id'.")
-  }
+  needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
+  vars <- validate_required_groups(object, vars, "taxa")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
-
-  # Check the variables needed
-  lapply(object, \(x){
-    validate_required_variables(x, keys_required, "taxa")})
   
   # Generate new column names by combining variable elements with expression names
-  combinations <- expand.grid(var = vars, expr = expr_names)
-  new_column_names <- apply(combinations, 1, function(x) paste("color", x["var"], x["expr"], sep = "_"))
-
+  new_column_names <- purrr::map2_chr(vars, expr_names, ~ paste("color", .x, .y, sep = "_"))
+  
   # Check if these new column names already exist in the taxa
   existing_columns <- colnames(taxa(object, .fmt = "tbl"))
   if (any(new_column_names %in% existing_columns)) {
@@ -288,191 +157,171 @@ setMethod("set_categorical_color", signature = "mgnetList", function(object, ...
     warning("The following column names in taxa data will be overwritten: ", paste(conflicting_names, collapse = ", "))
   }
   
-  if(distinct_colors > 99 || distinct_colors < 0){
-    stop("Error: Ddstinct_colors must be in range [0,99].")
-  }
-  
-  if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {
-    stop("Error: alpha must be in the range [0,1].")
-  }
-  
-  if(!is.character(colorspace) && !is.list(colorspace)) {
-    stop("Error: colorspace must be a character or a list.")
-  }
-  
-  if(is.character(colorspace)){
-    if(!colorspace %in% c("pretty", "pretty_dark", "rainbow", "pastels")){
-      stop("Error: when colorspace is a character, it must be one of 'pretty', 'pretty_dark', 'rainbow', 'pastels'.")
-    }
-  }
-  
-  if(is.list(colorspace) && !all(names(colorspace) %in% c("h", "s", "l"))) {
-    stop("Error: when colorspace is a list, it must contain 'h', 's', and 'l' elements as required by qualpalr.")
-  }
-  
   if(!is.logical(decreasing)) stop("Error: decreasing must be logical.")
+  
   # END CHECKS
   #----------------------------------------------------------------------------#
   
-  # MERGED
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
+  taxa_mutated_merged <- initialize_taxa(object)
+  long_abun_merged <- long_abundance_join(object, needed_keys$abundance) %>%
+    left_join(taxa_mutated_merged, by = c("mgnet", "taxa_id"))
+  
+  # MERGED
   #----------------------------------------------------------------------------#
   if(mode == "merged"){
     
-    # Compile list of valid variables including "taxa_id" and additional taxa variables
-    valid_vars <- c("taxa_id", unique(unlist(taxa_vars(object))))
-    
-    # Check if all elements of 'var' are in 'valid_vars'
-    if (!all(vars %in% valid_vars)) {
-      missing_vars <- vars[!vars %in% valid_vars]
-      stop("Error: The following grouping 'vars' elements are not valid or missing in the taxa data: ", 
-           paste(missing_vars, collapse = ", "))
-    }
-    
-    # CREATE THE BASE FOR THE SOLUTION
-    #----------------------------------------------------------------------------#
-    taxa_info_mutated_merged <- object %>%
-      purrr::map(\(x) {
-        if(length(taxa(x)) != 0){
-          taxa(x, .fmt = "tbl")
-        } else {
-          tibble::tibble(taxa_id = taxa_id(x))
-        }
-      }) %>%
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind()
-    
-    # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
-    #----------------------------------------------------------------------------#
-    if(length(needed_abundance_keys)!=0){
-      
-      long_abun_merged <- purrr::map(object, \(mgnet_obj){
-        
-        long_abun <- tidyr::expand_grid(sample_id = sample_id(mgnet_obj),
-                                        taxa_id = taxa_id(mgnet_obj))
-        
-        for(abundance_key in needed_abundance_keys){
-          long_abun <- long_abun %>%
-            dplyr::left_join(methods::slot(mgnet_obj, abundance_key) %>%
-                               tibble::as_tibble(rownames = "sample_id") %>%
-                               tidyr::pivot_longer(-sample_id, 
-                                                   names_to = "taxa_id", 
-                                                   values_to = abundance_key),
-                             by = c("sample_id", "taxa_id"))
-        }
-        
-        if(length(taxa(mgnet_obj))!=0) long_abun <- dplyr::left_join(long_abun, taxa(mgnet_obj, "tbl"), by = "taxa_id")
-        return(long_abun)
-      }) %>%
-        purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-        purrr::list_rbind()
-    }
-    
-    # LOOP OVER THE EXPRESSIONS AND GROUPING VARIABLES
-    #----------------------------------------------------------------------------#
     for (i in seq_along(expressions)) {
       for(var in vars){
         
-        expr_vars <- all.vars(expressions[[i]])
-        expr_name <- names(expressions)[i]
-        new_columns_name <- paste("color", var, expr_name, sep = "_")
-        
-        if (any(expr_vars %in% c("abun", "rela", "norm"))) {
-          
-          var_sorted <- long_abun_merged %>%
-            group_by(!!!rlang::syms(var)) %>%
-            reframe(!!expressions[[i]]) %>%
-            as.data.frame()
-          
-          var_sorted <- var_sorted[order(var_sorted[, ncol(var_sorted)], decreasing = decreasing), ]
-          var_sorted <- pull(var_sorted, {{var}})
-          
-        } else {
-          
-          var_sorted <- taxa_info_mutated_merged %>%
-            group_by(!!!rlang::syms(var)) %>%
-            reframe(!!expressions[[i]]) %>%
-            as.data.frame()
-          
-          var_sorted <- var_sorted[order(var_sorted[, ncol(var_sorted)], decreasing = decreasing), ]
-          var_sorted <- pull(var_sorted, {{var}})
-          
-        }
-        
-        distinct_color_var <- min(distinct_colors, length(var_sorted))
-        palette_colors_var_expri <- colormap_categories(var_sorted,
-                                                        distinct_colors = distinct_color_var,
+        result <- apply_expr_var_sort(taxa_mutated_merged, long_abun_merged, expressions[[i]], var, n, decreasing)
+
+        palette_colors_var_expri <- colormap_categories(as.character(result$var_sorted[[var]]),
+                                                        distinct_colors = result$n,
                                                         colorspace = colorspace,
                                                         extraColor = extraColor,
                                                         alpha = alpha)
         
-        taxa_info_mutated_merged <- taxa_info_mutated_merged %>%
-          mutate(!!new_columns_name := palette_colors_var_expri[taxa_info_mutated_merged[[{{var}}]]])
+        new_columns_name <- paste("color", var, names(expressions)[i], sep = "_")
+        taxa_mutated_merged <- taxa_mutated_merged %>%
+          mutate(!!new_columns_name := palette_colors_var_expri[taxa_mutated_merged[[{{var}}]]])
         
       }} # end i,var
     
-    taxa_info_mutated_splitted <- taxa_info_mutated_merged %>%
-      base::split(.[, "mgnet"]) %>%
-      purrr::imap(\(x,y){
-        dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
-      }) %>%
-      purrr::map(\(x){
-        x %>% dplyr::select(-any_of(c("mgnet", "comm_id"))) %>%
-          tibble::column_to_rownames("taxa_id")
-      })
-    
-    taxa_info_mutated_splitted <- taxa_info_mutated_splitted[names(object)]
-    taxa(object) <- taxa_info_mutated_splitted
+    taxa(object) <- split_arrange_merged_taxa(taxa_mutated_merged, object)
     return(object)
     
+    
+  # SEPARATE
+  #----------------------------------------------------------------------------#
   } else if(mode == "separate"){
     
     # Check that 'by' is present in all mgnets
     for(x in object@mgnets) {
-      if(!all((vars %in% c("taxa_id", taxa_vars(x))))) {
+      if(!all((vars %in% taxa_vars(x)))) {
         stop(paste("Error: 'by' variable", vars, "is not present in all mgnet objects' taxa metadata."))
       }
     }
-      
-    # LOOP OVER THE EXPRESSIONS AND GROUPING VARIABLES
-    #----------------------------------------------------------------------------#
+    
     for (i in seq_along(expressions)) {
       for(var in vars){
         
-        expr_vars <- all.vars(expressions[[i]])
-        expr_name <- names(expressions)[i]
-        new_columns_name <- paste("color", var, expr_name, sep = "_")
+        result <- apply_expr_var_sort(taxa_mutated_merged, long_abun_merged, expressions[[i]], c("mgnet", var), n, decreasing)
         
-        var_sorted_separated <- top_taxa(object, expression = !!expressions[[i]], by = var, 
-                                         decreasing = decreasing, mode = "separate")
+        if(is.numeric(result$var_sorted[["_internal_"]])){
+          
+          categories <- result$var_sorted %>%
+            group_by(mgnet) %>%
+            arrange(if(decreasing) desc(`_internal_`) else `_internal_`) %>%
+            slice_head(n = result$n) %>%
+            ungroup() %>%
+            pull(var)
+          
+          n = length(categories)
+          
+        } else {
+          
+          categories <- result$var_sorted %>%
+            filter(`_internal_`) %>%
+            pull(var) %>%
+            unique()
+          n <- length(categories)
+          
+        }
         
-        var_sorted_union_distinct <- sapply(var_sorted_separated, \(x) x[1:distinct_colors],
-                                            simplify = FALSE, USE.NAMES = TRUE) %>%
-          unlist() %>% unique()
-        
-        distinct_color_union <- length(var_sorted_union_distinct)
-        var_sorted_all <- unique(c(var_sorted_union_distinct, unlist(var_sorted_separated)))
-        
-        palette_colors_var_expri <- colormap_categories(var_sorted_all,
-                                                        distinct_colors = distinct_color_union,
+        categories <- unique(c(categories, result$var_sorted[[var]]))
+        palette_colors_var_expri <- colormap_categories(as.character(categories),
+                                                        distinct_colors = n,
                                                         colorspace = colorspace,
                                                         extraColor = extraColor,
                                                         alpha = alpha)
         
-        taxa(object) <- sapply(object, \(x){
-          x <- taxa(x, "tbl")
-          x <- x %>% 
-            mutate(!!new_columns_name := palette_colors_var_expri[x[[{{var}}]]]) %>%
-            dplyr::select(-any_of("comm_id")) %>%
-            tibble::column_to_rownames("taxa_id")
-          return(x)
-          
-        }, simplify = FALSE, USE.NAMES = TRUE)
-
-    }} # end i var
-
+        new_columns_name <- paste("color", var, names(expressions)[i], sep = "_")
+        taxa_mutated_merged <- taxa_mutated_merged %>%
+          mutate(!!new_columns_name := palette_colors_var_expri[taxa_mutated_merged[[{{var}}]]])
+        
+      }} # end i,var
+    
+    taxa(object) <- split_arrange_merged_taxa(taxa_mutated_merged, object)
     return(object)
+      
+  
   } # end separate
   
   
 })
+
+
+# SET COMMUNITIES COLOR
+#------------------------------------------------------------------------------#
+#' Set Community Colors in `mgnet` Objects
+#'
+#' This function applies a color scheme to taxa based on community membership, which is determined by 
+#' the sizes of communities identified in a metagenomic network. Each community can be assigned a unique 
+#' color, while smaller communities and isolated nodes are assigned default colors to maintain visual 
+#' clarity.
+#'
+#' @description
+#' `set_community_color` assigns colors to taxa based on community memberships that are specified in the `comm_id` 
+#' of the `mgnet` object. The function employs a color palette that is sensitive to community size, differentiating 
+#' between larger and smaller communities.
+#'
+#' @param object An `mgnet` object that includes community data.
+#' @param size An integer that specifies the minimum size a community must have to receive a unique color.
+#'        Communities smaller than this size will be colored with `smaller_color` (default 1).
+#' @param color_to The name of the column in the taxa data where the color values will be stored (default 'color_comm').
+#' @param smaller_color A hexadecimal color code used for communities that do not exceed the `size` threshold,
+#'        defaulting to a light gray ("#D3D3D3").
+#' @param isolated_color A hexadecimal color code used for isolated nodes, often those not belonging to any community,
+#'        defaulting to white ("#FFFFFF").
+#' @param colorspace The qualitative color palette from which to generate the community colors. Options include
+#'        'pretty', 'pretty_dark', 'rainbow', 'pastels', and others as supported by the `qualpalr` package. This
+#'        parameter allows customization of the color scheme to fit different visualization needs.
+#' @param alpha A numeric value between 0 and 1 indicating the opacity of the colors, where 1 is fully opaque and
+#'        0 is completely transparent. This is useful for creating layered visual effects in plots.
+#'
+#' @details
+#' The function modifies the provided `mgnet` object by adding or updating a column with community colors.
+#' It relies on the `colormap_community` function to generate a suitable color palette based on community
+#' sizes and the specified colorspace. The visualization can then be tailored to highlight community structures
+#' within metagenomic networks effectively.
+#'
+#' @return The modified `mgnet` object with the added or updated community color data.
+#'
+#' @export
+#' @seealso \link[colormap_community]{Generate Color Palette for Community Visualization}
+#' @aliases set_community_color,mgnet-method set_community_color,mgnetList-method
+setGeneric("set_community_color", function(object, size, color_to = "color_comm",
+                                           smaller_color = "#D3D3D3", isolated_color = "#FFFFFF",
+                                           colorspace = "pretty", alpha = 1) standardGeneric("set_community_color"))
+
+setMethod("set_community_color", signature = "mgnet", function(object, size, color_to = "color_comm",
+                                                               smaller_color = "#D3D3D3", isolated_color = "#FFFFFF",
+                                                               colorspace = "pretty", alpha = 1){
+  
+  palette <- colormap_community(comm(object), sizes_threshold = size, 
+                                smaller_color = smaller_color, isolated_color = isolated_color,
+                                colorspace = colorspace, alpha = alpha)
+  
+  
+  object <- mutate_taxa(object, !!color_to := palette[as.character(comm_id)])
+  return(object)
+})
+
+
+setMethod("set_community_color", signature = "mgnetList", function(object, size, color_to = "color_comm",
+                                                               smaller_color = "#D3D3D3", isolated_color = "#FFFFFF",
+                                                               colorspace = "pretty", alpha = 1){
+  
+  palette <- colormap_communities(comm(object), sizes_threshold = size, 
+                                  smaller_color = smaller_color, isolated_color = isolated_color,
+                                  colorspace = colorspace, alpha = alpha)
+  
+  for(i in names(mgl)){
+    object[[i]] <- mutate_taxa(object[[i]], !!color_to := palette[[i]][as.character(comm_id)])
+  }
+  
+  return(object)
+})
+

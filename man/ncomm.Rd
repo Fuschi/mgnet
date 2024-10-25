@@ -25,10 +25,10 @@ For \code{mgnet} objects without any communities, the function returns 0. For \c
 Retrieves the number of communities present in the \code{comm} slot of an \code{mgnet} object or each \code{mgnet} object within an \code{mgnetList}.
 }
 \examples{
-data(HMP2, package = "mgnet")
-ncomm(HMP2)  
+data(mg, package = "mgnet")
+ncomm(mg)  
 
-data(subjects_HMP2, package = "mgnet")
-ncomm(subjects_HMP2)  
+data(mgl, package = "mgnet")
+ncomm(mgl)  
 
 }

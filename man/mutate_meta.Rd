@@ -6,7 +6,7 @@
 \alias{mutate_meta,mgnetList-method}
 \title{Modify and Augment \code{mgnet} Objects by Transforming the \code{meta} Slot}
 \usage{
-mutate_meta(object, ..., .by)
+mutate_meta(object, ..., .by = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.

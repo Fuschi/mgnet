@@ -24,11 +24,13 @@
 setGeneric("pull_meta", function(object, var = -1) standardGeneric("pull_meta"))
 
 setMethod("pull_meta", signature(object = "mgnet"), function(object, var = -1) {
-  
+  if(miss_sample(object)) {stop("Error: No sample available.")}
   dplyr::pull(meta(object), {{var}})
 })
 
 setMethod("pull_meta", signature(object = "mgnetList"), function(object, var = -1) {
+  
+  if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
   
   meta(object, .fmt = "tbl") %>%
     dplyr::select("mgnet", "sample_id", {{var}}) %>%
@@ -70,11 +72,13 @@ setMethod("pull_meta", signature(object = "mgnetList"), function(object, var = -
 setGeneric("pull_taxa", function(object, var = -1) standardGeneric("pull_taxa"))
 
 setMethod("pull_taxa", signature(object = "mgnet"), function(object, var = -1) {
-  
+  if(miss_taxa(object)) {stop("Error: No taxa available.")}
   dplyr::pull(taxa(object), {{var}})
 })
 
 setMethod("pull_taxa", signature(object = "mgnetList"), function(object, var = -1) {
+  
+  if(miss_taxa(object, "any")) {stop("Error: No taxa available in any of the mgnet objects.")}
   
   taxa(object, .fmt = "tbl") %>%
     dplyr::select("mgnet", "taxa_id", {{var}}) %>%

@@ -41,7 +41,8 @@ setGeneric("unite_meta", function(object, col, ..., sep = "_", remove = TRUE) {
 
 setMethod("unite_meta", "mgnet", function(object, col, ..., sep = "_", remove = TRUE) {
   # Check if meta data exists
-  if (length(meta(object)) == 0) stop("No meta data available in 'mgnet' object.")
+  if(miss_sample(object)) {stop("Error: No sample available.")}
+  if(length(meta(object)) == 0) stop("No meta data available in 'mgnet' object.")
   
   # Use dplyr to unite columns
   meta_unite <- tidyr::unite(meta(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE)
@@ -129,8 +130,8 @@ setGeneric("unite_taxa", function(object, col, ..., sep = "_", remove = TRUE) {
 })
 
 setMethod("unite_taxa", "mgnet", function(object, col, ..., sep = "_", remove = TRUE) {
-  # Check if taxa data exists
-  if (length(taxa(object)) == 0) stop("No taxa data available in 'mgnet' object.")
+  if(miss_taxa(object)) {stop("Error: No taxa available.")}
+  if(length(taxa(object)) == 0) stop("No taxa data available in 'mgnet' object.")
   
   # Use dplyr to unite columns
   taxa_unite <- tidyr::unite(taxa(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE) %>%
@@ -148,8 +149,8 @@ setMethod("unite_taxa", "mgnet", function(object, col, ..., sep = "_", remove = 
 })
 
 setMethod("unite_taxa", "mgnetList", function(object, col, ..., sep = "_", remove = TRUE) {
-  # Check if taxa data exists
-  if (any(length(taxa(object)) == 0)) stop("No taxa data available in 'mgnetList' object.")
+  if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
+  if(miss_slot(object, "taxa", "all")) stop("No taxa data available in 'mgnetList' object.")
   
   # Use dplyr to unite columns
   taxa_merged <- tidyr::unite(taxa(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE) 

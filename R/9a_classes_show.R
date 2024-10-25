@@ -74,45 +74,54 @@ setMethod("show", "mgnet", function(object) {
 # ################################################################################
 #' @importFrom utils head
 setMethod("show", "mgnetList", function(object) {
-  cat("==== mgnetList Object Summary ====\n")
   
-  # Number of mgnet objects in the list
-  cat(sprintf("Contains %d mgnet objects:\n", length(object@mgnets)))
-  
-  # Iterate through each mgnet object and provide a summary
-  names <- names(object@mgnets)
-  for (i in seq_along(object@mgnets)) {
-    cat(sprintf("\n  -- mgnet Object `%s` --\n", names[i]))
-    mgnetObj <- object@mgnets[[i]]
-    cat(sprintf("  Samples: %d\n", nsample(mgnetObj)))
-    cat(sprintf("  Taxa: %d\n", ntaxa(mgnetObj)))
+  if (length(object@mgnets) == 0) {
     
-    if( length(mgnetObj@abun) > 0){
-      zeroPercentage <- sum(mgnetObj@abun == 0) / length(mgnetObj@abun)
-      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
-    } else if (length(mgnetObj@rela) > 0) {
-      zeroPercentage <- sum(mgnetObj@rela == 0) / length(mgnetObj@rela)
-      cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
-    } else {
-      cat("  No abundance or rela available.\n")
+    cat("The mgnetList is empty. No mgnet objects available.\n")
+    
+  } else {
+    
+    cat("==== mgnetList Object Summary ====\n")
+    
+    # Number of mgnet objects in the list
+    cat(sprintf("Contains %d mgnet objects:\n", length(object@mgnets)))
+    
+    # Iterate through each mgnet object and provide a summary
+    names <- names(object@mgnets)
+    for (i in seq_along(object@mgnets)) {
+      cat(sprintf("\n  -- mgnet Object `%s` --\n", names[i]))
+      mgnetObj <- object@mgnets[[i]]
+      cat(sprintf("  Samples: %d\n", nsample(mgnetObj)))
+      cat(sprintf("  Taxa: %d\n", ntaxa(mgnetObj)))
+      
+      if( length(mgnetObj@abun) > 0){
+        zeroPercentage <- sum(mgnetObj@abun == 0) / length(mgnetObj@abun)
+        cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+      } else if (length(mgnetObj@rela) > 0) {
+        zeroPercentage <- sum(mgnetObj@rela == 0) / length(mgnetObj@rela)
+        cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+      } else {
+        cat("  No abundance or rela available.\n")
+      }
+      
+      # Display a simplified network and community info if available
+      if (!is.null(mgnetObj@netw) && igraph::vcount(mgnetObj@netw) > 0) {
+        cat(sprintf("  Network: %d edges, ~%.2f%% density\n", igraph::ecount(mgnetObj@netw), 
+                    100*igraph::edge_density(mgnetObj@netw)))
+      } else {
+        cat("  No network data available.\n")
+      }
+      if (!is.null(mgnetObj@comm) && length(mgnetObj@comm) > 0) {
+        cat(sprintf("  Detected Communities: %d (%.2f%% Isolated)\n", 
+                    max(as.numeric(names(igraph::sizes(mgnetObj@comm)[igraph::sizes(mgnetObj@comm) > 1]))),
+                    100*sum(igraph::sizes(mgnetObj@comm)==1) / igraph::vcount(mgnetObj@netw)))
+      } else {
+        cat("  No community detection results available.\n")
+      }
     }
     
-    # Display a simplified network and community info if available
-    if (!is.null(mgnetObj@netw) && igraph::vcount(mgnetObj@netw) > 0) {
-      cat(sprintf("  Network: %d edges, ~%.2f%% density\n", igraph::ecount(mgnetObj@netw), 
-                  100*igraph::edge_density(mgnetObj@netw)))
-    } else {
-      cat("  No network data available.\n")
-    }
-    if (!is.null(mgnetObj@comm) && length(mgnetObj@comm) > 0) {
-      cat(sprintf("  Detected Communities: %d (%.2f%% Isolated)\n", 
-                  max(as.numeric(names(igraph::sizes(mgnetObj@comm)[igraph::sizes(mgnetObj@comm) > 1]))),
-                  100*sum(igraph::sizes(mgnetObj@comm)==1) / igraph::vcount(mgnetObj@netw)))
-    } else {
-      cat("  No community detection results available.\n")
-    }
+    cat("\n")
+    cat("==== End of mgnetList Object Summary ====\n")
+    
   }
-  
-  cat("\n")
-  cat("==== End of mgnetList Object Summary ====\n")
 })

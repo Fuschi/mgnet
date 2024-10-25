@@ -24,10 +24,7 @@ setMethod("abun<-", c("mgnet","ANY"), function(object, value){
 
 setMethod("abun<-", c("mgnetList","ANY"), function(object, value){
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@abun <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@abun <- value[[i]] }
   validObject(object)
   object
 })
@@ -59,10 +56,7 @@ setMethod("rela<-", c("mgnet","ANY"), function(object, value){
 
 setMethod("rela<-", c("mgnetList","ANY"), function(object, value){
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@rela <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@rela <- value[[i]] }
   validObject(object)
   object
 })
@@ -94,10 +88,7 @@ setMethod("norm<-", "mgnet", function(object, value) {
 
 setMethod("norm<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@norm <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@norm <- value[[i]] }
   validObject(object)
   object
 })
@@ -130,10 +121,7 @@ setMethod("meta<-", c("mgnet","ANY"), function(object, value){
 
 setMethod("meta<-", c("mgnetList","ANY"), function(object, value){
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@meta <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@meta <- value[[i]] }
   validObject(object)
   object
 })
@@ -165,10 +153,7 @@ setMethod("taxa<-", "mgnet", function(object, value) {
 
 setMethod("taxa<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@taxa <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@taxa <- value[[i]] }
   validObject(object)
   object
 })
@@ -200,10 +185,7 @@ setMethod("netw<-", "mgnet", function(object, value) {
 
 setMethod("netw<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@netw <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@netw <- value[[i]] }
   validObject(object)
   object
 })
@@ -234,9 +216,6 @@ setMethod("netw<-", "mgnetList", function(object, value) {
 setGeneric("comm<-", function(object, value) standardGeneric("comm<-"))
 
 setMethod("comm<-", "mgnet", function(object, value) {
-  if(!inherits(value, "communities")) {
-    stop("The value for 'comm' must be a 'communities' object from the 'igraph' package.")
-  }
   object@comm <- value
   validObject(object)
   object
@@ -244,10 +223,7 @@ setMethod("comm<-", "mgnet", function(object, value) {
 
 setMethod("comm<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
-  for(i in 1:length(object)) {
-    object@mgnets[[i]]@comm <- value[[i]]
-    validObject(object@mgnets[[i]])
-  }
+  for(i in names(object)) { object@mgnets[[i]]@comm <- value[[i]] }
   validObject(object)
   object
 })

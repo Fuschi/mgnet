@@ -10,25 +10,20 @@ sample_id(object, .fmt = "list")
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object from which to extract sample IDs.}
-
-\item{.fmt}{Character; specifies the output format when retrieving sample IDs from
-an \code{mgnetList}. Accepted values are \code{"list"} for a list of character vectors,
-and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
-returns a tibble with two columns: \code{"mgnet"}, indicating the name of the \code{mgnet} object
-each sample ID originates from, and \code{"sample_id"}, listing the sample IDs themselves.}
+}
+\value{
+Retrieves the IDs of sample from an \code{mgnet} object or lists of sample IDs for each
+\code{mgnet} object within an \code{mgnetList}.
 }
 \description{
-Retrieves the IDs of sample from an \code{mgnet} object or lists of sample IDs for each
-\code{mgnet} object within an \code{mgnetList}. For \code{mgnetList} objects, this method can
-output the results either as a list or as a organized tibble.
+Get sample IDs from mgnet or mgnetList Objects
 }
 \examples{
-data(HMP2, package = "mgnet")
-sample_id(HMP2)  
+data(mg, package = "mgnet")
+sample_id(mg)  
 
-data(subjects_HMP2, package = "mgnet")
-sample_id(subjects_HMP2, .fmt = "list")  
-sample_id(subjects_HMP2, .fmt = "tbl")  
+data(mgl, package = "mgnet")
+sample_id(mgl)  
 
 }
 \seealso{

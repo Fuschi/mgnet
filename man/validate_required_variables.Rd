@@ -4,20 +4,25 @@
 \alias{validate_required_variables}
 \title{Validate Required Variables in Expressions}
 \usage{
-validate_required_variables(object, keys_required, sample_or_taxa)
+validate_required_variables(
+  object,
+  expressions,
+  sample_or_taxa,
+  expression_names
+)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
 
-\item{keys_required}{A character vector of variable names required by the expressions.}
+\item{expressions}{A list of expressions captured by \code{rlang::enquos(...)}.}
 
 \item{sample_or_taxa}{A character string, either "sample" or "taxa", indicating the context.}
 }
 \value{
 A list containing:
 \describe{
-\item{needed_abundance_keys}{Character vector of needed abundance keys (e.g., "abun", "rela", "norm").}
-\item{needed_noabundance_keys}{Character vector of needed metadata keys.}
+\item{needed_abundance}{Character vector of needed abundance keys (e.g., "abun", "rela", "norm").}
+\item{needed_metadata}{Character vector of needed metadata keys.}
 }
 }
 \description{

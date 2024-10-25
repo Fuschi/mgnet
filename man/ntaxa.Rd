@@ -21,10 +21,10 @@ Returns an integer indicating the number of taxa in an \code{mgnet} object
 or a named vector of integers for each \code{mgnet} object within an \code{mgnetList}.
 }
 \examples{
-data(HMP2, package = "mgnet")
-ntaxa(HMP2)  
+data(mg, package = "mgnet")
+ntaxa(mg)  
 
-data(subjects_HMP2, package = "mgnet")
-ntaxa(subjects_HMP2)  
+data(mgl, package = "mgnet")
+ntaxa(mgl)  
 
 }

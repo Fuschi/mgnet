@@ -28,12 +28,16 @@
 setGeneric("bind_meta", function(object, ...) standardGeneric("bind_meta"))
 
 setMethod("bind_meta", signature(object = "mgnet"), function(object, ...) {
-  new_meta <- dplyr::bind_cols(meta(object), ...)
+  if(miss_sample(object)) {stop("Error: No sample available.")}
+  new_meta <- dplyr::bind_cols(object@meta, ...)
   meta(object) <- new_meta
   object
 })
 
 setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
+  
+  if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
+  
   additional_args <- list(...)
   
   # Check if additional columns are provided as a named list matching mgnet names
@@ -99,21 +103,22 @@ setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
 #' allowing you to augment the taxa metadata with additional data.
 #'
 #' @importFrom dplyr bind_cols
-#' @importFrom tidyselect any_of
 #' @export
 #' @name bind_taxa
 #' @aliases bind_taxa,mgnet-method bind_taxa,mgnetList-method
 setGeneric("bind_taxa", function(object, ...) standardGeneric("bind_taxa"))
 
 setMethod("bind_taxa", signature(object = "mgnet"), function(object, ...) {
-  new_taxa <- taxa(object) %>%
-    dplyr::select(tidyselect::any_of(comm_id)) %>%
-    dplyr::bind_cols(...)
+  if(miss_taxa(object)) {stop("Error: No taxa available.")}
+  new_taxa <-  dplyr::bind_cols(object@taxa, ...)
   taxa(object) <- new_taxa
   object
 })
 
 setMethod("bind_taxa", signature(object = "mgnetList"), function(object, ...) {
+  
+  if(miss_taxa(object, "any")) {stop("Error: No taxa available in any of the mgnet objects.")}
+  
   additional_args <- list(...)
   
   # Check if additional columns are provided as a named list matching mgnet names

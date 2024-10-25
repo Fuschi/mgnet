@@ -41,115 +41,39 @@
 #' @importFrom purrr reduce map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("filter_meta", function(object, ..., .by) {standardGeneric("filter_meta")})
+setGeneric("filter_meta", function(object, ..., .by = NULL) {standardGeneric("filter_meta")})
 
-setMethod("filter_meta", "mgnet", function(object, ..., .by = "sample_id") {
+setMethod("filter_meta", "mgnet", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  
   # Ensure there are samples to process
-  if (nsample(object) == 0) {
-    stop("Error: No samples available in at least one provided 'mgnet' object.")
-  }
+  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
+  # Check the reserved keywords
+  check_reserved_keywords(expressions)
   
-  # Check the variables needed
-  validate_required_variables(object, keys_required, "sample")
-  
-  # Store needed abundances keys
-  keys_abundance <- c("abun", "rela", "norm")
-  needed_abundance_keys <- intersect(keys_required, keys_abundance)
-  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- "sample_id"
-  }
-  
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "sample", FALSE)
+  .by <- validate_required_groups(object, .by, "sample")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
   
   # END CHECKS
   #----------------------------------------------------------------------------#
-  
-  # CREATE LONG FORMAT SAMPLE DATA
-  #----------------------------------------------------------------------------#
-  
-  if(length(meta(object)) == 0){
-    sample_info_data = tibble::tibble(sample_id = sample_id(object))
-  } else {
-    sample_info_data = meta(object, .fmt = "tbl")
-  }
-  
-  if(length(needed_abundance_keys) != 0){
-    
-    long_abun <- tidyr::expand_grid(sample_id = sample_id(object),
-                                           taxa_id = taxa_id(object))
-    
-    for(abundance_key in needed_abundance_keys){
-      long_abun <- long_abun %>%
-        dplyr::left_join(
-          methods::slot(object, abundance_key) %>%
-            tibble::as_tibble(rownames = "sample_id") %>%
-            tidyr::pivot_longer(-sample_id, 
-                                names_to = "taxa_id", 
-                                values_to = abundance_key),
-          by = c("sample_id", "taxa_id")
-        )
-    }
-    
-    long_abun <- long_abun %>%
-        dplyr::left_join(meta(object, .fmt = "tbl"), by = "sample_id")
 
-  }
-  # END LONG FORMAT SAMPLE DATA
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
+  metadata <- initialize_meta(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_samples <- list()
-  
-  for (i in seq_along(expressions)) {
-    expr <- expressions[[i]]
-    expr_vars <- all.vars(rlang::quo_get_expr(expr))
-    
-    #expr_name <- names(expressions)[i]
-    
-    if (any(expr_vars %in% keys_abundance)) {
-      
-      # Process expressions involving abundance-related variables
-      filtered_samples[[i]] <- long_abun %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-any_of(c("taxa_id", keys_abundance))) %>%
-        dplyr::distinct() %>%
-        dplyr::pull("sample_id")
-
-    } else {
-      
-      # Process expressions not involving abundance-related variables
-      filtered_samples[[i]] <- sample_info_data %>%
-          dplyr::group_by(!!!rlang::syms(.by)) %>%
-          dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-          dplyr::ungroup() %>%
-          dplyr::pull("sample_id")
-
-    }
-  }
+  filtered_samples <- apply_filter_verb(metadata, long_abun, expressions, .by, "sample")
     
   filtered_samples <- purrr::reduce(filtered_samples, intersect) 
   filtered_samples <- filtered_samples[order(which(sample_id(object) %in% filtered_samples))]
@@ -171,29 +95,12 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
+  # Check the reserved keywords
+  check_reserved_keywords(expressions)
   
-  # Check the variables needed
-  lapply(object, \(x){
-    validate_required_variables(x, keys_required, "sample")})
-  
-  # Store needed abundances keys
-  keys_abundance <- c("abun","rela","norm")
-  needed_abundance_keys <- intersect(keys_required, keys_abundance)
-  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- c("mgnet","sample_id")
-  }
-  
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "sample", FALSE)
+  .by <- validate_required_groups(object, .by, "sample")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -201,77 +108,14 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
   # END CHECKS
   #----------------------------------------------------------------------------#
   
-  # CREATE LONG FORMAT SAMPLE DATA
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  sample_info_data_merged <- object %>%
-    purrr::map(\(x) {
-      if(length(meta(x)) != 0){
-        meta(x, .fmt = "tbl")
-      } else {
-        tibble::tibble(sample_id = sample_id(x))
-      }
-    }) %>%
-    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-    purrr::list_rbind()
-  
-  if (length(needed_abundance_keys) != 0){
-    
-    long_abun_merged <- purrr::map(object, \(mgnet_obj){
-      
-      long_abun <- tidyr::expand_grid(sample_id = sample_id(mgnet_obj),
-                                             taxa_id = taxa_id(mgnet_obj))
-      
-      for(abundance_key in needed_abundance_keys){
-        long_abun <- long_abun %>%
-          dplyr::left_join(methods::slot(mgnet_obj, abundance_key) %>%
-                             tibble::as_tibble(rownames = "sample_id") %>%
-                             tidyr::pivot_longer(-sample_id, 
-                                                 names_to = "taxa_id", 
-                                                 values_to = abundance_key),
-                           by = c("sample_id", "taxa_id"))
-      }
-      return(long_abun)
-    }) %>%
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind() %>%
-      dplyr::left_join(sample_info_data_merged, 
-                       by = c("mgnet","sample_id"))
-  } 
-  # END LONG FORMAT SAMPLE DATA
-  #----------------------------------------------------------------------------#
+  metadata <- initialize_meta(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_samples <- list()
-  
-  for (i in seq_along(expressions)) {
-    expr <- expressions[[i]]
-    expr_vars <- all.vars(quo_get_expr(expr))
-    
-    if (any(expr_vars %in% keys_abundance)) {
-      
-      # Process expressions involving abundance-related variables
-      filtered_samples[[i]] <- long_abun_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
-        dplyr::distinct() %>%
-        dplyr::select(tidyselect::all_of(c("mgnet", "sample_id")))
-      
-    } else {
-      
-      # Process expressions not involving abundance-related variables
-      filtered_samples[[i]] <- sample_info_data_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(tidyselect::all_of(c("mgnet", "sample_id")))
-      
-    }
-  }
-  
-  filtered_samples <- purrr::reduce(filtered_samples, dplyr::semi_join, by = c("mgnet", "sample_id")) 
+  filtered_samples <- apply_filter_verb(metadata, long_abun, expressions, .by, "sample")
   
   for(i in names(object)){
     filtered_i <- dplyr::filter(filtered_samples, mgnet == i) %>% dplyr::pull("sample_id")
@@ -328,42 +172,24 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
 #' @importFrom purrr reduce map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("filter_taxa", function(object, ..., .by) {standardGeneric("filter_taxa")})
+setGeneric("filter_taxa", function(object, ..., .by = NULL) {standardGeneric("filter_taxa")})
 
-setMethod("filter_taxa", "mgnet", function(object, ..., .by = "taxa_id") {
+setMethod("filter_taxa", "mgnet", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if (ntaxa(object) == 0) {
-    stop("Error: No samples available in the 'mgnet' object.")
-  }
+  # Ensure there are taxa to process
+  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
+  # Check the reserved keywords
+  check_reserved_keywords(expressions)
   
-  # Check the variables needed
-  validate_required_variables(object, keys_required, "taxa")
-  
-  # Store needed abundances keys
-  keys_abundance <- c("abun","rela","norm")
-  needed_abundance_keys <- intersect(keys_required, keys_abundance)
-  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- "taxa_id"
-  }
-  
-  if (!is.character(.by) || "sample_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
+  .by <- validate_required_groups(object, .by, "taxa")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -371,191 +197,54 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = "taxa_id") {
   # END CHECKS
   #----------------------------------------------------------------------------#
   
-  # CREATE LONG FORMAT taxa DATA
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  
-  if(length(taxa(object)) == 0){
-    taxa_info_data = tibble::tibble(taxa_id = taxa_id(object))
-  } else {
-    taxa_info_data = taxa(object, .fmt = "tbl")
-  }
-  
-  if(length(needed_abundance_keys) != 0){
-    
-    taxa_abun_data <- tidyr::expand_grid(sample_id = sample_id(object),
-                                           taxa_id = taxa_id(object))
-    
-    for(abundance_key in needed_abundance_keys){
-      taxa_abun_data <- taxa_abun_data %>%
-        dplyr::left_join(
-          methods::slot(object, abundance_key) %>%
-            tibble::as_tibble(rownames = "sample_id") %>%
-            tidyr::pivot_longer(-sample_id, 
-                                names_to = "taxa_id", 
-                                values_to = abundance_key),
-          by = c("sample_id", "taxa_id")
-        )
-    }
-    
-    taxa_abun_data <- taxa_abun_data %>%
-      dplyr::left_join(taxa(object, .fmt = "tbl"),
-                       by = "taxa_id")
-    
-  }
-  # END LONG FORMAT SAMPLE DATA
-  #----------------------------------------------------------------------------#
+  metadata <- initialize_taxa(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_taxa <- list()
-  
-  for (i in seq_along(expressions)) {
-    expr <- expressions[[i]]
-    expr_vars <- all.vars(rlang::quo_get_expr(expr))
-    
-    #expr_name <- names(expressions)[i]
-    
-    if (any(expr_vars %in% keys_abundance)) {
-      
-      # Process expressions involving abundance-related variables
-      filtered_taxa[[i]] <- taxa_abun_data %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-any_of(c("sample_id", keys_abundance))) %>%
-        dplyr::distinct() %>%
-        dplyr::pull("taxa_id")
-      
-    } else {
-      
-      # Process expressions not involving abundance-related variables
-      filtered_taxa[[i]] <- taxa_info_data %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::pull("taxa_id")
-      
-    }
-  }
-  
+  filtered_taxa <- apply_filter_verb(metadata, long_abun, expressions, .by, "taxa")
+
   filtered_taxa <- purrr::reduce(filtered_taxa, intersect) 
   filtered_taxa <- filtered_taxa[order(which(taxa_id(object) %in% filtered_taxa))]
-  
   return(object[, filtered_taxa])
 })
 
 
-setMethod("filter_taxa", "mgnetList", function(object, ..., .by = c("mgnet", "taxa_id")) {
+setMethod("filter_taxa", "mgnetList", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if (any(ntaxa(object) == 0)) {
-    stop("Error: No samples available in the 'mgnet' object.")
+  # Ensure there are taxa to process
+  if (any(miss_taxa(object) == 0)) {
+    stop("Error: No taxa available in the 'mgnet' object.")
   }
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
+  # Check the reserved keywords
+  check_reserved_keywords(expressions)
   
-  # Check the variables needed
-  lapply(object, \(x){
-    validate_required_variables(x, keys_required, "taxa")})
-  
-  # Store needed abundances keys
-  keys_abundance <- c("abun","rela","norm")
-  needed_abundance_keys <- intersect(keys_required, keys_abundance)
-  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- c("mgnet","taxa_id")
-  }
-  
-  if (!is.character(.by) || "sample_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
+  .by <- validate_required_groups(object, .by, "taxa")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
   
-  # CREATE LONG FORMAT taxa DATA
+  # END CHECKS
   #----------------------------------------------------------------------------#
-
-  taxa_info_data_merged <- object %>%
-    purrr::map(\(x) {
-      y <- tibble::tibble(taxa_id = taxa_id(x))
-      if(length(taxa(object))!=0){
-        y <- y %>% dplyr::left_join(taxa(x, .fmt = "tbl"), by = "taxa_id")
-      }
-      return(y)
-    }) %>%
-    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-    purrr::list_rbind()
   
-  if (length(needed_abundance_keys) != 0){
-    
-    taxa_abun_data_merged <- purrr::map(object, \(mgnet_obj){
-      
-      taxa_abun_data <- tidyr::expand_grid(sample_id = sample_id(mgnet_obj),
-                                             taxa_id = taxa_id(mgnet_obj))
-      
-      for(abundance_key in needed_abundance_keys){
-        taxa_abun_data <- taxa_abun_data %>%
-          dplyr::left_join(methods::slot(mgnet_obj, abundance_key) %>%
-                             tibble::as_tibble(rownames = "sample_id") %>%
-                             tidyr::pivot_longer(-sample_id, 
-                                                 names_to = "taxa_id", 
-                                                 values_to = abundance_key),
-                           by = c("sample_id", "taxa_id"))
-      }
-      return(taxa_abun_data)
-    }) %>%
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind() %>%
-      dplyr::left_join(taxa_info_data_merged, 
-                       by = c("mgnet","taxa_id"))
-  } 
-  # END LONG FORMAT taxa DATA
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
+  metadata <- initialize_taxa(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_taxa <- list()
-  
-  for (i in seq_along(expressions)) {
-    expr <- expressions[[i]]
-    expr_vars <- all.vars(quo_get_expr(expr))
-    
-    if (any(expr_vars %in% keys_abundance)) {
-      
-      # Process expressions involving abundance-related variables
-      filtered_taxa[[i]] <- taxa_abun_data_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
-        dplyr::distinct() %>%
-        dplyr::select(tidyselect::all_of(c("mgnet", "taxa_id")))
-      
-    } else {
-      
-      # Process expressions not involving abundance-related variables
-      filtered_taxa[[i]] <- taxa_info_data_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(tidyselect::all_of(c("mgnet", "taxa_id")))
-      
-    }
-  }
-  
-  filtered_taxa <- purrr::reduce(filtered_taxa, dplyr::semi_join, by = c("mgnet", "taxa_id")) 
+  filtered_taxa <- apply_filter_verb(metadata, long_abun, expressions, .by, "taxa")
   
   for(i in names(object)){
     filtered_i <- dplyr::filter(filtered_taxa, mgnet == i) %>% dplyr::pull("taxa_id")

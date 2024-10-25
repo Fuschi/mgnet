@@ -11,7 +11,7 @@
 check_reserved_keywords <- function(expressions) {
   
   # Define the reserved keywords
-  reserved_keywords <- c("sample_id", "taxa_id", "comm_id", "abun", "rela", "norm", "mgnet")
+  reserved_keywords <- c("sample_id", "taxa_id", "comm_id", "abun", "rela", "norm", "mgnet", "meta", "taxa", ".")
   
   # Search reserved keywords in the expression names
   found_keywords <- names(expressions)[names(expressions) %in% reserved_keywords]
@@ -22,75 +22,6 @@ check_reserved_keywords <- function(expressions) {
     stop(sprintf("Error: The following reserved keywords can't be modified: %s",
                  paste(found_keywords, collapse = ", ")))
   }
-}
-
-#------------------------------------------------------------------------------#
-#' Validate Required Variables in Expressions
-#'
-#' This internal function checks that all variables required by the expressions are present
-#' in the object (either in abundance data or metadata). It returns the needed abundance
-#' and metadata keys.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param keys_required A character vector of variable names required by the expressions.
-#' @param sample_or_taxa A character string, either "sample" or "taxa", indicating the context.
-#'
-#' @return A list containing:
-#'   \describe{
-#'     \item{needed_abundance_keys}{Character vector of needed abundance keys (e.g., "abun", "rela", "norm").}
-#'     \item{needed_noabundance_keys}{Character vector of needed metadata keys.}
-#'   }
-#' @keywords internal
-validate_required_variables <- function(object, keys_required, sample_or_taxa) {
-  
-  keys_abundance <- c("abun", "rela", "norm")
-  needed_abundance_keys <- intersect(keys_required, keys_abundance)
-  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
-  
-  # Get available metadata variables
-  if (sample_or_taxa == "sample") {
-    metadata_columns <- unique(unlist(meta_vars(object)))
-  } else {
-    metadata_columns <- unique(unlist(taxa_vars(object)))
-  }
-  
-  # Check for missing abundance data
-  missing_abundances <- c()
-  for (key in keys_abundance) {
-    if (key %in% keys_required && length(methods::slot(object, key)) == 0) {
-      missing_abundances <- c(missing_abundances, key)
-    }
-  }
-  
-  # Check for missing metadata variables
-  missing_noabundances <- c()
-  if (length(needed_noabundance_keys) > 0) {
-    missing_noabundances <- setdiff(needed_noabundance_keys, metadata_columns)
-  }
-  
-  # Generate error message if any keys are missing
-  if (length(missing_abundances) > 0 || length(missing_noabundances) > 0) {
-    error_message <- "Error: The following required variables in the expressions are missing:\n"
-    
-    # Add missing abundance-related keys
-    if (length(missing_abundances) > 0) {
-      error_message <- paste0(error_message, "- abundance-related: ", 
-                              paste(missing_abundances, collapse = ", "), "\n")
-    }
-    
-    # Add missing metadata keys
-    if (length(missing_noabundances) > 0) {
-      error_message <- paste0(error_message, "- ", sample_or_taxa, " metadata: ", 
-                              paste(missing_noabundances, collapse = ", "), "\n")
-    }
-    
-    stop(error_message)
-  }
-  
-  return(list(
-    needed_abundance_keys = needed_abundance_keys,
-    needed_noabundance_keys = needed_noabundance_keys
-  ))
 }
 
 #' Check for Forbidden Functions and Disallowed Variables in Expressions
@@ -153,31 +84,187 @@ check_forbidden_expressions <- function(expressions) {
 }
 
 
-#' Check for Exclusive Keyword Usage in Expressions
+#------------------------------------------------------------------------------#
+#' Extract Required Keys from Expressions
 #'
-#' This internal function checks each expression to ensure that reserved keywords
-#' ('.', 'netw', 'comm') are used exclusively. If any of these keywords are present,
-#' no other variables or keywords should be present in the expression.
+#' This internal function extracts the variable names from a list of expressions.
+#' It identifies all the variables used within the expressions provided and returns
+#' a unique set of required keys. This function is helpful in determining which
+#' abundance or metadata variables are needed for processing.
 #'
-#' @param expressions A list of quosured expressions.
+#' @param expressions A list of expressions captured using `rlang::enquos`. These
+#' expressions contain variable names that need to be extracted and evaluated.
 #'
-#' @return Throws an error if any expression contains exclusive keywords along with other variables.
+#' @return A character vector of unique variable names (keys) required by the expressions.
 #' @keywords internal
-check_exclusive_keyword_usage <- function(expressions) {
-  for (i in seq_along(expressions)) {
-    
-    exclusive_keys <- c(".", "netw", "comm")
-    expr <- rlang::quo_get_expr(expressions[[i]])
-    all_vars <- all.vars(expr)
-    
-    # Find intersection of all variables in the expression with the list of exclusive keys
-    exclusive_used <- intersect(all_vars, exclusive_keys)
-    
-    # Check if any exclusive keys are used and if there are any other variables present
-    if (length(exclusive_used) > 0) {
-      if (length(all_vars) > length(exclusive_used)) {
-        stop(sprintf("Error: Exclusive keyword '%s' used with other variables. It must be used alone.", toString(exclusive_used)))
-      }
+#'
+#' @seealso \code{\link[=rlang]{enquos}} for capturing expressions in quosures.
+extract_required_keys <- function(expressions) {
+  keys_required <- expressions %>%
+    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
+    unlist() %>%
+    unique()
+  
+  return(keys_required)
+}
+
+
+#------------------------------------------------------------------------------#
+#' Validate Required Variables in Expressions
+#'
+#' This internal function checks that all variables required by the expressions are present
+#' in the object (either in abundance data or metadata). It returns the needed abundance
+#' and metadata keys.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param expressions A list of expressions captured by `rlang::enquos(...)`.
+#' @param sample_or_taxa A character string, either "sample" or "taxa", indicating the context.
+#' 
+#' @importFrom purrr map
+#' @importFrom rlang quo_get_expr
+#'
+#' @return A list containing:
+#'   \describe{
+#'     \item{needed_abundance}{Character vector of needed abundance keys (e.g., "abun", "rela", "norm").}
+#'     \item{needed_metadata}{Character vector of needed metadata keys.}
+#'   }
+#' @keywords internal
+validate_required_variables <- function(object, expressions, sample_or_taxa, expression_names) {
+  
+  keys_required <- expressions %>%
+    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
+    unlist() %>%
+    unique()
+  
+  keys_abundance <- c("abun", "rela", "norm")
+  needed_abundance_keys <- intersect(keys_required, keys_abundance)
+  needed_noabundance_keys <- setdiff(keys_required, keys_abundance)
+  
+  # Get available metadata variables
+  if (sample_or_taxa == "sample") {
+    metadata_columns <- meta_vars(object, "unique")
+  } else {
+    metadata_columns <- taxa_vars(object, "unique")
+  }
+  
+  if(expression_names) metadata_columns <- c(metadata_columns, names(expressions))
+  
+  # Check for missing abundance data
+  missing_abundances <- c()
+  for (key in keys_abundance) {
+    if (key %in% keys_required && miss_slot(object, key, "any")) {
+      missing_abundances <- c(missing_abundances, key)
     }
   }
+  
+  # Check for missing metadata variables
+  missing_noabundances <- c()
+  if (length(needed_noabundance_keys) > 0) {
+    missing_noabundances <- setdiff(needed_noabundance_keys, metadata_columns)
+  }
+  
+  # Generate error message if any keys are missing
+  # if (length(missing_abundances) > 0 || length(missing_noabundances) > 0) {
+  #   error_message <- "Error: The following required variables in the expressions are missing:\n"
+  #   
+  #   # Add missing abundance-related keys
+  #   if (length(missing_abundances) > 0) {
+  #     error_message <- paste0(error_message, "- abundance-related: ", 
+  #                             paste(missing_abundances, collapse = ", "), "\n")
+  #   }
+  #   
+  #   # Add missing metadata keys
+  #   if (length(missing_noabundances) > 0) {
+  #     error_message <- paste0(error_message, "- ", sample_or_taxa, " metadata: ", 
+  #                             paste(missing_noabundances, collapse = ", "), "\n")
+  #   }
+  #   
+  #   stop(error_message)
+  # }
+  
+  return(list(
+    abundance = needed_abundance_keys,
+    metadata = needed_noabundance_keys
+  ))
+}
+
+
+
+#------------------------------------------------------------------------------#
+#' Validate Required Groups Variables in Expressions
+#'
+#' This internal function checks that all groups variables required in the object 
+#' (either in abundance data or metadata).
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param groups_required A character vector of variable names.
+#' @param sample_or_taxa A character string, either "sample" or "taxa", indicating the context.
+#' 
+#' @return the controlled grouping variables
+#'
+#' @keywords internal
+validate_required_groups <- function(object, groups_required, sample_or_taxa) {
+  
+  if(is.null(groups_required) && inherits(object, "mgnet")){
+    
+    groups_required <- if(sample_or_taxa == "sample") "sample_id" else "taxa_id"
+    
+  } else if(is.null(groups_required) && inherits(object, "mgnetList")){
+    
+    groups_required <- if(sample_or_taxa == "sample"){
+      c("mgnet", "sample_id")
+    } else {
+      c("mgnet", "sample_id")
+    }
+    
+  } else {
+    
+    sample_or_taxa <- match.arg(sample_or_taxa, c("sample", "taxa"))
+    groups_abundance <- c("abun", "rela", "norm")
+    needed_abundance_groups <- intersect(groups_required, groups_abundance)
+    needed_noabundance_groups <- setdiff(groups_required, groups_abundance)
+    
+    # Get available metadata variables
+    if (sample_or_taxa == "sample") {
+      metadata_columns <- meta_vars(object, "unique")
+    } else {
+      metadata_columns <- taxa_vars(object, "unique")
+    }
+    
+    # Check for missing abundance data
+    missing_abundances <- c()
+    for (group in groups_abundance) {
+      if (group %in% groups_required && miss_slot(object, group, "any")) {
+        missing_abundances <- c(missing_abundances, group)
+      }
+    }
+    
+    # Check for missing metadata variables
+    missing_noabundances <- c()
+    if (length(needed_noabundance_groups) > 0) {
+      missing_noabundances <- setdiff(needed_noabundance_groups, metadata_columns)
+    }
+    
+    # Generate error message if any groups are missing
+    if (length(missing_abundances) > 0 || length(missing_noabundances) > 0) {
+      error_message <- "Error: The following required grouping variables in the expressions are missing:\n"
+      
+      # Add missing abundance-related groups
+      if (length(missing_abundances) > 0) {
+        error_message <- paste0(error_message, "- abundance-related: ", 
+                                paste(missing_abundances, collapse = ", "), "\n")
+      }
+      
+      # Add missing metadata groups
+      if (length(missing_noabundances) > 0) {
+        error_message <- paste0(error_message, "- ", sample_or_taxa, " metadata: ", 
+                                paste(missing_noabundances, collapse = ", "), "\n")
+      }
+      
+      stop(error_message)
+    }
+    
+    groups_required
+  }
+  
 }

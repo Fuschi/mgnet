@@ -7,15 +7,15 @@ setOldClass("communities")
 #'
 #' An S4 class designed for comprehensive management and analysis of metagenomic networks.
 #' It encapsulates a variety of microbial data including abundance matrices, sample metadata,
-#' taxonomic information, and results from network analysis. This class serves as a robust 
-#' framework for exploring microbial communities and their interactions, supporting 
+#' taxonomic information, and results from network analysis. This class serves as a robust
+#' framework for exploring microbial communities and their interactions, supporting
 #' sophisticated workflows in metagenomics research. Designed to be compatible with the tidyverse,
 #' `mgnet` facilitates seamless integration with pipelines that leverage tidyverse packages
 #' for data manipulation, analysis, and visualization.
 #'
 #' @slot abun A numeric matrix representing the raw abundance data from
 #'        next-generation sequencing (NGS), where rows correspond to samples and columns
-#'        to taxa. 
+#'        to taxa.
 #' @slot rela A numeric matrix representing the relative abundance of each taxon
 #'        within each sample. It is calculated as the proportion of each taxon's abundance
 #'        relative to the total abundance in the sample, providing insights into the
@@ -24,7 +24,7 @@ setOldClass("communities")
 #'        analysis across samples. This includes transformations such as log-ratio transformation,
 #'        rarefaction, or DESeq normalization, to address issues like compositional data biases.
 #' @slot meta A data frame containing metadata for samples, indexed by sample IDs.
-#'        Metadata can include sample collection details, experimental conditions, 
+#'        Metadata can include sample collection details, experimental conditions,
 #'        and clinical outcomes.
 #' @slot taxa A data frame containing a broad range of metadata associated with each taxon,
 #'        indexed by taxa IDs. This metadata may encompass any relevant ecological, genetic,
@@ -60,7 +60,6 @@ setOldClass("communities")
 #' @rdname mgnet-class
 #' @exportClass mgnet
 setClass("mgnet",
-         
   slots = c(
     abun = "ANY",
     rela = "ANY",
@@ -68,18 +67,18 @@ setClass("mgnet",
     meta = "ANY",
     taxa = "ANY",
     netw = "ANY",
-    comm = "ANY"  
+    comm = "ANY"
   ),
-  
   prototype = prototype(
-    abun = matrix(numeric(0), nrow=0, ncol=0),
-    rela = matrix(numeric(0), nrow=0, ncol=0),
-    norm = matrix(numeric(0), nrow=0, ncol=0),
+    abun = matrix(numeric(0), nrow = 0, ncol = 0),
+    rela = matrix(numeric(0), nrow = 0, ncol = 0),
+    norm = matrix(numeric(0), nrow = 0, ncol = 0),
     meta = data.frame(),
     taxa = data.frame(),
     netw = igraph::make_empty_graph(0),
     comm = igraph::cluster_fast_greedy(
-      igraph::make_empty_graph(0,directed=F))
+      igraph::make_empty_graph(0, directed = F)
+    )
   )
 )
 ################################################################################
@@ -94,7 +93,7 @@ setClass("mgnet",
 #'
 #' This function constructs an `mgnet` object, encapsulating a comprehensive range of metagenomic data.
 #' It integrates abundance data, sample metadata, taxonomic details, and network analysis results into a single
-#' structure, providing a robust platform for analyzing microbial communities and their interactions. 
+#' structure, providing a robust platform for analyzing microbial communities and their interactions.
 #' Enhanced error handling is implemented to ensure a smooth user experience by providing clear feedback
 #' on input errors.
 #'
@@ -119,7 +118,7 @@ setClass("mgnet",
 #'        `make_empty_graph`.
 #' @param comm An object storing community detection results, typically obtained from network analysis.
 #'        Defaults to the result of `cluster_fast_greedy` applied to an empty graph.
-#'        
+#'
 #' @section Reserved Keywords:
 #' The `mgnet` class reserves the following keywords for internal use, which should not be used
 #' as column names in provided matrices or data frames: `sample_id`, `taxa_id`, `comm_id`,
@@ -139,35 +138,36 @@ setClass("mgnet",
 #' # Creating a mgnet object with example data
 #' data(otu_HMP2, meta_HMP2, taxa_HMP2, package = "mgnet")
 #' HMP2 <- mgnet(abun = otu_HMP2, meta = meta_HMP2, taxa = taxa_HMP2)
-#' 
+#'
 #' @export
-mgnet <- function(abun = matrix(numeric(0), nrow=0,ncol=0),
-                  rela = matrix(numeric(0), nrow=0,ncol=0),
-                  norm = matrix(numeric(0), nrow=0, ncol=0),
+mgnet <- function(abun = matrix(numeric(0), nrow = 0, ncol = 0),
+                  rela = matrix(numeric(0), nrow = 0, ncol = 0),
+                  norm = matrix(numeric(0), nrow = 0, ncol = 0),
                   meta = data.frame(),
                   taxa = data.frame(),
-                  netw = make_empty_graph(n=0, directed=FALSE),
-                  comm = cluster_fast_greedy(make_empty_graph(n=0, directed=FALSE))
-){
-  
-  tryCatch({
-    mgnet_object <- new("mgnet", 
-                        abun = abun, 
-                        rela = rela, norm = norm,
-                        meta = meta,
-                        taxa = taxa,
-                        netw = netw, comm = comm)
-    
-    if(length(mgnet_object@abun) != 0 && length(mgnet_object@rela)==0 ){
-      mgnet_object@rela <- mgnet_object@abun / rowSums(mgnet_object@abun)
+                  netw = make_empty_graph(n = 0, directed = FALSE),
+                  comm = cluster_fast_greedy(make_empty_graph(n = 0, directed = FALSE))) {
+  tryCatch(
+    {
+      mgnet_object <- new("mgnet",
+        abun = abun,
+        rela = rela, norm = norm,
+        meta = meta,
+        taxa = taxa,
+        netw = netw, comm = comm
+      )
+
+      if (length(mgnet_object@abun) != 0 && length(mgnet_object@rela) == 0) {
+        mgnet_object@rela <- mgnet_object@abun / rowSums(mgnet_object@abun)
+      }
+
+      return(mgnet_object)
+    },
+    error = function(e) {
+      # Clean the error message to remove R internal trace information
+      stop(e$message)
     }
-    
-    return(mgnet_object)
-    
-  }, error = function(e) {
-    # Clean the error message to remove R internal trace information
-    stop(e$message)
-  })
+  )
 }
 ################################################################################
 # END CONSTRUCTOR MGNET

@@ -24,10 +24,10 @@ This function retrieves community IDs from an \code{mgnet} or \code{mgnetList} o
 format. For \code{mgnetList}, the community IDs can be output as either a list or a structured tibble.
 }
 \examples{
-data(subject_HMP2_netw, package = "mgnet")
-comm_id(subject_HMP2_netw)  
+data(mg, package = "mgnet")
+comm_id(mg)  
 
-data(subjects_HMP2_netw, package = "mgnet")
-comm_id(subjects_HMP2_netw, .fmt = "list")  
-comm_id(subjects_HMP2_netw, .fmt = "tbl")   
+data(mgl, package = "mgnet")
+comm_id(mgl, .fmt = "list")  
+comm_id(mgl, .fmt = "tbl")   
 }

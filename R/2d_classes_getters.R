@@ -322,16 +322,15 @@ setMethod("norm", "mgnet", function(object, .var = NULL, .fmt = "mat", .fun = su
 setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun = sum) {
   
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  result <- sapply(object@mgnets, function(x) norm(object = x, .var = .var, 
-                                                             .fmt = .fmt, .fun = .fun),
+  result <- sapply(object, function(x) norm(object = x, .var = .var, .fmt = .fmt, .fun = .fun),
                    simplify = FALSE, USE.NAMES = TRUE)
   return(result)
 })
 
 
-# INFO_SAMPLE
+# META
 #------------------------------------------------------------------------------#
-#' Get Sample Information
+#' Get Sample Metadata Information
 #'
 #' Retrieves the sample information stored in the `meta` slot of an `mgnet` object
 #' or for each `mgnet` object within an `mgnetList`, with the option to format the output as
@@ -341,9 +340,9 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #' @param .fmt A character string specifying the output format of the result.
 #'        Possible choices are:
 #'        - "df": Returns the output as a `data.frame`.
-#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, if present, the row names of
+#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the row names of
 #'          the abundance matrix are converted into a new column named `sample_id`, ensuring alignment
-#'          with the reserved keyword in `mgnet`.
+#'          with the reserved keyword in `mgnet-class`.
 #'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
 #'          each corresponding to the `meta` of an individual `mgnet` object.
 #'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
@@ -354,6 +353,7 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #' @return The content of the `meta` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' 
 #' @importFrom purrr map imap list_rbind
+#' @importFrom tibble tibble
 #' @export
 #' @name meta
 #' @aliases meta,mgnet-method meta,mgnetList-method
@@ -380,32 +380,61 @@ setMethod("meta", "mgnet", function(object, .fmt) {
 })
 
 setMethod("meta", "mgnetList", function(object, .fmt) {
+  
   if(missing(.fmt)) .fmt <- "list_df"
   .fmt <- match.arg(.fmt, c("list_df", "list_tbl", "tbl"))
   
   if(.fmt == "list_df") {
     
+    if(length(object) == 0) return(data.frame())
     return(purrr::map(object, function(x) meta(x, .fmt = "df")))
     
   } else if(.fmt == "list_tbl") {
     
+    if(length(object) == 0) return(tibble::tibble())
     return(purrr::map(object, function(x) meta(x, .fmt = "tbl")))
     
-  } else {
+  } else if(.fmt == "tbl") {
+
+    if(miss_sample(object, "any")){
+      
+      missing_sample_mgnets <- names(object)[miss_sample(object, "list")]
+      warning("The following mgnet objects have no samples and will be excluded: ", 
+              paste(missing_sample_mgnets, collapse = ", "))
+      object <- object[has_sample(object)]
+      
+    }
     
-    purrr::map(object, function(x) meta(x, .fmt = "tbl")) %>%
-      purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind() %>%
-      return()
+    if(length(object) == 0) return(tibble::tibble())
     
+    if(miss_slot(object, "meta", "any")){
+      
+      result <- purrr::map(object, \(x){
+        if(has_slot(x, "meta")) meta(x, "tbl") else tibble::tibble(sample_id = sample_id(x))}) %>%
+        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+        purrr::list_rbind()
+      
+      return(result)
+      
+    }
+
+    if(has_slot(object, "meta", "all")){
+      
+      result <- purrr::map(object, function(x) meta(x, .fmt = "tbl")) %>%
+        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+        purrr::list_rbind()
+      
+      return(result)
+      
+    }
   }
   
 })
 
 
-# INFO_TAXA
+# TAXA
 #------------------------------------------------------------------------------#
-#' Get Taxa Information
+#' Get Taxa Metadata Information
 #'
 #' Retrieves the taxa information stored in the `taxa` slot of an `mgnet` object
 #' or for each `mgnet` object within an `mgnetList`, with the option to format the output as
@@ -415,9 +444,9 @@ setMethod("meta", "mgnetList", function(object, .fmt) {
 #' @param .fmt A character string specifying the output format of the result.
 #'        Possible choices are:
 #'        - "df": Returns the output as a `data.frame`.
-#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, if present, the row names of
+#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the the row names of
 #'          the abundance matrix are converted into a new column named `taxa_id`, ensuring alignment
-#'          with the reserved keyword in `mgnet`.
+#'          with the reserved keyword in `mgnet-class`.
 #'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
 #'          each corresponding to the `taxa` of an individual `mgnet` object.
 #'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
@@ -428,6 +457,7 @@ setMethod("meta", "mgnetList", function(object, .fmt) {
 #' @return The content of the `taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' 
 #' @importFrom purrr map imap list_rbind
+#' @importFrom tibble tibble
 #' @export
 #' @name taxa
 #' @aliases taxa,mgnet-method taxa,mgnetList-method
@@ -437,14 +467,13 @@ setMethod("taxa", "mgnet", function(object, .fmt) {
   
   if(missing(.fmt)) .fmt <- "df"
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-
+  
   
   if(length(object@taxa) == 0 && length(object@comm) == 0){
     switch(.fmt,
            df  = {return(data.frame())},
            tbl = {return(tibble::tibble())})
   }
-  
   
   if(length(object@taxa) != 0 && length(object@comm) == 0){
     switch(.fmt,
@@ -470,6 +499,7 @@ setMethod("taxa", "mgnet", function(object, .fmt) {
     
   }
   
+  
 })
 
 setMethod("taxa", "mgnetList", function(object, .fmt) {
@@ -479,19 +509,47 @@ setMethod("taxa", "mgnetList", function(object, .fmt) {
   
   if(.fmt == "list_df") {
     
-    return(purrr::map(object, function(x) taxa(x, .fmt = "df")))
+    if(length(object) == 0) return(data.frame())
+    return(sapply(object, taxa, .fmt = "df", simplify = FALSE, USE.NAMES = TRUE))
     
   } else if(.fmt == "list_tbl") {
     
-    return(purrr::map(object, function(x) taxa(x, .fmt = "tbl")))
+    if(length(object) == 0) return(tibble::tibble())
+    return(sapply(object, taxa, .fmt = "tbl", simplify = FALSE, USE.NAMES = TRUE))
     
-  } else {
+  } else if(.fmt == "tbl") {
     
-    purrr::map(object, function(x) taxa(x, .fmt = "tbl")) %>%
-      purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind() %>%
-      return()
+    if(miss_taxa(object, "any")){
+      
+      missing_taxa_mgnets <- names(object)[miss_taxa(object, "list")]
+      warning("The following mgnet objects have no taxa and will be excluded: ", 
+              paste(missing_taxa_mgnets, collapse = ", "))
+      object <- object[has_taxa(object)]
+      
+    }
     
+    if(length(object) == 0) return(tibble::tibble())
+    
+    if(miss_metataxa(object, "any")){
+      
+      result <- purrr::map(object, \(x){
+        if(has_metataxa(x)) taxa(x, "tbl") else tibble::tibble(taxa_id = taxa_id(x))}) %>%
+        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+        purrr::list_rbind()
+      
+      return(result)
+      
+    }
+    
+    if(has_metataxa(object, "all")){
+      
+      result <- purrr::map(object, function(x) taxa(x, .fmt = "tbl")) %>%
+        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
+        purrr::list_rbind() 
+        
+      return(result)
+      
+    }
   }
   
 })
@@ -563,3 +621,120 @@ setMethod("comm", "mgnet", function(object) {
 setMethod("comm", "mgnetList", function(object) {
   sapply(object@mgnets, function(x) x@comm, simplify = FALSE, USE.NAMES = TRUE)
 })
+
+# META_VARS
+#------------------------------------------------------------------------------#
+#' Get Sample Metadata Variables
+#'
+#' Retrieves the names of metadata variables available in the `meta` slot of an `mgnet` object,
+#' or for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of sample metadata variables 
+#'        in each `mgnet` and \code{"unique"} for a single array with the unique elemnts. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a character vector of metadata variable names.
+#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
+#'         the metadata variable names in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(mg, package = "mgnet")
+#' meta_vars(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' meta_vars(mgl, .fmt = "list)  
+#' meta_vars(mgl, .fmt = "unique) 
+#' 
+#' @export
+#' @name meta_vars
+#' @aliases meta_vars,mgnet-method meta_vars,mgnetList-method
+setGeneric("meta_vars", function(object, .fmt = "list") standardGeneric("meta_vars"))
+
+setMethod("meta_vars", "mgnet", function(object, .fmt = "list") {
+  
+  if(miss_sample(object)){
+    return(character(length=0))
+  } else if(length(object@meta) == 0){
+    return("sample_id")
+  } else {
+    return(colnames(meta(object, "tbl")))
+  }
+  
+})
+
+setMethod("meta_vars", "mgnetList", function(object, .fmt = "list") {
+  
+  .fmt <- match.arg(.fmt, c("list", "unique"))
+  
+  vars <- sapply(object, meta_vars, simplify = FALSE, USE.NAMES = TRUE)
+  vars <- sapply(vars, \(x){if(length(x)!=0) c("mgnet", x) else x}, 
+                 simplify = FALSE, USE.NAMES = TRUE)
+  
+  if(.fmt == "list"){
+    return(vars)
+  } else {
+    return(unique(unlist(vars)))
+  }
+  
+})
+
+# TAXA_VARS
+#------------------------------------------------------------------------------#
+#' Get Taxa Metadata Variables
+#'
+#' Retrieves the names of metadata variables available in the `taxa` slot of an `mgnet` object,
+#' or for each `mgnet` object within an `mgnetList`.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of sample metadata variables 
+#'        in each `mgnet` and \code{"unique"} for a single array with the unique elemnts. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a character vector of metadata variable names.
+#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
+#'         the metadata variable names in the corresponding `mgnet` objects.
+#'         
+#' @examples
+#' data(mg, package = "mgnet")
+#' taxa_vars(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' taxa_vars(mgl, .fmt = "list)  
+#' taxa_vars(mgl, .fmt = "unique) 
+#' 
+#' @export
+#' @name taxa_vars
+#' @aliases taxa_vars,mgnet-method taxa_vars,mgnetList-method
+setGeneric("taxa_vars", function(object, .fmt = "list") standardGeneric("taxa_vars"))
+
+setMethod("taxa_vars", "mgnet", function(object, .fmt = "list") {
+  
+  if(!has_sample(object)){
+    return(character(length=0))
+  } else if(miss_metataxa(object)){
+    return("taxa_id")
+  } else {
+    return(colnames(taxa(object, "tbl")))
+  }
+  
+})
+
+setMethod("taxa_vars", "mgnetList", function(object, .fmt = "list") {
+  
+  .fmt <- match.arg(.fmt, c("list", "unique"))
+  
+  vars <- sapply(object, taxa_vars, simplify = FALSE, USE.NAMES = TRUE)
+  vars <- sapply(vars, \(x){if(length(x)!=0) c("mgnet", x) else x}, 
+                 simplify = FALSE, USE.NAMES = TRUE)
+  
+  if(.fmt == "list"){
+    return(vars)
+  } else {
+    return(unique(unlist(vars)))
+  }
+  
+})
+

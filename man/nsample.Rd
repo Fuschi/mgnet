@@ -21,10 +21,10 @@ Returns an integer indicating the number of samples in an \code{mgnet} object
 or a named vector of integers for each \code{mgnet} object within an \code{mgnetList}.
 }
 \examples{
-data(HMP2, package = "mgnet")
-nsample(HMP2)  
+data(mg, package = "mgnet")
+nsample(mg)  
 
-data(subjects_HMP2, package = "mgnet")
-nsample(subjects_HMP2)  
+data(mg, package = "mgnet")
+nsample(mgl)  
 
 }

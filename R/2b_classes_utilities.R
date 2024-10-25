@@ -68,10 +68,11 @@ are_list_assign <- function(object, value) {
   if (!inherits(object, "mgnetList")) errors <- c(errors, sprintf("%s must be an mgnetList.", objectName))
   if (length(object@mgnets) != length(value)) errors <- c(errors, sprintf("Lengths of %s and %s lists must be equal.", objectName, valueName))
   if (is.null(names(value))) errors <- c(errors, sprintf("%s list must have named elements.", valueName))
+  if (any(duplicated(value))) errors <- c(erros, sprintf("%s cannot have duplicated names", valueName))
   
-  # Check names alignment if both have names
-  if (!is.null(names(object@mgnets)) && any(names(object@mgnets) != names(value))) {
-    errors <- c(errors, sprintf("Elements of %s and %s must have the same names in the same order.", objectName, valueName))
+  # Check if names of both lists are present, even in different order
+  if (!is.null(names(object@mgnets)) && (!setequal(names(object@mgnets), names(value)))) {
+    errors <- c(errors, sprintf("The %s and %s lists must have the same names, but their order can differ.", objectName, valueName))
   }
   
   if(length(errors)!=0){

@@ -42,16 +42,14 @@
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("mutate_meta", function(object, ..., .by) {standardGeneric("mutate_meta")})
+setGeneric("mutate_meta", function(object, ..., .by = NULL) {standardGeneric("mutate_meta")})
 
-setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
+setMethod("mutate_meta", "mgnet", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are samples to process
-  if (nsample(object) == 0) {
-    stop("Error: No samples available in the 'mgnet' object.")
-  }
+  if (miss_sample(object)) stop("Error: No samples available in the 'mgnet' object.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -59,23 +57,9 @@ setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
-  
-  # Store needed abundances keys
-  needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- "sample_id"
-  }
-  
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "sample", TRUE)
+  .by <- validate_required_groups(object, .by, "sample")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -85,83 +69,26 @@ setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  # Initialize sample_info_mutated
-  if (length(meta(object)) != 0) {
-    sample_info_mutated <- meta(object, .fmt = "tbl")
-  } else {
-    sample_info_mutated <- tibble::tibble(sample_id = sample_id(object))
-  }
-  
-  # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
-  #----------------------------------------------------------------------------#
-  if (length(needed_abundance_keys) > 0) {
-    # Create the grid of sample_id and taxa_id combinations
-    long_abun <- tidyr::expand_grid(
-      sample_id = sample_id(object),
-      taxa_id = taxa_id(object)
-    )
-    
-    # Left join all abundance variables needed
-    for (abundance_key in needed_abundance_keys) {
-      long_abun <- long_abun %>%
-        dplyr::left_join(
-          methods::slot(object, abundance_key) %>%
-            tibble::as_tibble(rownames = "sample_id") %>%
-            tidyr::pivot_longer(-sample_id,
-                                names_to = "taxa_id",
-                                values_to = abundance_key),
-          by = c("sample_id", "taxa_id")
-        )
-    }
-  }
+  meta_mutated <- initialize_meta(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  for (i in seq_along(expressions)) {
-    
-    expr_vars <- all.vars(expressions[[i]])
-    
-    if (any(expr_vars %in% c("abun", "rela", "norm"))) {
-      
-      # EXPRESSION WITH ABUNDANCES
-      #----------------------------------------------#
-      sample_info_mutated <- long_abun %>%
-        dplyr::left_join(sample_info_mutated, by = "sample_id") %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-any_of(c("taxa_id", needed_abundance_keys))) %>%
-        dplyr::distinct() %>%
-        dplyr::arrange(match(sample_id, sample_id(object)))
-      
-    } else {
-      
-      # EXPRESSION WITHOUT ABBUNDANCES
-      #----------------------------------------------#
-      sample_info_mutated <- sample_info_mutated %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::arrange(match(sample_id, sample_id(object)))
-      
-    }
-  } # End of loop over expressions
-  
-  meta(object) <- tibble::column_to_rownames(sample_info_mutated, "sample_id")
+  meta_mutated <- apply_mutate_verb(meta_mutated, long_abun, expressions, .by, "sample")
+
+  meta(object) <- tibble::column_to_rownames(meta_mutated, "sample_id")
   return(object)
   
 })
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
+setMethod("mutate_meta", "mgnetList", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are samples to process
-  if (any(nsample(object) == 0)) {
-    stop("Error: No samples available in the 'mgnet' object.")
-  }
+  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -169,114 +96,33 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
-  
-  # Store needed abundances keys
-  needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- c("mgnet","sample_id")
-  }
-  
-  if (!is.character(.by) || "taxa_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'taxa_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "sample", TRUE)
+  .by <- validate_required_groups(object, .by, "sample")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
   
   # END CHECKS
   #----------------------------------------------------------------------------#
-
-  # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#  
-  info_sample_mutated_merged <- object %>%
-    purrr::map(\(x) {
-      if(length(meta(x)) != 0){
-        meta(x, .fmt = "tbl")
-      } else {
-        tibble::tibble(sample_id = sample_id(x))
-      }
-    }) %>%
-    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-    purrr::list_rbind()
   
-  # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
+  # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  if(length(needed_abundance_keys)!=0){
-    
-    long_abun_merged <- purrr::map(object, \(mgnet_obj){
-      
-      long_abun <- tidyr::expand_grid(sample_id = sample_id(mgnet_obj),
-                                      taxa_id = taxa_id(mgnet_obj))
-      
-      for(abundance_key in needed_abundance_keys){
-        long_abun <- long_abun %>%
-          dplyr::left_join(methods::slot(mgnet_obj, abundance_key) %>%
-                             tibble::as_tibble(rownames = "sample_id") %>%
-                             tidyr::pivot_longer(-sample_id, 
-                                                 names_to = "taxa_id", 
-                                                 values_to = abundance_key),
-                           by = c("sample_id", "taxa_id"))
-      }
-      return(long_abun)
-    }) %>%
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind()
-  }
+  meta_mutated_merged <- initialize_meta(object)
+  long_abun_merged <- long_abundance_join(object, needed_keys$abundance) 
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  for(i in seq_along(expressions)){
-    
-    expr_vars <- all.vars(expressions[[i]])
-    
-    if(any(expr_vars %in% c("abun","rela","norm"))){
-      
-      # EXPRESSION WITH ABUNDANCES
-      #----------------------------------------------#
-      info_sample_mutated_merged <- long_abun_merged %>%
-        dplyr::left_join(info_sample_mutated_merged, by = c("mgnet","sample_id")) %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
-        dplyr::distinct() 
-      
-      
-    } else {
-      
-      # EXPRESSION WITHOUT ABUNDANCES
-      #----------------------------------------------#
-      info_sample_mutated_merged <- info_sample_mutated_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() 
-      
-    }
-  } # loop expressions
+  meta_mutated_merged <- apply_mutate_verb(meta_mutated_merged, long_abun_merged, expressions, .by, "sample")
   
-  info_sample_mutated_splitted <- info_sample_mutated_merged %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(sample_id, sample_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-"mgnet") %>%
-        tibble::column_to_rownames("sample_id")
-    })
-  
-  info_sample_mutated_splitted <- info_sample_mutated_splitted[names(object)]
-  meta(object) <- info_sample_mutated_splitted
+  meta_mutated_splitted <- split_arrange_merged_meta(meta_mutated_merged, object)
+  meta(object) <- meta_mutated_splitted
   return(object)
 })
 
 
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 #' Modify and Augment `mgnet` Objects by Transforming the `taxa` Slot
 #'
 #' This function dynamically manipulates the `taxa` slot within `mgnet` or `mgnetList` objects,
@@ -314,40 +160,24 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("mutate_taxa", function(object, ..., .by) {standardGeneric("mutate_taxa")})
+setGeneric("mutate_taxa", function(object, ..., .by = NULL) {standardGeneric("mutate_taxa")})
 
-setMethod("mutate_taxa", "mgnet", function(object, ..., .by) {
+setMethod("mutate_taxa", "mgnet", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  # Ensure there are taxa to process
-  if (ntaxa(object) == 0) {
-    stop("Error: No taxa available in the 'mgnet' object.")
-  }
+  # Ensure there are samples to process
+  if (miss_taxa(object)) stop("Error: No taxa available in the 'mgnet' object.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
-  
+
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
-  
-  # Store needed abundances keys
-  needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- "taxa_id"
-  }
-  
-  if (!is.character(.by) || "sample_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
-  }
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "taxa", TRUE)
+  .by <- validate_required_groups(object, .by, "taxa")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -357,85 +187,27 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  # Initialize sample_info_mutated
-  if (length(taxa(object)) != 0) {
-    taxa_info_mutated <- taxa(object, .fmt = "tbl")
-  } else {
-    taxa_info_mutated <- tibble::tibble(taxa_id = taxa_id(object))
-  }
-  
-  # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
-  #----------------------------------------------------------------------------#
-  if (length(needed_abundance_keys) > 0) {
-    # Create the grid of sample_id and taxa_id combinations
-    long_abun <- tidyr::expand_grid(
-      sample_id = sample_id(object),
-      taxa_id = taxa_id(object)
-    )
-    
-    # Left join all abundance variables needed
-    for (abundance_key in needed_abundance_keys) {
-      long_abun <- long_abun %>%
-        dplyr::left_join(
-          methods::slot(object, abundance_key) %>%
-            tibble::as_tibble(rownames = "sample_id") %>%
-            tidyr::pivot_longer(-sample_id,
-                                names_to = "taxa_id",
-                                values_to = abundance_key),
-          by = c("sample_id", "taxa_id")
-        )
-    }
-  }
-  
+  taxa_mutated <- initialize_taxa(object)
+  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  for (i in seq_along(expressions)) {
-    
-    expr_vars <- all.vars(expressions[[i]])
-    
-    if (any(expr_vars %in% c("abun", "rela", "norm"))) {
-      
-      # EXPRESSION WITH ABUNDANCES
-      #----------------------------------------------#
-      taxa_info_mutated <- long_abun %>%
-        dplyr::left_join(taxa_info_mutated, by = "taxa_id") %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-any_of(c("sample_id", needed_abundance_keys))) %>%
-        dplyr::distinct() %>%
-        dplyr::arrange(match(taxa_id, taxa_id(object))) %>%
-        dplyr::select(-tidyselect::any_of("comm_id"))
-      
-    } else {
-      
-      # EXPRESSION WITHOUT ABBUNDANCES
-      #----------------------------------------------#
-      taxa_info_mutated <- taxa_info_mutated %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::arrange(match(taxa_id, taxa_id(object))) %>%
-        dplyr::select(-tidyselect::any_of("comm_id"))
-      
-    }
-  } # End of loop over expressions
+  taxa_mutated <- apply_mutate_verb(taxa_mutated, long_abun, expressions, .by, "taxa") %>%
+    dplyr::select(-tidyselect::any_of("comm_id"))
   
-  taxa(object) <- tibble::column_to_rownames(taxa_info_mutated, "taxa_id")
+  taxa(object) <- tibble::column_to_rownames(taxa_mutated, "taxa_id")
   return(object)
   
 })
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
+setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are taxa to process
-  if (any(ntaxa(object) == 0)) {
-    stop("Error: No taxa available in the 'mgnet' object.")
-  }
+  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -443,24 +215,9 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Capture required keys from expressions
-  keys_required <- expressions %>%
-    purrr::map(~ all.vars(rlang::quo_get_expr(.x))) %>%
-    unlist() %>%
-    unique()
-  
-  # Store needed abundances keys
-  needed_abundance_keys <- intersect(keys_required, c("abun","rela","norm"))
-  
-  # Validate the .by argument
-  if (missing(.by)) {
-    .by <- c("mgnet","taxa_id")
-  }
-  
-  if (!is.character(.by) || "sample_id" %in% .by) {
-    stop("Error: '.by' must be a character vector and cannot include 'sample_id'.")
-  }
-  
+  # Store and validate needed keys and groups
+  needed_keys <- validate_required_variables(object, expressions, "taxa", TRUE)
+  .by <- validate_required_groups(object, .by, "taxa")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -469,85 +226,15 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   #----------------------------------------------------------------------------#
   
   # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#  
-  info_taxa_mutated_merged <- object %>%
-    purrr::map(\(x) {
-      if(length(taxa(x)) != 0){
-        taxa(x, .fmt = "tbl")
-      } else {
-        tibble::tibble(taxa_id = taxa_id(x))
-      }
-    }) %>%
-    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-    purrr::list_rbind()
-  
-  # CALCULATE LONG ABUNDANCE DATA ONCE, if needed
   #----------------------------------------------------------------------------#
-  if(length(needed_abundance_keys)!=0){
-    
-    long_abun_merged <- purrr::map(object, \(mgnet_obj){
-      
-      long_abun <- tidyr::expand_grid(sample_id = sample_id(mgnet_obj),
-                                      taxa_id = taxa_id(mgnet_obj))
-      
-      for(abundance_key in needed_abundance_keys){
-        long_abun <- long_abun %>%
-          dplyr::left_join(methods::slot(mgnet_obj, abundance_key) %>%
-                             tibble::as_tibble(rownames = "sample_id") %>%
-                             tidyr::pivot_longer(-sample_id, 
-                                                 names_to = "taxa_id", 
-                                                 values_to = abundance_key),
-                           by = c("sample_id", "taxa_id"))
-      }
-      return(long_abun)
-    }) %>%
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
-      purrr::list_rbind()
-  }
+  taxa_mutated_merged <- initialize_taxa(object)
+  long_abun_merged <- long_abundance_join(object, needed_keys$abundance) 
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  for(i in seq_along(expressions)){
-    
-    expr_vars <- all.vars(expressions[[i]])
-    
-    if(any(expr_vars %in% c("abun","rela","norm"))){
-      
-      # EXPRESSION WITH ABUNDANCES
-      #----------------------------------------------#
-      info_taxa_mutated_merged <- long_abun_merged %>%
-        dplyr::left_join(info_taxa_mutated_merged, by = c("mgnet","taxa_id")) %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
-        dplyr::distinct() 
-      
-      
-    } else {
-      
-      # EXPRESSION WITHOUT ABUNDANCES
-      #----------------------------------------------#
-      info_taxa_mutated_merged <- info_taxa_mutated_merged %>%
-        dplyr::group_by(!!!rlang::syms(.by)) %>%
-        dplyr::mutate(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() 
-      
-    }
-  } # loop expressions
+  taxa_mutated <- apply_mutate_verb(taxa_mutated_merged, long_abun_merged, expressions, .by, "taxa")
   
-  info_taxa_mutated_splitted <- info_taxa_mutated_merged %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-any_of(c("mgnet", "comm_id"))) %>%
-        tibble::column_to_rownames("taxa_id")
-    })
-  
-  info_taxa_mutated_splitted <- info_taxa_mutated_splitted[names(object)]
-  
-  taxa(object) <- info_taxa_mutated_splitted
+  taxa_mutated_splitted <- split_arrange_merged_taxa(taxa_mutated_merged, object)
+  taxa(object) <- taxa_mutated_splitted
   return(object)
 })

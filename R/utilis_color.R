@@ -112,9 +112,9 @@ colormap_categories <- function(categories, distinct_colors, extraColor = "#FFFF
 #' @importFrom igraph sizes
 #' @importFrom grDevices adjustcolor
 colormap_community <- function(community, 
-                                 sizes_threshold, smaller_color = "#D3D3D3",
-                                 isolated_color = "#FFFFFF",
-                                 colorspace = "pretty", alpha = 1) {
+                               sizes_threshold, smaller_color = "#D3D3D3",
+                               isolated_color = "#FFFFFF",
+                               colorspace = "pretty", alpha = 1) {
   
   if (!inherits(community, "communities")) {
     stop("The 'community' parameter must be a community object from igraph.")

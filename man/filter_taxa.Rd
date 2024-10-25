@@ -6,7 +6,7 @@
 \alias{filter_taxa,mgnetList-method}
 \title{Filter \code{mgnet} or \code{mgnetList} Objects Based on Taxa and Abundance Data}
 \usage{
-filter_taxa(object, ..., .by)
+filter_taxa(object, ..., .by = NULL)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.

@@ -11,11 +11,11 @@
 #'         of samples in the corresponding `mgnet` objects.
 #'         
 #' @examples
-#' data(HMP2, package = "mgnet")
-#' nsample(HMP2)  
+#' data(mg, package = "mgnet")
+#' nsample(mg)  
 #'
-#' data(subjects_HMP2, package = "mgnet")
-#' nsample(subjects_HMP2)  
+#' data(mg, package = "mgnet")
+#' nsample(mgl)  
 #' 
 #' @export
 #' @name nsample
@@ -48,14 +48,14 @@ setMethod("nsample", "mgnetList", function(object) {
 #'         of taxa in the corresponding `mgnet` objects.
 #'         
 #' @examples
-#' data(HMP2, package = "mgnet")
-#' ntaxa(HMP2)  
+#' data(mg, package = "mgnet")
+#' ntaxa(mg)  
 #'
-#' data(subjects_HMP2, package = "mgnet")
-#' ntaxa(subjects_HMP2)  
-#' 
-#' @export
+#' data(mgl, package = "mgnet")
+#' ntaxa(mgl)  
+#'
 #' @importFrom igraph vcount
+#' @export
 #' @name ntaxa
 #' @aliases ntaxa,mgnet-method ntaxa,mgnetList-method
 setGeneric("ntaxa", function(object) standardGeneric("ntaxa"))
@@ -65,7 +65,7 @@ setMethod("ntaxa", "mgnet", function(object) {
   else if(length(object@taxa)!=0) return(nrow(object@taxa))
   else if(length(object@rela)!=0) return(ncol(object@rela))
   else if(length(object@norm)!=0) return(ncol(object@norm))
-  else if(length(object@netw)!=0) return(vcount(object@netw))
+  else if(length(object@netw)!=0) return(igraph::vcount(object@netw))
   else return(0)
 })
 
@@ -78,30 +78,22 @@ setMethod("ntaxa", "mgnetList", function(object) {
 #------------------------------------------------------------------------------#
 #' Get sample IDs from mgnet or mgnetList Objects
 #'
-#' Retrieves the IDs of sample from an `mgnet` object or lists of sample IDs for each 
-#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, this method can 
-#' output the results either as a list or as a organized tibble.
 #'
 #' @param object An `mgnet` or `mgnetList` object from which to extract sample IDs.
-#' @param .fmt Character; specifies the output format when retrieving sample IDs from 
-#'        an `mgnetList`. Accepted values are \code{"list"} for a list of character vectors, 
-#'        and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
-#'        returns a tibble with two columns: \code{"mgnet"}, indicating the name of the `mgnet` object
-#'        each sample ID originates from, and \code{"sample_id"}, listing the sample IDs themselves.
-#'        
-#' @importFrom purrr imap
-#' @importFrom dplyr bind_rows
-#' @importFrom tibble tibble
+#' 
+#' @return Retrieves the IDs of sample from an `mgnet` object or lists of sample IDs for each 
+#' `mgnet` object within an `mgnetList`. 
+#'         
 #' @export
 #' @name sample_id
 #' @aliases sample_id,mgnet-method sample_id,mgnetList-method
+#' 
 #' @examples
-#' data(HMP2, package = "mgnet")
-#' sample_id(HMP2)  
+#' data(mg, package = "mgnet")
+#' sample_id(mg)  
 #'
-#' data(subjects_HMP2, package = "mgnet")
-#' sample_id(subjects_HMP2, .fmt = "list")  
-#' sample_id(subjects_HMP2, .fmt = "tbl")  
+#' data(mgl, package = "mgnet")
+#' sample_id(mgl)  
 #' 
 #' @seealso \link{mgnet} and \link{mgnetList} for details on the classes.
 setGeneric("sample_id", function(object, .fmt = "list") standardGeneric("sample_id"))
@@ -114,53 +106,33 @@ setMethod("sample_id", "mgnet", function(object, .fmt = "list") {
   else return(character(0))
 })
 
-setMethod("sample_id", "mgnetList", function(object, .fmt = "list") {
-  .fmt <- match.arg(.fmt, choices = c("list", "tbl"))
-  
-  if (.fmt == "list") {
-    
+setMethod("sample_id", "mgnetList", function(object) {
     return(sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE))
-    
-  } else {
-    
-    sapply(object@mgnets, sample_id, simplify = FALSE, USE.NAMES = TRUE) %>%
-      purrr::imap(\(x,y) tibble::tibble("mgnet" = y, "sample_id" = x)) %>%
-      dplyr::bind_rows() %>%
-      return()
-    
-  }
 })
-
 
 
 # TAXA_ID
 #------------------------------------------------------------------------------#
-#' Get Taxa IDs from mgnet or mgnetList Objects
+#' Get taxa IDs from mgnet or mgnetList Objects
 #'
-#' Retrieves the IDs of taxa from an `mgnet` object or lists of taxa IDs for each 
-#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, this method can 
-#' output the results either as a list or as a organized tibble.
 #'
 #' @param object An `mgnet` or `mgnetList` object from which to extract taxa IDs.
-#' @param .fmt Character; specifies the output format when retrieving taxa IDs from 
-#'        an `mgnetList`. Accepted values are \code{"list"} for a list of character vectors, 
-#'        and \code{"tbl"} for a tibble. The default is \code{"list"}. The \code{"tbl"} format
-#'        returns a tibble with two columns: \code{"mgnet"}, indicating the name of the `mgnet` object
-#'        each taxa ID originates from, and \code{"taxa_id"}, listing the taxa IDs themselves.
-#'        
-#' @importFrom purrr imap
-#' @importFrom dplyr bind_rows
-#' @importFrom tibble tibble
+#' 
+#' @return Retrieves the IDs of taxa from an `mgnet` object or lists of taxa IDs for each 
+#' `mgnet` object within an `mgnetList`. 
+#' 
+#' @importFrom igraph V
+#'         
 #' @export
 #' @name taxa_id
-#' @aliases taxa_id,mgnet-method taxa_id,mgnetList-method
+#' @aliases sample_id,mgnet-method sample_id,mgnetList-method
+#' 
 #' @examples
-#' data(HMP2, package = "mgnet")
-#' taxa_id(HMP2)  
+#' data(mg, package = "mgnet")
+#' taxa_id(mgl)  
 #'
-#' data(subjects_HMP2, package = "mgnet")
-#' taxa_id(subjects_HMP2, .fmt = "list")  
-#' taxa_id(subjects_HMP2, .fmt = "tbl")  
+#' data(mgl, package = "mgnet")
+#' taxa_id(mgl)  
 #' 
 #' @seealso \link{mgnet} and \link{mgnetList} for details on the classes.
 setGeneric("taxa_id", function(object, .fmt = "list") standardGeneric("taxa_id"))
@@ -170,60 +142,12 @@ setMethod("taxa_id", "mgnet", function(object, .fmt = "list") {
   else if(length(object@taxa) != 0) return(rownames(object@taxa))
   else if(length(object@norm) != 0) return(colnames(object@norm))
   else if(length(object@rela) != 0) return(colnames(object@rela))
+  else if(length(object@netw) != 0) return(igraph::V(object@netw)$name)
   else return(character(0))
 })
 
-setMethod("taxa_id", "mgnetList", function(object, .fmt = "list") {
-  .fmt <- match.arg(.fmt, choices = c("list", "tbl"))
-  
-  if (.fmt == "list") {
-    
-    return(sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE))
-    
-  } else {
-    
-    sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE) %>%
-      purrr::imap(\(x,y) tibble::tibble("mgnet" = y, "taxa_id" = x)) %>%
-      dplyr::bind_rows() %>%
-      return()
-    
-  }
-})
-
-# INFO_SAMPLE_VARS
-#------------------------------------------------------------------------------#
-#' Get Sample Metadata Variables
-#'
-#' Retrieves the names of metadata variables available in the `meta` slot of an `mgnet` object,
-#' or for each `mgnet` object within an `mgnetList`.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @return For an `mgnet` object, a character vector of metadata variable names.
-#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
-#'         the metadata variable names in the corresponding `mgnet` objects.
-#'         
-#' @examples
-#' data(HMP2, package = "mgnet")
-#' meta_vars(HMP2)  
-#'
-#' data(subjects_HMP2, package = "mgnet")
-#' meta_vars(subjects_HMP2)  
-#' 
-#' @export
-#' @name meta_vars
-#' @aliases meta_vars,mgnet-method meta_vars,mgnetList-method
-setGeneric("meta_vars", function(object) standardGeneric("meta_vars"))
-
-setMethod("meta_vars", "mgnet", function(object) {
-  if(length(object@meta)!=0){
-    return(colnames(object@meta))
-  } else {
-    return(character(length=0))
-  }
-})
-
-setMethod("meta_vars", "mgnetList", function(object) {
-  sapply(object@mgnets, meta_vars, simplify = FALSE, USE.NAMES = TRUE)
+setMethod("taxa_id", "mgnetList", function(object) {
+  return(sapply(object@mgnets, taxa_id, simplify = FALSE, USE.NAMES = TRUE))
 })
 
 
@@ -245,11 +169,11 @@ setMethod("meta_vars", "mgnetList", function(object) {
 #' For an `mgnetList` object, returns a numeric named vector with each element representing the number of communities in each `mgnet` object.
 #' 
 #' @examples
-#' data(HMP2, package = "mgnet")
-#' ncomm(HMP2)  
+#' data(mg, package = "mgnet")
+#' ncomm(mg)  
 #'
-#' data(subjects_HMP2, package = "mgnet")
-#' ncomm(subjects_HMP2)  
+#' data(mgl, package = "mgnet")
+#' ncomm(mgl)  
 #' 
 #' @export
 #' @name ncomm
@@ -281,48 +205,6 @@ setMethod("ncomm","mgnetList",
           })
 
 
-# INFO_TAXA_VARS
-#------------------------------------------------------------------------------#
-#' Get Taxa Metadata Variables
-#'
-#' Retrieves the names of metadata variables available in the `taxa` slot of an `mgnet` object,
-#' or for each `mgnet` object within an `mgnetList`.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @return For an `mgnet` object, a character vector of metadata variable names.
-#'         For an `mgnetList` object, a named list of character vectors, with each list item representing 
-#'         the metadata variable names in the corresponding `mgnet` objects.
-#'         
-#' @examples
-#' data(HMP2, package = "mgnet")
-#' taxa_vars(HMP2)  
-#'
-#' data(subjects_HMP2, package = "mgnet")
-#' taxa_vars(subjects_HMP2) 
-#' 
-#' @export
-#' @name taxa_vars
-#' @aliases taxa_vars,mgnet-method taxa_vars,mgnetList-method
-setGeneric("taxa_vars", function(object) standardGeneric("taxa_vars"))
-
-setMethod("taxa_vars", "mgnet", function(object) {
-  
-  if(length(object@taxa)!=0 & length(object@comm)!=0){
-    return(c("comm_id", colnames(object@taxa)))
-  } else if(length(object@taxa)!=0 & length(object@comm)==0){
-    return(colnames(object@taxa))
-  } else if(length(object@taxa)==0 & length(object@comm)!=0){
-    return("comm_id")
-  } else {
-    return(character(length=0))
-  }
-  
-})
-
-setMethod("taxa_vars", "mgnetList", function(object) {
-  sapply(object@mgnets, taxa_vars, simplify = FALSE, USE.NAMES = TRUE)
-})
-
 # COMM_ID
 #------------------------------------------------------------------------------#
 #' Retrieve Community IDs from mgnet or mgnetList Objects
@@ -347,12 +229,12 @@ setMethod("taxa_vars", "mgnetList", function(object) {
 #' @name comm_id
 #' @aliases comm_id,mgnet-method comm_id,mgnetList-method
 #' @examples
-#' data(subject_HMP2_netw, package = "mgnet")
-#' comm_id(subject_HMP2_netw)  
+#' data(mg, package = "mgnet")
+#' comm_id(mg)  
 #'
-#' data(subjects_HMP2_netw, package = "mgnet")
-#' comm_id(subjects_HMP2_netw, .fmt = "list")  
-#' comm_id(subjects_HMP2_netw, .fmt = "tbl")   
+#' data(mgl, package = "mgnet")
+#' comm_id(mgl, .fmt = "list")  
+#' comm_id(mgl, .fmt = "tbl")   
 setGeneric("comm_id", function(object, .fmt = "list") standardGeneric("comm_id"))
 
 setMethod("comm_id", "mgnet", function(object, .fmt = "list"){
@@ -474,4 +356,469 @@ setMethod("names<-", "mgnetList", function(x, value) {
   names(x@mgnets) <- value
   validObject(x)
   x
+})
+
+
+# HAS METHODS
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+
+# HAS_SAMPLE
+#------------------------------------------------------------------------------#
+#' Check if Samples Are Present
+#'
+#' Checks whether there are samples present in an `mgnet` object or in each 
+#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, the output format can
+#' be a list, or a single logical value indicating if any or all objects contain samples.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` contains samples, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects contain samples. Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether samples are present.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` contains samples. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects contain samples.
+#'         
+#' @examples
+#' data(mg, package = "mgnet")
+#' has_sample(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' has_sample(mgl, .fmt = "list")  
+#' has_sample(mgl, .fmt = "any")  
+#' has_sample(mgl, .fmt = "all")  
+#'
+#' @export
+#' @name has_sample
+#' @aliases has_sample,mgnet-method has_sample,mgnetList-method
+setGeneric("has_sample", function(object, .fmt = "list") standardGeneric("has_sample"))
+
+setMethod("has_sample", "mgnet", function(object) {
+  nsample(object) != 0
+})
+
+setMethod("has_sample", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(FALSE)
+  sample_presence <- sapply(object@mgnets, has_sample, simplify = TRUE, USE.NAMES = TRUE)
+  
+  if (.fmt == "list") {
+    return(sample_presence)
+  } else if (.fmt == "any") {
+    return(any(sample_presence))
+  } else if (.fmt == "all") {
+    return(all(sample_presence))
+  }
+})
+
+
+# MISS_SAMPLE
+#------------------------------------------------------------------------------#
+#' Check if Samples are Missing in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether samples are missing (i.e., absent or empty) in an `mgnet` object or 
+#' in each `mgnet` object within an `mgnetList`. For `mgnetList` objects, the output format can
+#' be a list, or a single logical value indicating if any or all objects are missing samples.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` is missing samples, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects are missing samples. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether samples are missing.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` is missing samples. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects are missing samples.
+#'
+#' @examples
+#' data(mg, package = "mgnet")
+#' miss_sample(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' miss_sample(mgl, .fmt = "list")  
+#' miss_sample(mgl, .fmt = "any")  
+#' miss_sample(mgl, .fmt = "all")  
+#'
+#' @export
+#' @name miss_sample
+#' @aliases miss_sample,mgnet-method miss_sample-mgnetList
+setGeneric("miss_sample", function(object, .fmt = "list") standardGeneric("miss_sample"))
+
+setMethod("miss_sample", "mgnet", function(object, .fmt = "list") {
+  nsample(object) == 0
+})
+
+setMethod("miss_sample", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(TRUE)
+  sample_absence <- sapply(object@mgnets, miss_sample, simplify = TRUE, USE.NAMES = TRUE)
+  
+  if (.fmt == "list") {
+    return(sample_absence)
+  } else if (.fmt == "any") {
+    return(any(sample_absence))
+  } else if (.fmt == "all") {
+    return(all(sample_absence))
+  }
+})
+
+
+# HAS_TAXA
+#------------------------------------------------------------------------------#
+#' Check if Taxa Are Present
+#'
+#' Checks whether there are taxa present in an `mgnet` object or in each 
+#' `mgnet` object within an `mgnetList`. For `mgnetList` objects, the output format can
+#' be a list, or a single logical value indicating if any or all objects contain taxa.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` contains taxa, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects contain taxa. Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether taxa are present.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` contains taxa. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects contain taxa.
+#'         
+#' @examples
+#' data(mg, package = "mgnet")
+#' has_taxa(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' has_taxa(mgl, .fmt = "list")  
+#' has_taxa(mgl, .fmt = "any")  
+#' has_taxa(mgl, .fmt = "all")  
+#'
+#' @export
+#' @name has_taxa
+#' @aliases has_taxa,mgnet-method has_taxa,mgnetList-method
+setGeneric("has_taxa", function(object, .fmt = "list") standardGeneric("has_taxa"))
+
+setMethod("has_taxa", "mgnet", function(object) {
+  ntaxa(object) != 0
+})
+
+setMethod("has_taxa", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(FALSE)
+  taxa_presence <- sapply(object@mgnets, has_taxa, simplify = TRUE, USE.NAMES = TRUE)
+  
+  if (.fmt == "list") {
+    return(taxa_presence)
+  } else if (.fmt == "any") {
+    return(any(taxa_presence))
+  } else if (.fmt == "all") {
+    return(all(taxa_presence))
+  }
+})
+
+
+# MISS_TAXA
+#------------------------------------------------------------------------------#
+#' Check if Taxa are Missing in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether taxa are missing (i.e., absent or empty) in an `mgnet` object or 
+#' in each `mgnet` object within an `mgnetList`. For `mgnetList` objects, the output format can
+#' be a list, or a single logical value indicating if any or all objects are missing taxa.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` is missing taxa, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects are missing taxa. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether taxa are missing.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` is missing taxa. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects are missing taxa.
+#'
+#' @examples
+#' data(mg, package = "mgnet")
+#' miss_taxa(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' miss_taxa(mgl, .fmt = "list")  
+#' miss_taxa(mgl, .fmt = "any")  
+#' miss_taxa(mgl, .fmt = "all")  
+#'
+#' @export
+#' @name miss_taxa
+#' @aliases miss_taxa,mgnet-method miss_taxa-mgnetList
+setGeneric("miss_taxa", function(object, .fmt = "list") standardGeneric("miss_taxa"))
+
+setMethod("miss_taxa", "mgnet", function(object, .fmt = "list") {
+  length(taxa_id(object)) == 0
+})
+
+setMethod("miss_taxa", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(TRUE)
+  taxa_absence <- sapply(object@mgnets, miss_taxa, simplify = TRUE, USE.NAMES = TRUE)
+  
+  if (.fmt == "list") {
+    return(taxa_absence)
+  } else if (.fmt == "any") {
+    return(any(taxa_absence))
+  } else if (.fmt == "all") {
+    return(all(taxa_absence))
+  }
+})
+
+
+# HAS_SLOT
+#------------------------------------------------------------------------------#
+#' Check if a Slot is Present in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether a specific slot (e.g., `meta`, `taxa`, `netw`, etc.) 
+#' is present in an `mgnet` object or in each `mgnet` object within an `mgnetList`. 
+#' For `mgnetList` objects, the output format can be a list, or a single logical 
+#' value indicating if any or all objects contain the specified slot.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param slot_name A character string specifying the slot to check for presence 
+#'        (e.g., `"meta"`, `"taxa"`, `"netw"`, `"comm"`, `"abun"`, `"rela"`, `"norm"`).
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` contains the slot, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects contain the slot. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether the slot is present.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` contains the slot. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects contain the slot.
+#'
+#' @examples
+#' data(mg, package = "mgnet")
+#' has_slot(mg, "meta")  
+#'
+#' data(mgl, package = "mgnet")
+#' has_slot(mgl, "taxa", .fmt = "list")  
+#' has_slot(mgl, "netw", .fmt = "any")  
+#' has_slot(mgl, "comm", .fmt = "all")  
+#'
+#' @importFrom methods slot
+#' @export
+#' @name has_slot
+#' @aliases has_slot,mgnet-method has_slot,mgnetList-method
+setGeneric("has_slot", function(object, slot_name, .fmt = "list") standardGeneric("has_slot"))
+
+setMethod("has_slot", "mgnet", function(object, slot_name, .fmt = "list") {
+  slot_value <- methods::slot(object, slot_name)
+  return(length(slot_value) != 0)
+})
+
+setMethod("has_slot", "mgnetList", function(object, slot_name, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(FALSE)
+  slot_presence <- sapply(object@mgnets, has_slot, slot_name = slot_name, simplify = TRUE, USE.NAMES = TRUE)
+  
+  if (.fmt == "list") {
+    return(slot_presence)
+  } else if (.fmt == "any") {
+    return(any(slot_presence))
+  } else if (.fmt == "all") {
+    return(all(slot_presence))
+  }
+})
+
+
+# MISS_SLOT
+#------------------------------------------------------------------------------#
+#' Check if a Slot is Missing in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether a specific slot (e.g., `meta`, `taxa`, `netw`, etc.) 
+#' is missing (i.e., empty or absent) in an `mgnet` object or in each `mgnet` object within an `mgnetList`. 
+#' For `mgnetList` objects, the output format can be a list, or a single logical 
+#' value indicating if any or all objects are missing the specified slot.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param slot_name A character string specifying the slot to check for absence 
+#'        (e.g., `"meta"`, `"taxa"`, `"netw"`, `"comm"`, `"abun"`, `"rela"`, `"norm"`).
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` is missing the slot, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects are missing the slot. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether the slot is missing.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` is missing the slot. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects are missing the slot.
+#'
+#' @examples
+#' data(mg, package = "mgnet")
+#' miss_slot(mg, "meta")  
+#'
+#' data(mgl, package = "mgnet")
+#' miss_slot(mgl, "taxa", .fmt = "list")  
+#' miss_slot(mgl, "netw", .fmt = "any")  
+#' miss_slot(mgl, "comm", .fmt = "all")  
+#'
+#' @export 
+#' @name miss_slot
+#' @aliases miss_slot,mgnet-method miss_slot,mgnetList-method
+setGeneric("miss_slot", function(object, slot_name, .fmt = "list") standardGeneric("miss_slot"))
+
+setMethod("miss_slot", "mgnet", function(object, slot_name, .fmt = "list") {
+  # Dynamically check the length of the specified slot and return TRUE if missing
+  slot_value <- methods::slot(object, slot_name)
+  return(length(slot_value) == 0)
+})
+
+setMethod("miss_slot", "mgnetList", function(object, slot_name, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(TRUE)
+  slot_absence <- sapply(object@mgnets, miss_slot, slot_name = slot_name, simplify = TRUE, USE.NAMES = TRUE)
+  
+  # Return the result based on the `.fmt` parameter
+  if (.fmt == "list") {
+    return(slot_absence)
+  } else if (.fmt == "any") {
+    return(any(slot_absence))
+  } else if (.fmt == "all") {
+    return(all(slot_absence))
+  }
+})
+
+
+# HAS METADATA
+#------------------------------------------------------------------------------#
+#' Check if Taxa Metadata Are Present
+#'
+#' Checks whether there are taxa metadata, combining `taxa` and `comm` slots,
+#' in an `mgnet` object or in each `mgnet` object within an `mgnetList`. For `mgnetList` 
+#' objects, the output format can be a list, or a single logical value indicating
+#' if any or all objects contain taxa.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` contains taxa, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects contain taxa. Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether taxa are present.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` contains taxa metadata. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects contain taxa.
+#'         
+#' @examples
+#' data(mg, package = "mgnet")
+#' has_metataxa(mg)  
+#'
+#' data(mgl, package = "mgnet")
+#' has_metataxa(mgl, .fmt = "list")  
+#' has_metataxa(mgl, .fmt = "any")  
+#' has_metataxa(mgl, .fmt = "all")  
+#'
+#' @export
+#' @name has_metataxa
+#' @aliases has_metataxa,mgnet-method has_metataxa,mgnetList-method
+setGeneric("has_metataxa", function(object, .fmt = "list") standardGeneric("has_metataxa"))
+
+setMethod("has_metataxa", "mgnet", function(object) {
+  if(length(object@taxa) != 0 || length(object@comm) != 0) TRUE else FALSE
+})
+
+setMethod("has_metataxa", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(TRUE)
+  slot_presence <- sapply(object@mgnets, has_metataxa, simplify = TRUE, USE.NAMES = TRUE)
+  
+  # Return the result based on the `.fmt` parameter
+  if (.fmt == "list") {
+    return(slot_presence)
+  } else if (.fmt == "any") {
+    return(any(slot_presence))
+  } else if (.fmt == "all") {
+    return(all(slot_presence))
+  }
+})
+
+# MISS METADATA
+#------------------------------------------------------------------------------#
+#' Check if a Taxa Metadata Missing in `mgnet` or `mgnetList` Objects
+#'
+#' This function checks whether taxa metadata, combining `taxa` and `comm`, 
+#' is missing (i.e., empty or absent) in an `mgnet` object or in each `mgnet` object within an `mgnetList`. 
+#' For `mgnetList` objects, the output format can be a list, or a single logical 
+#' value indicating if any or all objects are missing the specified slot.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @param slot_name A character string specifying the slot to check for absence 
+#'        (e.g., `"meta"`, `"taxa"`, `"netw"`, `"comm"`, `"abun"`, `"rela"`, `"norm"`).
+#' @param .fmt Character; specifies the output format when checking an `mgnetList`. 
+#'        Accepted values are \code{"list"} for a list of logical values, \code{"any"} for 
+#'        a single logical indicating if any `mgnet` is missing the slot, and \code{"all"} 
+#'        for a single logical indicating if all `mgnet` objects are missing the slot. 
+#'        Default is \code{"list"}.
+#'        
+#' @return For an `mgnet` object, a logical indicating whether the slot is missing.
+#'         For an `mgnetList` object, the output depends on the value of `.fmt`.
+#'         If \code{.fmt = "list"}, returns a named logical vector. If \code{.fmt = "any"}, 
+#'         returns a single logical value indicating if any `mgnet` is missing the slot. 
+#'         If \code{.fmt = "all"}, returns a single logical value indicating if all `mgnet`
+#'         objects are missing the slot.
+#'
+#' @examples
+#' data(mg, package = "mgnet")
+#' miss_metataxa(mg, "meta")  
+#'
+#' data(mgl, package = "mgnet")
+#' miss_metataxa(mgl, "taxa", .fmt = "list")  
+#' miss_metataxa(mgl, "netw", .fmt = "any")  
+#' miss_metataxa(mgl, "comm", .fmt = "all")  
+#'
+#' @export 
+#' @name miss_metataxa
+#' @aliases miss_metataxa,mgnet-method miss_metataxa,mgnetList-method
+setGeneric("miss_metataxa", function(object, .fmt = "list") standardGeneric("miss_metataxa"))
+
+setMethod("miss_metataxa", "mgnet", function(object) {
+  if(length(object@taxa) == 0 && length(object@comm) == 0) TRUE else FALSE
+})
+
+setMethod("miss_metataxa", "mgnetList", function(object, .fmt = "list") {
+  .fmt <- match.arg(.fmt, choices = c("list", "any", "all"))
+  
+  if(length(object) == 0) return(TRUE)
+  slot_absence <- sapply(object@mgnets, miss_metataxa, simplify = TRUE, USE.NAMES = TRUE)
+  
+  # Return the result based on the `.fmt` parameter
+  if (.fmt == "list") {
+    return(slot_absence)
+  } else if (.fmt == "any") {
+    return(any(slot_absence))
+  } else if (.fmt == "all") {
+    return(all(slot_absence))
+  }
 })
