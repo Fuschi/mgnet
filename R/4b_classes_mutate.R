@@ -11,10 +11,9 @@
 #'        metadata within the sample slot. This allows for a comprehensive data transformation
 #'        experience that supports all standard and custom `tidyverse` manipulation techniques.
 #' @param .by Optional; a character vector specifying the columns to group data by before transformations.
-#'        Defaults to 'sample_id' for `mgnet` objects and c('mgnet', 'sample_id') for `mgnetList` objects.
+#'        Defaults to 'sample_id' for mgnet objects and c('mgnet', 'sample_id') for mgnetList objects.
 #'        Grouping ensures that transformations are contextually applied within each subgroup defined
-#'        by `.by`. Usage of 'taxa_id' as a grouping variable is strictly prohibited to maintain
-#'        data consistency and avoid misinterpretation.
+#'        by .by. If you do not wish to group the data, set .by to NULL.
 #'
 #' @details The function is designed to integrate seamlessly with the `tidyverse`, allowing users
 #'          to utilize familiar and potent data manipulation verbs such as `mutate`, `filter`.
@@ -42,9 +41,9 @@
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("mutate_meta", function(object, ..., .by = NULL) {standardGeneric("mutate_meta")})
+setGeneric("mutate_meta", function(object, ..., .by) {standardGeneric("mutate_meta")})
 
-setMethod("mutate_meta", "mgnet", function(object, ..., .by = NULL) {
+setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -57,9 +56,8 @@ setMethod("mutate_meta", "mgnet", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "sample", TRUE)
-  .by <- validate_required_groups(object, .by, "sample")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- "sample_id"
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -69,21 +67,19 @@ setMethod("mutate_meta", "mgnet", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  meta_mutated <- initialize_meta(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  meta_mutated <- gather_meta(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  meta_mutated <- apply_mutate_verb(meta_mutated, long_abun, expressions, .by, "sample")
-
-  meta(object) <- tibble::column_to_rownames(meta_mutated, "sample_id")
+  meta(object) <- apply_mutate_verb(meta_mutated, long_abun, expressions, .by, "sample")
   return(object)
   
 })
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_meta", "mgnetList", function(object, ..., .by = NULL) {
+setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -96,9 +92,8 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "sample", TRUE)
-  .by <- validate_required_groups(object, .by, "sample")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- c("mgnet", "sample_id")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -108,8 +103,8 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  meta_mutated_merged <- initialize_meta(object)
-  long_abun_merged <- long_abundance_join(object, needed_keys$abundance) 
+  meta_mutated_merged <- gather_meta(object)
+  long_abun_merged <- long_abundance_join(object, get_abundance_keys(expressions)) 
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
@@ -136,10 +131,9 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by = NULL) {
 #'        metadata within the taxa slot. This allows for a comprehensive data transformation
 #'        experience that supports all standard and custom `tidyverse` manipulation techniques.
 #' @param .by Optional; a character vector specifying the columns to group data by before transformations.
-#'        Defaults to 'taxa_id' for `mgnet` objects and c('mgnet', 'taxa_id') for `mgnetList` objects.
+#'        Defaults to 'taxa_id' for mgnet objects and c('mgnet', 'taxa_id') for mgnetList objects.
 #'        Grouping ensures that transformations are contextually applied within each subgroup defined
-#'        by `.by`. Usage of 'sample_id' as a grouping variable is strictly prohibited to maintain
-#'        data consistency and avoid misinterpretation.
+#'        by .by. If you do not wish to group the data, set .by to NULL.
 #'
 #'          ### Keywords in `mgnet` and `mgnetList`:
 #'          - **abun, rela, norm**: Slots within `mgnet` objects that store abundance data, which can be
@@ -175,9 +169,8 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "taxa", TRUE)
-  .by <- validate_required_groups(object, .by, "taxa")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- "taxa_id"
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -187,8 +180,8 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  taxa_mutated <- initialize_taxa(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  taxa_mutated <- gather_taxa(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
 
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
@@ -202,7 +195,7 @@ setMethod("mutate_taxa", "mgnet", function(object, ..., .by = NULL) {
 
 #------------------------------------------------------------------------------#
 #------------------------------------------------------------------------------#
-setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = NULL) {
+setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
@@ -215,9 +208,8 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "taxa", TRUE)
-  .by <- validate_required_groups(object, .by, "taxa")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- c("mgnet", "taxa_id")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -227,13 +219,13 @@ setMethod("mutate_taxa", "mgnetList", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  taxa_mutated_merged <- initialize_taxa(object)
-  long_abun_merged <- long_abundance_join(object, needed_keys$abundance) 
+  taxa_mutated_merged <- gather_taxa(object)
+  long_abun_merged <- long_abundance_join(object, get_abundance_keys(expressions)) 
   
   # LOOP OVER THE EXPRESSIONS
   #----------------------------------------------------------------------------#
-  taxa_mutated <- apply_mutate_verb(taxa_mutated_merged, long_abun_merged, expressions, .by, "taxa")
-  
+  taxa_mutated_merged <- apply_mutate_verb(taxa_mutated_merged, long_abun_merged, expressions, .by, "taxa")
+
   taxa_mutated_splitted <- split_arrange_merged_taxa(taxa_mutated_merged, object)
   taxa(object) <- taxa_mutated_splitted
   return(object)

@@ -29,8 +29,7 @@ setGeneric("bind_meta", function(object, ...) standardGeneric("bind_meta"))
 
 setMethod("bind_meta", signature(object = "mgnet"), function(object, ...) {
   if(miss_sample(object)) {stop("Error: No sample available.")}
-  new_meta <- dplyr::bind_cols(object@meta, ...)
-  meta(object) <- new_meta
+  meta(object) <- dplyr::bind_cols(object@meta, ...)
   object
 })
 
@@ -57,7 +56,7 @@ setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
   } else {
     # Additional columns are to be bound to all mgnet objects' meta data
     # Get combined meta data
-    meta_tbl <- meta(object, .fmt = "tbl")
+    meta_tbl <- gather_meta(object)
     
     # Bind additional columns to the combined meta data
     new_meta_tbl <- dplyr::bind_cols(meta_tbl, ...)
@@ -68,7 +67,7 @@ setMethod("bind_meta", signature(object = "mgnetList"), function(object, ...) {
       purrr::imap(function(df, mgnet_name) {
         df %>%
           dplyr::arrange(match(sample_id, sample_id(object@mgnets[[mgnet_name]]))) %>%
-          dplyr::select(-tidyselect::all_of(mgnet)) %>%
+          dplyr::select(-tidyselect::all_of("mgnet")) %>%
           tibble::column_to_rownames("sample_id")
       })
     
@@ -138,7 +137,7 @@ setMethod("bind_taxa", signature(object = "mgnetList"), function(object, ...) {
   } else {
     # Additional columns are to be bound to all mgnet objects' taxa data
     # Get combined taxa data
-    taxa_tbl <- taxa(object, .fmt = "tbl")
+    taxa_tbl <- gather_taxa(object)
     
     # Bind additional columns to the combined taxa data
     new_taxa_tbl <- dplyr::bind_cols(taxa_tbl, ...)
@@ -149,7 +148,7 @@ setMethod("bind_taxa", signature(object = "mgnetList"), function(object, ...) {
       purrr::imap(function(df, mgnet_name) {
         df %>%
           dplyr::arrange(match(taxa_id, taxa_id(object@mgnets[[mgnet_name]]))) %>%
-          dplyr::select(-tidyselect::any_of(mgnet, comm_id)) %>%
+          dplyr::select(-tidyselect::any_of("mgnet", "comm_id")) %>%
           tibble::column_to_rownames("taxa_id")
       })
     

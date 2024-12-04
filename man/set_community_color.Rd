@@ -20,11 +20,9 @@ set_community_color(
 \item{object}{An \code{mgnet} object that includes community data.}
 
 \item{size}{An integer that specifies the minimum size a community must have to receive a unique color.
-Communities smaller than this size will be colored with \code{smaller_color}. If the parameter is omitted,
-the function assigns a unique color to all communities, regardless of their size.}
+Communities smaller than this size will be colored with \code{smaller_color} (default 1).}
 
-\item{color_to}{The name of the column in the taxa data where the color values will be stored.
-This allows the function to be versatile in how it applies color information within an existing dataset.}
+\item{color_to}{The name of the column in the taxa data where the color values will be stored (default 'color_comm').}
 
 \item{smaller_color}{A hexadecimal color code used for communities that do not exceed the \code{size} threshold,
 defaulting to a light gray ("#D3D3D3").}
@@ -51,7 +49,7 @@ between larger and smaller communities.
 This function applies a color scheme to taxa based on community membership, which is determined by
 the sizes of communities identified in a metagenomic network. Each community can be assigned a unique
 color, while smaller communities and isolated nodes are assigned default colors to maintain visual
-clarity. This function is particularly useful for visualizing community structure in network plots.
+clarity.
 
 The function modifies the provided \code{mgnet} object by adding or updating a column with community colors.
 It relies on the \code{colormap_community} function to generate a suitable color palette based on community

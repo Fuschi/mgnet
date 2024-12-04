@@ -90,8 +90,6 @@ setClass(
   }
 )
 
-
-
 # Define constructor for mgnetList
 #------------------------------------------------------------------------------#
 #' Create an mgnetList Object
@@ -141,13 +139,10 @@ as.list.mgnetList <- function(x, ...) {
   x@mgnets
 }
 
-
 # Define coercion from mgnetList to list
 #------------------------------------------------------------------------------#
 #' @export
 setAs("mgnetList", "list", function(from) from@mgnets)
-
-
 
 #------------------------------------------------------------------------------#
 #' Access or Assign Elements in an mgnetList Object

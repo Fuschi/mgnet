@@ -50,7 +50,7 @@ setMethod("show", "mgnet", function(object) {
   }
   
   # Community information
-  if( length(object@comm) > 0) {
+  if( length(object@comm) > 0 & any(sizes(object@comm) > 1)) {
     cat(sprintf("  Detected Communities: %d\n", max(as.numeric(names(sizes(object@comm)[sizes(object@comm) > 1]))) ))
     
     sizes <- igraph::sizes(object@comm)
@@ -61,6 +61,8 @@ setMethod("show", "mgnet", function(object) {
     isolated_msg <- paste0("  Isolated Nodes: ", sum(igraph::sizes(object@comm)==1))
     cat(isolated_msg, "\n")
     
+  } else if( length(object@comm) > 0 & all(sizes(object@comm) == 1)) {
+    cat("  Detected Communities: All nodes are isolated.\n")
   } else {
     cat("  No community detection results available.\n")
   }
@@ -111,10 +113,12 @@ setMethod("show", "mgnetList", function(object) {
       } else {
         cat("  No network data available.\n")
       }
-      if (!is.null(mgnetObj@comm) && length(mgnetObj@comm) > 0) {
+      if (!is.null(mgnetObj@comm) && length(mgnetObj@comm) > 0 && any(sizes(mgnetObj@comm) > 1)) {
         cat(sprintf("  Detected Communities: %d (%.2f%% Isolated)\n", 
                     max(as.numeric(names(igraph::sizes(mgnetObj@comm)[igraph::sizes(mgnetObj@comm) > 1]))),
                     100*sum(igraph::sizes(mgnetObj@comm)==1) / igraph::vcount(mgnetObj@netw)))
+      } else if (!is.null(mgnetObj@comm) && length(mgnetObj@comm) > 0 && all(sizes(mgnetObj@comm) == 1)) {
+        cat("  Detected Communities: All nodes are isolated.\n)")
       } else {
         cat("  No community detection results available.\n")
       }

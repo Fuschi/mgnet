@@ -35,10 +35,11 @@ setGeneric("split_sample", function(object, ...) {
 })
 
 setMethod("split_sample", "mgnet", function(object, ...) {
+  
+  if(miss_sample(object)) stop("Error: No sample available.")
+  
   # Capture the column names as quosures
   split_cols <- enquos(...)
-  
-  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
   
   # Check if split_cols is empty
   if (length(split_cols) == 0) {
@@ -111,10 +112,11 @@ setGeneric("split_taxa", function(object, ...) {
 })
 
 setMethod("split_taxa", "mgnet", function(object, ...) {
+  
+  if(miss_taxa(object)) stop("Error: No taxa available.")
+  
   # Capture the column names as quosures
   split_cols <- enquos(...)
-  
-  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
   
   # Check if split_cols is empty
   if (length(split_cols) == 0) {

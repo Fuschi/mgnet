@@ -16,7 +16,7 @@
 apply_mutate_verb <- function(info_mutated, long_abun, expressions, .by, sample_or_taxa) {
   
   join_by <- if(sample_or_taxa=="sample") "sample_id" else "taxa_id"
-  del_key <- if(sample_or_taxa=="sample") "taxa_id" else "sample_id"
+  del_key <- if(sample_or_taxa=="sample") c("taxa_id","comm_id") else "sample_id"
   if("mgnet" %in% colnames(info_mutated)) join_by <- c("mgnet", join_by)
   
   # LOOP OVER THE EXPRESSIONS
@@ -24,6 +24,13 @@ apply_mutate_verb <- function(info_mutated, long_abun, expressions, .by, sample_
   for(i in seq_along(expressions)){
     
     expr_vars <- all.vars(expressions[[i]])
+    
+    if (any(c("netw", "comm") %in% expr_vars)) {
+      
+      result <- expression(object@netw....)
+      
+    }
+    
     
     if(any(expr_vars %in% c("abun","rela","norm"))){
       
@@ -72,8 +79,7 @@ apply_filter_verb <- function(metadata, long_abun, expressions, .by, sample_or_t
   
   join_by <- if(sample_or_taxa=="sample") "sample_id" else "taxa_id"
   del_key <- if(sample_or_taxa=="sample") "taxa_id" else "sample_id"
-  pull_id <- if(sample_or_taxa=="sample") "sample_id" else "taxa_id"
-  
+
   if("mgnet" %in% colnames(metadata)) join_by <- c("mgnet", join_by)
   filtered_id <- list()
   
@@ -90,8 +96,7 @@ apply_filter_verb <- function(metadata, long_abun, expressions, .by, sample_or_t
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
         dplyr::ungroup() %>%
         dplyr::select(-any_of(c({{del_key}}, "abun", "rela", "norm"))) %>%
-        dplyr::distinct() %>%
-        dplyr::pull({{pull_id}})
+        dplyr::distinct() 
       
     } else {
       
@@ -99,8 +104,7 @@ apply_filter_verb <- function(metadata, long_abun, expressions, .by, sample_or_t
       filtered_id[[i]] <- metadata %>%
         dplyr::group_by(!!!rlang::syms(.by)) %>%
         dplyr::filter(!!!rlang::eval_tidy(expressions[i])) %>%
-        dplyr::ungroup() %>%
-        dplyr::pull({{pull_id}})
+        dplyr::ungroup()
       
     }
   }
@@ -120,14 +124,14 @@ apply_expr_var_sort <- function(metadata, long_abun, expression, var, n, decreas
 
       var_sorted <- long_abun %>%
         dplyr::group_by(!!!rlang::syms(var)) %>%
-        dplyr::reframe('_internal_' := !!expression) %>%
+        dplyr::summarise('_internal_' := !!expression, .groups = "drop") %>%
         as.data.frame()
       
     } else {
 
       var_sorted <- metadata %>%
         dplyr::group_by(!!!rlang::syms(var)) %>%
-        dplyr::reframe('_internal_' := !!expression) %>%
+        dplyr::summarise('_internal_' := !!expression, .groups = "drop") %>%
         as.data.frame()
 
     }
@@ -138,18 +142,12 @@ apply_expr_var_sort <- function(metadata, long_abun, expression, var, n, decreas
     
     if(is.logical(var_sorted[, '_internal_'])){
       n <- sum(var_sorted[, '_internal_'])
-      var_sorted <- var_sorted[order(var_sorted[, '_internal_'], decreasing = decreasing), ]
+      var_sorted <- var_sorted[order(var_sorted[, '_internal_'], decreasing = TRUE), ]
     } else {
       n <- min(n, nrow(var_sorted))
-      var_sorted <- var_sorted[order(var_sorted[, '_internal_'], decreasing = TRUE), ]
+      var_sorted <- var_sorted[order(var_sorted[, '_internal_'], decreasing = decreasing), ]
     }
 
     return(list(var_sorted = var_sorted, n = n))
 }
-
-
-
-
-
-
 

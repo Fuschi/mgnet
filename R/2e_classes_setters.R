@@ -95,65 +95,172 @@ setMethod("norm<-", "mgnetList", function(object, value) {
 
 
 
-# meta
+# META
 #------------------------------------------------------------------------------#
-#' Set Sample Metadata
+#' Update Sample Metadata for mgnet and mgnetList Objects
 #'
-#' This setter function updates the sample metadata for `mgnet` objects and
-#' each `mgnet` object within a `mgnetList`. The metadata must be provided as a dataframe
-#' for `mgnet` objects. For `mgnetList` objects, the metadata should be a named list of dataframes
-#' corresponding to each `mgnet` object within the list.
+#' This function sets the sample metadata for `mgnet` objects and also updates
+#' each `mgnet` object within a `mgnetList`. The metadata for `mgnet` objects must be
+#' provided as a dataframe. For `mgnetList` objects, the metadata should be either
+#' a named list of dataframes corresponding to each `mgnet` object within the list,
+#' or a single dataframe containing a 'mgnet' and 'sample_id' columns to split the 
+#' metadata accordingly.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new sample metadata to be set.
-#' @return The `mgnet` or `mgnetList` object with updated sample metadata.
+#' @param object An `mgnet` or `mgnetList` object to be updated.
+#' @param value The new sample metadata to set, either a dataframe or a named list
+#' of dataframes as per the object type.
+#' @return The updated `mgnet` or `mgnetList` object with new sample metadata.
 #' @export
 #' @importFrom methods validObject
+#' @importFrom tibble column_to_rownames has_rownames
 #' @name meta<-
 #' @aliases meta<-,mgnet-method meta<-,mgnetList-method
 setGeneric("meta<-", function(object, value) standardGeneric("meta<-"))
 
-setMethod("meta<-", c("mgnet","ANY"), function(object, value){
-  object@meta <- value
+setMethod("meta<-", c("mgnet", "ANY"), function(object, value) {
+  
+  if ("sample_id" %in% colnames(value) && tibble::has_rownames(value)) {
+    stop(sprintf("Error: %s cannot have both the 'sample_id' column and row names set.", deparse(substitute(value))))
+  }
+
+  if (!"sample_id" %in% colnames(value) && !has_rownames(value)) {
+    stop(sprintf("Error: %s must have either a 'sample_id' column or row names set.", deparse(substitute(value))))
+  }
+
+  if ("sample_id" %in% colnames(value)) {
+    if (any(duplicated(value$sample_id))) {
+      stop(sprintf("Error: The `sample_id` column in %s contains duplicate values.", deparse(substitute(value))))
+    }
+    value <- tibble::column_to_rownames(value, "sample_id")
+  }
+
+  if (has_sample(object)) {
+    if (!all(rownames(value) %in% sample_id(object))) {
+      stop(sprintf("Error: In '%s', the 'sample_id' values in the provided data do not match the existing 'sample_id' in the object.", i))
+    }
+    if (!identical(rownames(value), sample_id(object))) {
+      value <- value[sample_id(object), ]
+    }
+  }
+
+  object@meta <- as.data.frame(value)
   validObject(object)
   object
 })
 
 setMethod("meta<-", c("mgnetList","ANY"), function(object, value){
-  are_list_assign(object, value)
-  for(i in names(object)) { object@mgnets[[i]]@meta <- value[[i]] }
+  
+  if(class(value)[[1]] == "list"){
+    
+    are_list_assign(object, value)
+    for(i in names(object)) meta(object[[i]]) <- value[[i]] 
+    
+  } else if(is.data.frame(value)){
+    
+    is_assign_tbl(object, value, "sample")
+    splitted_value <- split(value, value$mgnet)
+    splitted_value <- lapply(splitted_value, \(x){
+      x$mgnet <- NULL
+      return(x)
+    })
+    for(i in names(object)) meta(object[[i]]) <- splitted_value[[i]]
+    
+  } else {
+    
+    valueName <- deparse(substitute(value))
+    stop(sprintf("Error: %s must could be only a list of data.frame or a single data.frame but with `mgnet` and `sample_id` columns"))
+    
+  }
+  
   validObject(object)
   object
 })
 
 
-# taxa
+# TAXA
 #------------------------------------------------------------------------------#
-#' Set Taxa Metadata
+#' Update Taxa Metadata for mgnet and mgnetList Objects
 #'
-#' This setter function updates the taxa metadata for `mgnet` objects and
-#' each `mgnet` object within a `mgnetList`. The taxa metadata must be provided as a dataframe
-#' for `mgnet` objects. For `mgnetList` objects, the taxa metadata should be a named list of dataframes
-#' corresponding to each `mgnet` object within the list.
+#' This function sets the taxa metadata for `mgnet` objects and also updates
+#' each `mgnet` object within a `mgnetList`. The metadata for `mgnet` objects must be
+#' provided as a dataframe. For `mgnetList` objects, the metadata should be either
+#' a named list of dataframes corresponding to each `mgnet` object within the list,
+#' or a single dataframe containing a 'mgnet' and 'taxa_id' columns to split the 
+#' metadata accordingly.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param value The new taxa metadata to be set.
-#' @return The `mgnet` or `mgnetList` object with updated taxa metadata.
+#' @param object An `mgnet` or `mgnetList` object to be updated.
+#' @param value The new taxa metadata to set, either a dataframe or a named list
+#' of dataframes as per the object type.
+#' @return The updated `mgnet` or `mgnetList` object with new taxa metadata.
 #' @export
 #' @importFrom methods validObject
+#' @importFrom tibble column_to_rownames
 #' @name taxa<-
 #' @aliases taxa<-,mgnet-method taxa<-,mgnetList-method
 setGeneric("taxa<-", function(object, value) standardGeneric("taxa<-"))
 
-setMethod("taxa<-", "mgnet", function(object, value) {
-  object@taxa <- value
+setMethod("taxa<-", c("mgnet", "ANY"), function(object, value) {
+  
+  if ("taxa_id" %in% colnames(value) && has_rownames(value)) {
+    stop(sprintf("Error: %s cannot have both the 'taxa_id' column and row names set.", deparse(substitute(value))))
+  }
+  
+  if (!"taxa_id" %in% colnames(value) && !has_rownames(value)) {
+    stop(sprintf("Error: %s must have either a 'taxa_id' column or row names set.", deparse(substitute(value))))
+  }
+  
+  if ("taxa_id" %in% colnames(value)) {
+    if (any(duplicated(value$taxa_id))) {
+      stop(sprintf("Error: The `taxa_id` column in %s contains duplicate values.", deparse(substitute(value))))
+    }
+    value <- tibble::column_to_rownames(value, "taxa_id")
+  }
+  
+  if (has_sample(object)) {
+    if (!all(rownames(value) %in% taxa_id(object))) {
+      stop(sprintf("Error: In '%s', the 'taxa_id' values in the provided data do not match the existing 'taxa_id' in the object.", i))
+    }
+    if (!identical(rownames(value), taxa_id(object))) {
+      value <- value[taxa_id(object), ]
+    }
+  }
+  
+  if ("comm_id" %in% colnames(value)){
+    if(!all(value$comm_id == comm_id(object))){
+      stop("Error: Communities membership encoded in comm_id differes from the ones in the object")
+    }
+    value$comm_id <- NULL
+  }
+  
+  object@taxa <- as.data.frame(value)
   validObject(object)
   object
 })
 
-setMethod("taxa<-", "mgnetList", function(object, value) {
-  are_list_assign(object, value)
-  for(i in names(object)) { object@mgnets[[i]]@taxa <- value[[i]] }
+setMethod("taxa<-", c("mgnetList","ANY"), function(object, value){
+  
+  if(class(value)[[1]] == "list"){
+    
+    are_list_assign(object, value)
+    for(i in names(object)) taxa(object[[i]]) <- value[[i]] 
+    
+  } else if(is.data.frame(value)){
+    
+    is_assign_tbl(object, value, "taxa")
+    splitted_value <- split(value, value$mgnet)
+    splitted_value <- lapply(splitted_value, \(x){
+      x$mgnet <- NULL
+      return(x)
+    })
+    for(i in names(object)) taxa(object[[i]]) <- splitted_value[[i]]
+    
+  } else {
+    
+    valueName <- deparse(substitute(value))
+    stop(sprintf("Error: %s must could be only a list of data.frame or a single data.frame but with `mgnet` and `taxa_id` columns"))
+    
+  }
+  
   validObject(object)
   object
 })
@@ -186,6 +293,53 @@ setMethod("netw<-", "mgnet", function(object, value) {
 setMethod("netw<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   for(i in names(object)) { object@mgnets[[i]]@netw <- value[[i]] }
+  validObject(object)
+  object
+})
+
+
+# LINK
+#------------------------------------------------------------------------------#
+setGeneric("link<-", function(object, value, .suffix = c("_1", "_2")) standardGeneric("link<-"))
+
+setMethod("link<-", c("mgnet", "ANY"), function(object, value) {
+  
+  if(miss_slot(object, "netw")) stop("Error: No network available.")
+  
+  correct_taxa_ids <- paste0("taxa", .suffix)
+  col_names <- colnames(value)
+  if(all(correct_taxa_ids %in% col_names)) stop("I didn't find the identifiers of the taxa for the nodes....")
+  
+  tbl_link <- value %>%
+    dplyr::select(-tidyselect::ends_with(.suffix[1]),
+                  -tidyselect::ends_with(.suffix[2]))
+  
+})
+
+setMethod("taxa<-", c("mgnetList","ANY"), function(object, value){
+  
+  if(class(value)[[1]] == "list"){
+    
+    are_list_assign(object, value)
+    for(i in names(object)) taxa(object[[i]]) <- value[[i]] 
+    
+  } else if(is.data.frame(value)){
+    
+    is_assign_tbl(object, value, "taxa")
+    splitted_value <- split(value, value$mgnet)
+    splitted_value <- lapply(splitted_value, \(x){
+      x$mgnet <- NULL
+      return(x)
+    })
+    for(i in names(object)) taxa(object[[i]]) <- splitted_value[[i]]
+    
+  } else {
+    
+    valueName <- deparse(substitute(value))
+    stop(sprintf("Error: %s must could be only a list of data.frame or a single data.frame but with `mgnet` and `taxa_id` columns"))
+    
+  }
+  
   validObject(object)
   object
 })

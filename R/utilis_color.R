@@ -37,12 +37,12 @@ colormap_categories <- function(categories, distinct_colors, extraColor = "#FFFF
     distinct_colors <- length(uniq_categories)
   } 
   
-  if(!is.numeric(distinct_colors) || distinct_colors != round(distinct_colors) || distinct_colors < 1 || distinct_colors > 99){
-    stop("distinct_colors must be an integer between 1 and 99.")
+  if(distinct_colors > length(uniq_categories)){
+    distinct_colors <- length(uniq_categories)
   }
   
-  if(distinct_colors > min(99, length(uniq_categories))){
-    stop("distinct_colors cannot exceed the current number of categories: ", length(uniq_categories))
+  if(!is.numeric(distinct_colors) || distinct_colors != round(distinct_colors) || distinct_colors < 1 || distinct_colors > 99){
+    stop("distinct_colors must be an integer between 1 and 99.")
   }
   
   if(!is.numeric(alpha) || alpha < 0 || alpha > 1) {

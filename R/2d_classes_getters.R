@@ -334,7 +334,7 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #'
 #' Retrieves the sample information stored in the `meta` slot of an `mgnet` object
 #' or for each `mgnet` object within an `mgnetList`, with the option to format the output as
-#' a `data.frame`, `tibble`, or a combined `tibble` for multiple mgnet objects.
+#' a `data.frame`, `tibble`.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
 #' @param .fmt A character string specifying the output format of the result.
@@ -343,12 +343,6 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the row names of
 #'          the abundance matrix are converted into a new column named `sample_id`, ensuring alignment
 #'          with the reserved keyword in `mgnet-class`.
-#'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
-#'          each corresponding to the `meta` of an individual `mgnet` object.
-#'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
-#'        - "tbl" (for `mgnetList` only): Concatenates the results of all `mgnet` objects into a single 
-#'          `tibble`, with an additional column identifying the source `mgnet` object. The column is named 
-#'          `mgnet`, which is a reserved keyword of the `mgnet` class and contains the name of each `mgnet` object.
 #'          
 #' @return The content of the `meta` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' 
@@ -357,11 +351,10 @@ setMethod("norm", "mgnetList", function(object, .var = NULL, .fmt = "mat", .fun 
 #' @export
 #' @name meta
 #' @aliases meta,mgnet-method meta,mgnetList-method
-setGeneric("meta", function(object, .fmt) standardGeneric("meta"))
+setGeneric("meta", function(object, .fmt = "df") standardGeneric("meta"))
 
-setMethod("meta", "mgnet", function(object, .fmt) {
+setMethod("meta", "mgnet", function(object, .fmt = "df") {
   
-  if(missing(.fmt)) .fmt<- "df"
   .fmt <- match.arg(.fmt, c("df", "tbl"))
 
   if( length(object@meta) == 0 ){
@@ -379,54 +372,20 @@ setMethod("meta", "mgnet", function(object, .fmt) {
   }
 })
 
-setMethod("meta", "mgnetList", function(object, .fmt) {
+setMethod("meta", "mgnetList", function(object, .fmt = "df") {
   
-  if(missing(.fmt)) .fmt <- "list_df"
-  .fmt <- match.arg(.fmt, c("list_df", "list_tbl", "tbl"))
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
   
-  if(.fmt == "list_df") {
+  if(.fmt == "df") {
     
     if(length(object) == 0) return(data.frame())
     return(purrr::map(object, function(x) meta(x, .fmt = "df")))
     
-  } else if(.fmt == "list_tbl") {
+  } else if(.fmt == "tbl") {
     
     if(length(object) == 0) return(tibble::tibble())
     return(purrr::map(object, function(x) meta(x, .fmt = "tbl")))
     
-  } else if(.fmt == "tbl") {
-
-    if(miss_sample(object, "any")){
-      
-      missing_sample_mgnets <- names(object)[miss_sample(object, "list")]
-      warning("The following mgnet objects have no samples and will be excluded: ", 
-              paste(missing_sample_mgnets, collapse = ", "))
-      object <- object[has_sample(object)]
-      
-    }
-    
-    if(length(object) == 0) return(tibble::tibble())
-    
-    if(miss_slot(object, "meta", "any")){
-      
-      result <- purrr::map(object, \(x){
-        if(has_slot(x, "meta")) meta(x, "tbl") else tibble::tibble(sample_id = sample_id(x))}) %>%
-        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-        purrr::list_rbind()
-      
-      return(result)
-      
-    }
-
-    if(has_slot(object, "meta", "all")){
-      
-      result <- purrr::map(object, function(x) meta(x, .fmt = "tbl")) %>%
-        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-        purrr::list_rbind()
-      
-      return(result)
-      
-    }
   }
   
 })
@@ -447,12 +406,6 @@ setMethod("meta", "mgnetList", function(object, .fmt) {
 #'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the the row names of
 #'          the abundance matrix are converted into a new column named `taxa_id`, ensuring alignment
 #'          with the reserved keyword in `mgnet-class`.
-#'        - "list_df": When working with `mgnetList`, returns a list of `data.frame` objects, 
-#'          each corresponding to the `taxa` of an individual `mgnet` object.
-#'        - "list_tbl": Similar to "list_df", but each entry in the list is a `tibble`.
-#'        - "tbl" (for `mgnetList` only): Concatenates the results of all `mgnet` objects into a single 
-#'          `tibble`, with an additional column identifying the source `mgnet` object. The column is named 
-#'          `mgnet`, which is a reserved keyword of the `mgnet` class and contains the name of each `mgnet` object.
 #'          
 #' @return The content of the `taxa` slot for `mgnet` or a list of such contents for `mgnetList`.
 #' 
@@ -461,13 +414,11 @@ setMethod("meta", "mgnetList", function(object, .fmt) {
 #' @export
 #' @name taxa
 #' @aliases taxa,mgnet-method taxa,mgnetList-method
-setGeneric("taxa", function(object, .fmt) standardGeneric("taxa"))
+setGeneric("taxa", function(object, .fmt = "df") standardGeneric("taxa"))
 
-setMethod("taxa", "mgnet", function(object, .fmt) {
+setMethod("taxa", "mgnet", function(object, .fmt = "df") {
   
-  if(missing(.fmt)) .fmt <- "df"
   .fmt <- match.arg(.fmt, c("df", "tbl"))
-  
   
   if(length(object@taxa) == 0 && length(object@comm) == 0){
     switch(.fmt,
@@ -502,55 +453,21 @@ setMethod("taxa", "mgnet", function(object, .fmt) {
   
 })
 
-setMethod("taxa", "mgnetList", function(object, .fmt) {
+setMethod("taxa", "mgnetList", function(object, .fmt = "df") {
   
-  if(missing(.fmt)) .fmt <- "list_df"
-  .fmt <- match.arg(.fmt, c("list_df", "list_tbl", "tbl"))
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
   
-  if(.fmt == "list_df") {
+  if(.fmt == "df") {
     
     if(length(object) == 0) return(data.frame())
     return(sapply(object, taxa, .fmt = "df", simplify = FALSE, USE.NAMES = TRUE))
     
-  } else if(.fmt == "list_tbl") {
+  } else if(.fmt == "tbl") {
     
     if(length(object) == 0) return(tibble::tibble())
     return(sapply(object, taxa, .fmt = "tbl", simplify = FALSE, USE.NAMES = TRUE))
     
-  } else if(.fmt == "tbl") {
-    
-    if(miss_taxa(object, "any")){
-      
-      missing_taxa_mgnets <- names(object)[miss_taxa(object, "list")]
-      warning("The following mgnet objects have no taxa and will be excluded: ", 
-              paste(missing_taxa_mgnets, collapse = ", "))
-      object <- object[has_taxa(object)]
-      
-    }
-    
-    if(length(object) == 0) return(tibble::tibble())
-    
-    if(miss_metataxa(object, "any")){
-      
-      result <- purrr::map(object, \(x){
-        if(has_metataxa(x)) taxa(x, "tbl") else tibble::tibble(taxa_id = taxa_id(x))}) %>%
-        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-        purrr::list_rbind()
-      
-      return(result)
-      
-    }
-    
-    if(has_metataxa(object, "all")){
-      
-      result <- purrr::map(object, function(x) taxa(x, .fmt = "tbl")) %>%
-        purrr::imap(\(x,y) mutate(x, mgnet = y, .before = 1)) %>%
-        purrr::list_rbind() 
-        
-      return(result)
-      
-    }
-  }
+  } 
   
 })
 
@@ -568,7 +485,7 @@ setMethod("taxa", "mgnetList", function(object, .fmt) {
 #' @return An `igraph` object containing the network from an `mgnet` object, or a list of `igraph` objects
 #'         from an `mgnetList`, each representing the network graph of a contained `mgnet` object.
 #' @export
-#' @importFrom igraph vertex_attr set_edge_attr is_weighted E
+#' @importFrom igraph vertex_attr set_edge_attr is_weighted E membership
 #' @aliases netw,mgnet-method netw,mgnetList-method
 setGeneric("netw", function(object, add_vertex_attr = FALSE) standardGeneric("netw"))
 
@@ -585,6 +502,10 @@ setMethod("netw", "mgnet", function(object, add_vertex_attr = FALSE) {
         igraph::vertex_attr(g, vertex_attr) <- object@taxa[[vertex_attr]]
       }
     }
+    
+    if (length(object@comm) != 0){
+      igraph::vertex_attr(g, "comm_id") <- igraph::membership(object@comm)
+    }
   }
 
   return(g)
@@ -593,6 +514,113 @@ setMethod("netw", "mgnet", function(object, add_vertex_attr = FALSE) {
 
 setMethod("netw", "mgnetList", function(object, add_vertex_attr) {
   sapply(object@mgnets, function(x) netw(x, add_vertex_attr), simplify = FALSE, USE.NAMES = TRUE)
+})
+
+
+# LINK
+#------------------------------------------------------------------------------#
+#' Retrieve Edge List with Metadata from mgnet Object(s)
+#'
+#' Extracts an edge list from the network slot of an `mgnet` or `mgnetList` object, including edge attributes 
+#' and associated taxa metadata for both vertices in each link.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#'               For `mgnet`, the method will extract the network's edge list and merge taxa metadata 
+#'               for both source and target nodes. For `mgnetList` the method will be applied on each element.
+#' @param .suffix A character vector of length 2 providing suffixes to append to the taxa 
+#'        metadata columns to distinguish the nodes connected from an edge. 
+#'        Default is c("_1", "_2"). The values must be distinct to prevent column name overlap.
+#'
+#' @details
+#' This method leverages the network structure within `mgnet` objects to generate a detailed edge tibble that includes:
+#' - `Node Identifiers`: Each identifier for the nodes connected by an edge begins with the string "taxa" and is 
+#'   appended with `.suffix` to indicate the source and target nodes, respectively (e.g., `taxa_id_1`, `taxa_id_2`).
+#' - `Link Attributes`: Includes all available attributes associated with the links, such as weight.
+#' - `Metadata`: Metadata from both source and target taxa are included, with column names appended 
+#'   with `_1` and `_2` as suffixes. These suffixes help distinguish between the source and target taxa metadata.
+#'
+#' For `mgnetList` objects, this transformation is applied individually to each `mgnet` object.
+#'
+#' @importFrom igraph E is_weighted as_data_frame
+#' @importFrom dplyr left_join
+#' @importFrom purrr map imap list_rbind
+#' @export
+#' @name link
+#' @aliases link,mgnet-method link,mgnetList-method
+setGeneric("link", function(object, .suffix = c("_1", "_2")) standardGeneric("link"))
+
+setMethod("link", "mgnet", function(object, .suffix = c("_1", "_2")) {
+  
+  # Ensure the network is available
+  if (miss_slot(object, "netw")) stop("Error: No network available.")
+  
+  # Check .suffix
+  if(length(.suffix) != 2 || !is.character(.suffix) || .suffix[1] == .suffix[2]){
+    stop(".suffix must be a character vector of length 2 with distinct values")
+  }
+  
+  # Check if is requirred the edge filter
+  selected_links <- get_selected_links(object)
+  if (!is.null(selected_links)) {
+    netw0 <- netw(object)
+    netw(object) <- igraph::subgraph_from_edges(graph = netw(object),
+                                                eids = get_selected_links(object),
+                                                delete.vertices = FALSE)
+  }
+  
+  # Extract edge list with weights
+  net <- netw(object)
+  edges_df <- igraph::as_data_frame(net, what = "edges")
+  edges_df <- as_tibble(edges_df)
+  colnames(edges_df)[1:2] <- paste0("taxa_id", .suffix)
+  
+  new_taxa_info_cols <- paste0(taxa_vars(object), .suffix[1])
+  new_taxa_info_cols <- c(new_taxa_info_cols, paste0(taxa_vars(object), .suffix[2]))
+  
+  # Check for potential column name overlaps
+  if (any(new_taxa_info_cols %in% names(edges_df)[-c(1,2)])) {
+    overlapping_columns <- new_taxa_info_cols[new_taxa_info_cols %in% names(edges_df)]
+    stop("Overlap detected in column names between nodes and edges: ", paste(overlapping_columns, collapse = ", "))
+  }
+
+  # First, ensure you get the network correctly and extract attribute names
+  edges__attr_names <- names(igraph::edge_attr(netw(object)))
+  
+  if (!is.null(edges__attr_names) && length(edges__attr_names) > 0) {
+    
+    # Create a regex pattern to match any of the suffixes at the end of strings
+    pattern <- stringr::str_c(.suffix, collapse = "|", suffix = "$")
+    
+    # Use str_detect to find elements ending with any suffix
+    invalid_names <- edges__attr_names[stringr::str_detect(edges__attr_names, pattern)]
+    if (length(invalid_names) > 0) {
+      # Construct a concise error message that lists the problematic attribute names and the disallowed suffixes
+      suffix_list <- paste(.suffix, collapse = ", ")
+      error_message <- sprintf(
+        "Edge attributes '%s' end with disallowed suffixes (%s). " +
+          "Suffixes must differ between nodes and edges to discern them. Please adjust the .suffix values or rename the edge or vertex attributes accordingly.",
+        paste(invalid_names, collapse = ", "), suffix_list
+      )
+      stop(error_message)
+    }
+  }
+  
+  # Merge with taxa metadata for source nodes
+  tbl_1 <- gather_taxa(object)
+  colnames(tbl_1) <- paste0(colnames(tbl_1), .suffix[1])
+  edges_df <- dplyr::left_join(edges_df, tbl_1, by = paste0("taxa_id", .suffix[1]))
+  
+  # Merge with taxa metadata for target nodes
+  tbl_2 <- gather_taxa(object)
+  colnames(tbl_2) <- paste0(colnames(tbl_2), .suffix[2])
+  edges_df <- dplyr::left_join(edges_df, tbl_2, by = paste0("taxa_id", .suffix[2]))
+  
+  return(edges_df)
+  
+})
+
+setMethod("link", "mgnetList", function(object, .suffix = c("_1", "_2")){
+  sapply(object, \(x) link(x, .suffix), simplify = FALSE, USE.NAMES = TRUE)
 })
 
 

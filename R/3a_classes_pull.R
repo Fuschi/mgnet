@@ -18,34 +18,29 @@
 #' This function supports dynamic evaluation of the column name using `rlang` for unquoted names.
 #'
 #' @export
-#' @importFrom dplyr pull select
+#' @importFrom dplyr pull
+#' @importFrom rlang ensym
+#' @importFrom purrr map
 #' @name pull_meta
 #' @aliases pull_meta,mgnet-method pull_meta,mgnetList-method
 setGeneric("pull_meta", function(object, var = -1) standardGeneric("pull_meta"))
 
 setMethod("pull_meta", signature(object = "mgnet"), function(object, var = -1) {
   if(miss_sample(object)) {stop("Error: No sample available.")}
-  dplyr::pull(meta(object), {{var}})
+  var <- rlang::ensym(var)
+  dplyr::pull(gather_meta(object), var)
 })
 
 setMethod("pull_meta", signature(object = "mgnetList"), function(object, var = -1) {
-  
   if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
-  
-  meta(object, .fmt = "tbl") %>%
-    dplyr::select("mgnet", "sample_id", {{var}}) %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(sample_id, sample_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::pull({{var}})
-    })
+  var <- rlang::ensym(var)
+  gather_meta(object) %>% dplyr::select(mgnet, var) %>% base::split(.[["mgnet"]]) %>%
+    purrr::map(\(x) pull(x, !!var))
   
 })
 
 
-# PULL INFO TAXA
+# PULL TAXA
 #------------------------------------------------------------------------------#
 #' Pull Taxa Information from mgnet or mgnetList Objects
 #'
@@ -66,28 +61,23 @@ setMethod("pull_meta", signature(object = "mgnetList"), function(object, var = -
 #' flexible and intuitive usage within data manipulation workflows.
 #'
 #' @export
-#' @importFrom dplyr pull select
+#' @importFrom dplyr pull
+#' @importFrom rlang ensym
+#' @importFrom purrr map
 #' @name pull_taxa
 #' @aliases pull_taxa,mgnet-method pull_taxa,mgnetList-method
 setGeneric("pull_taxa", function(object, var = -1) standardGeneric("pull_taxa"))
 
 setMethod("pull_taxa", signature(object = "mgnet"), function(object, var = -1) {
   if(miss_taxa(object)) {stop("Error: No taxa available.")}
-  dplyr::pull(taxa(object), {{var}})
+  var <- rlang::ensym(var)
+  dplyr::pull(gather_taxa(object), var)
 })
 
 setMethod("pull_taxa", signature(object = "mgnetList"), function(object, var = -1) {
-  
   if(miss_taxa(object, "any")) {stop("Error: No taxa available in any of the mgnet objects.")}
-  
-  taxa(object, .fmt = "tbl") %>%
-    dplyr::select("mgnet", "taxa_id", {{var}}) %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::pull({{var}})
-    })
+  var <- rlang::ensym(var)
+  gather_taxa(object) %>% dplyr::select(mgnet, var) %>% base::split(.[["mgnet"]]) %>%
+    purrr::map(\(x) pull(x, !!var))
   
 })

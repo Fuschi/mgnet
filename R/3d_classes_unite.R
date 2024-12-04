@@ -34,7 +34,8 @@
 #' @importFrom tidyselect all_of
 #' @importFrom dplyr select arrange
 #' @importFrom tibble column_to_rownames
-#' @importFrom purrr map imap
+#' @importFrom purrr map imap map_chr
+#' @importFrom rlang as_label enquos
 setGeneric("unite_meta", function(object, col, ..., sep = "_", remove = TRUE) {
   standardGeneric("unite_meta")
 })
@@ -42,17 +43,21 @@ setGeneric("unite_meta", function(object, col, ..., sep = "_", remove = TRUE) {
 setMethod("unite_meta", "mgnet", function(object, col, ..., sep = "_", remove = TRUE) {
   # Check if meta data exists
   if(miss_sample(object)) {stop("Error: No sample available.")}
-  if(length(meta(object)) == 0) stop("No meta data available in 'mgnet' object.")
+  if(miss_slot(object, "meta")) stop("No meta data available in 'mgnet' object.")
   
-  # Use dplyr to unite columns
-  meta_unite <- tidyr::unite(meta(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE)
+  # Evaluate column selection to resolve tidyselect helpers
+  meta_data <- gather_meta(object)
+  selected_columns <- colnames(dplyr::select(meta_data, !!!rlang::enquos(...)))
   
-  if(remove){
-    cols_to_remove <- setdiff(sapply(rlang::ensyms(...), rlang::as_string), "sample_id")
+  # Use tidyr::unite to combine columns
+  meta_unite <- tidyr::unite(meta_data, !!col, !!!rlang::syms(selected_columns), sep = sep, remove = FALSE)
+
+  if (remove) {
+    cols_to_remove <- setdiff(selected_columns, "sample_id")
     meta_unite <- dplyr::select(meta_unite, -tidyselect::any_of(cols_to_remove))
   }
   
-  meta(object) <- tibble::column_to_rownames(meta_unite, "sample_id")
+  meta(object) <- meta_unite
   
   # Return the modified object
   return(object)
@@ -60,34 +65,30 @@ setMethod("unite_meta", "mgnet", function(object, col, ..., sep = "_", remove = 
 
 setMethod("unite_meta", "mgnetList", function(object, col, ..., sep = "_", remove = TRUE) {
   # Check if meta data exists
-  if (any(length(meta(object)) == 0)) stop("No meta data available in 'mgnetList' object.")
+  if(miss_sample(object, "any")) {stop("Error: No sample available.")}
+  if(miss_slot(object, "meta", "all")) stop("No meta data available in 'mgnet' object.")
   
-  # Use dplyr to unite columns
-  meta_merged <- tidyr::unite(meta(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE) 
+  # Evaluate column selection to resolve tidyselect helpers
+  meta_data <- gather_meta(object)
+  selected_columns <- colnames(dplyr::select(meta_data, !!!rlang::enquos(...)))
   
-  if(remove){
-    cols_to_remove <- setdiff(sapply(rlang::ensyms(...), rlang::as_string), c("mgnet","sample_id"))
-    meta_merged <- dplyr::select(meta_merged, -tidyselect::any_of(cols_to_remove))
+  # Use tidyr::unite to combine columns
+  meta_unite <- tidyr::unite(meta_data, !!col, !!!rlang::syms(selected_columns), sep = sep, remove = FALSE)
+  
+  if (remove) {
+    cols_to_remove <- setdiff(selected_columns, c("mgnet","sample_id"))
+    meta_unite <- dplyr::select(meta_unite, -tidyselect::any_of(cols_to_remove))
   }
   
-  meta_splitted <- meta_merged %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(sample_id, sample_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-tidyselect::all_of("mgnet")) %>%
-        tibble::column_to_rownames("sample_id")
-    })
-  
-  meta_splitted <- meta_splitted[names(object)]
-  meta(object) <- meta_splitted
+  meta(object) <- meta_unite
   
   # Return the modified object
   return(object)
 })
 
 
+#------------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 #' Unite Multiple Taxa Metadata Columns into One in `mgnet` or `mgnetList` Objects
 #'
 #' @description
@@ -130,48 +131,46 @@ setGeneric("unite_taxa", function(object, col, ..., sep = "_", remove = TRUE) {
 })
 
 setMethod("unite_taxa", "mgnet", function(object, col, ..., sep = "_", remove = TRUE) {
-  if(miss_taxa(object)) {stop("Error: No taxa available.")}
-  if(length(taxa(object)) == 0) stop("No taxa data available in 'mgnet' object.")
+  # Check if taxa data exists
+  if(miss_taxa(object)) {stop("Error: No sample available.")}
+  if(miss_slot(object, "taxa")) stop("No taxa data available in 'mgnet' object.")
   
-  # Use dplyr to unite columns
-  taxa_unite <- tidyr::unite(taxa(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE) %>%
-    dplyr::select(-tidyselect::any_of("comm_id"))
+  # Evaluate column selection to resolve tidyselect helpers
+  taxa_data <- gather_taxa(object)
+  selected_columns <- colnames(dplyr::select(taxa_data, !!!rlang::enquos(...)))
   
-  if(remove){
-    cols_to_remove <- setdiff(sapply(rlang::ensyms(...), rlang::as_string), "taxa_id")
+  # Use tidyr::unite to combine columns
+  taxa_unite <- tidyr::unite(taxa_data, !!col, !!!rlang::syms(selected_columns), sep = sep, remove = FALSE)
+  
+  if (remove) {
+    cols_to_remove <- setdiff(selected_columns, "taxa_id")
     taxa_unite <- dplyr::select(taxa_unite, -tidyselect::any_of(cols_to_remove))
   }
   
-  taxa(object) <- tibble::column_to_rownames(taxa_unite, "taxa_id")
+  taxa(object) <- taxa_unite
   
   # Return the modified object
   return(object)
 })
 
 setMethod("unite_taxa", "mgnetList", function(object, col, ..., sep = "_", remove = TRUE) {
-  if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
-  if(miss_slot(object, "taxa", "all")) stop("No taxa data available in 'mgnetList' object.")
+  # Check if taxa data exists
+  if(miss_sample(object, "any")) {stop("Error: No sample available.")}
+  if(miss_slot(object, "taxa", "all")) stop("No taxa data available in 'mgnet' object.")
   
-  # Use dplyr to unite columns
-  taxa_merged <- tidyr::unite(taxa(object, .fmt = "tbl"), {{col}}, ..., sep = sep, remove = FALSE) 
+  # Evaluate column selection to resolve tidyselect helpers
+  taxa_data <- gather_taxa(object)
+  selected_columns <- colnames(dplyr::select(taxa_data, !!!rlang::enquos(...)))
   
-  if(remove){
-    cols_to_remove <- setdiff(sapply(rlang::ensyms(...), rlang::as_string), c("mgnet","taxa_id"))
-    taxa_merged <- dplyr::select(taxa_merged, -tidyselect::any_of(cols_to_remove))
+  # Use tidyr::unite to combine columns
+  taxa_unite <- tidyr::unite(taxa_data, !!col, !!!rlang::syms(selected_columns), sep = sep, remove = FALSE)
+  
+  if (remove) {
+    cols_to_remove <- setdiff(selected_columns, c("mgnet","taxa_id"))
+    taxa_unite <- dplyr::select(taxa_unite, -tidyselect::any_of(cols_to_remove))
   }
   
-  taxa_splitted <- taxa_merged %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-tidyselect::any_of(c("mgnet", "comm_id"))) %>%
-        tibble::column_to_rownames("taxa_id")
-    })
-  
-  taxa_splitted <- taxa_splitted[names(object)]
-  taxa(object) <- taxa_splitted
+  taxa(object) <- taxa_unite
   
   # Return the modified object
   return(object)

@@ -100,7 +100,7 @@ setMethod("constructCorrCLRNet", "mgnet",
 
             if( clr_method != "stored"){
 
-              if(length(norm(object)) != 0) message("norm slot rewritten")
+              if(length(norm(object)) != 0) message("norm slot rewritten.")
 
               norm <- if(clr_method == "clr") {
                   mgnet::clr(zero_dealing(object@abun, method = zero_strategy))
@@ -108,21 +108,16 @@ setMethod("constructCorrCLRNet", "mgnet",
                   mgnet::iclr(zero_dealing(object@abun, method = zero_strategy))
                 }
 
-            } else if ( clr_method == "stored" && length(object@norm)!=0 ){
+            } else if ( clr_method == "stored"){
 
               norm <- object@norm
 
-            } else {
-
-              stop("why are you here?")
-
-            }
+            } 
 
             if(thresh_method=="absolute"){
 
               adj <- cor(norm, method=cor_method)
               adj <- adj * (abs(adj) >= thresh_value)
-              diag(adj) <- 0
 
             } else if(thresh_method=="density"){
 
@@ -134,6 +129,7 @@ setMethod("constructCorrCLRNet", "mgnet",
 
             }
 
+            
             diag(adj) <- 0
             if(all(adj==0)){
               netw <- make_empty_graph( n = ntaxa(object), directed = FALSE)
@@ -141,9 +137,9 @@ setMethod("constructCorrCLRNet", "mgnet",
               E(netw)$weight <- numeric(0)
             } else {
               netw <- igraph::graph_from_adjacency_matrix(adjmatrix = adj,
-                                                             mode = "undirected",
-                                                             weighted = TRUE,
-                                                             diag = FALSE)
+                                                          mode = "undirected",
+                                                          weighted = TRUE,
+                                                          diag = FALSE)
             }
 
             object@norm <- norm
@@ -159,11 +155,11 @@ setMethod("constructCorrCLRNet", "mgnetList",
                    cores = 1){
             
             if (cores > 1) {
-              
-              cl <- makeCluster(min(cores, detectCores()))
-              on.exit(stopCluster(cl))
 
-              object@mgnets <- parLapply(cl, object@mgnets, constructCorrCLRNet,
+              cl <- parallel::makeCluster(min(cores, parallel::detectCores()-1))
+              on.exit(parallel::stopCluster(cl))
+
+              object@mgnets <- parallel::parLapply(cl, object@mgnets, constructCorrCLRNet,
                                                    zero_strategy = zero_strategy, clr_method = clr_method,
                                                    cor_method = cor_method, thresh_method = thresh_method,
                                                    thresh_value = thresh_value, padj_method = padj_method)

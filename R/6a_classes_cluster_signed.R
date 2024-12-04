@@ -166,10 +166,11 @@ setMethod("cluster_signed", "mgnetList",
             
             if (cores > 1) {
               
-              cl <- makeCluster(min(cores, detectCores()))
-              on.exit(stopCluster(cl))
+              requireNamespace("parallel", quietly = TRUE)
+              cl <- parallel::makeCluster(min(cores, parallel::detectCores()-1))
+              on.exit(parallel::stopCluster(cl))
 
-              object@mgnets <- parLapply(cl, object@mgnets, cluster_signed,
+              object@mgnets <- parallel::parLapply(cl, object@mgnets, cluster_signed,
                                                    resistance = resistance, penalty = penalty,
                                                    add.names = add.names)
             } else {

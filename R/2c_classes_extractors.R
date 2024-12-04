@@ -156,10 +156,14 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
       }
       
       #Reorder vertices
-      adj_reorder <- adj[j,j]
+      adj_reorder <- as.matrix(adj[j,j])
+      rownames(adj_reorder) <- colnames(adj_reorder) <- V(x@netw)$name[j]
       
       # Reconstruct the graph from the reordered adjacency matrix
-      netw.new <- igraph::graph_from_adjacency_matrix(adj_reorder, mode = "undirected", weighted = TRUE)
+      netw.new <- igraph::graph_from_adjacency_matrix(adj_reorder, 
+                                                      mode = "undirected", 
+                                                      weighted = TRUE, 
+                                                      diag = FALSE)
       
       
       if(length(x@comm) != 0){

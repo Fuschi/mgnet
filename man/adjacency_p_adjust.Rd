@@ -10,7 +10,8 @@ adjacency_p_adjust(
   n = NULL,
   method = "pearson",
   adjust = "holm",
-  alpha = 0.05
+  alpha = 0.05,
+  keep.psych = FALSE
 )
 }
 \arguments{
@@ -28,14 +29,22 @@ Default is "pearson".}
 "bonferroni", "BH", "BY", "fdr", "none"). Default is "holm".}
 
 \item{alpha}{Numeric value specifying the significance level for the adjusted p-values. Default is 0.05.}
+
+\item{keep.psych}{Logical indicating whether to return the full result object from \code{psych::corr.test}
+or \code{psych::corr.p}. Default is FALSE.}
 }
 \value{
 An adjacency matrix derived from the correlation matrix, where elements are set to zero
-if their corresponding adjusted p-value is greater than \code{alpha}.
+if their corresponding adjusted p-value is greater than \code{alpha}. If \code{keep.psych} is TRUE,
+a list containing the adjacency matrix and the result from \code{psych::corr.test} or \code{psych::corr.p}.
 }
 \description{
 Generates an adjacency matrix from abundance data or a pre-computed correlation matrix,
 applying a threshold on the correlation matrix based on adjusted p-values with multiple
 test corrections. This function is useful for constructing networks from correlation matrices
 by considering statistically significant correlations.
+}
+\seealso{
+For more on correlation and statistical testing, see \code{\link[psych]{psych-package}},
+which offers a variety of psychological, psychometric, and multivariate analysis tools.
 }

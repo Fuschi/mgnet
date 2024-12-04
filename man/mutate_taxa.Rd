@@ -18,10 +18,9 @@ metadata within the taxa slot. This allows for a comprehensive data transformati
 experience that supports all standard and custom \code{tidyverse} manipulation techniques.}
 
 \item{.by}{Optional; a character vector specifying the columns to group data by before transformations.
-Defaults to 'taxa_id' for \code{mgnet} objects and c('mgnet', 'taxa_id') for \code{mgnetList} objects.
+Defaults to 'taxa_id' for mgnet objects and c('mgnet', 'taxa_id') for mgnetList objects.
 Grouping ensures that transformations are contextually applied within each subgroup defined
-by \code{.by}. Usage of 'sample_id' as a grouping variable is strictly prohibited to maintain
-data consistency and avoid misinterpretation.
+by .by. If you do not wish to group the data, set .by to NULL.
 
 \if{html}{\out{<div class="sourceCode">}}\preformatted{     ### Keywords in `mgnet` and `mgnetList`:
      - **abun, rela, norm**: Slots within `mgnet` objects that store abundance data, which can be

@@ -133,7 +133,7 @@ setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zer
     
     clr_variant <- match.arg(clr_variant, c("clr", "iclr"))
     zero_strategy <- match.arg(zero_strategy, c("const", "unif"))
-    if(length(object@abun) == 0 & length(object@rela)) stop("abundance and relative data missing; cannot calculate log-ratio abundance.")
+    if(length(x@abun) == 0 & length(x@rela)) stop("abundance and relative data missing; cannot calculate log-ratio abundance.")
     
     if(length(x) != 0){
       abundance <- abun(x, .fmt = "mat")
@@ -141,10 +141,8 @@ setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zer
       abundance <- rela(x, .fmt = "mat")
     }
     
-    norm(x) <- clr_zero_handle(X = abundance, clr_variant = clr_variant, zero_strategy = zero_strategy)
-    return(x)
-    
-  })
+    return(clr_zero_handle(X = abundance, clr_variant = clr_variant, zero_strategy = zero_strategy))
+  }, simplify = FALSE, USE.NAMES = TRUE)
   return(object)
 })
 

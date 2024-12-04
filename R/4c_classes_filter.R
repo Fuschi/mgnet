@@ -10,10 +10,10 @@
 #' @param ... Dynamic expressions or functions to apply for filtering.
 #'        Users can specify conditions involving both metadata and abundance data, facilitating
 #'        complex and targeted filtering strategies that are essential in data-driven studies.
-#' @param .by Optional; a character vector specifying the columns to group data by before filtering.
-#'        Defaults to 'sample_id' for `mgnet` objects and c('mgnet', 'sample_id') for `mgnetList` objects.
-#'        Proper grouping is essential for ensuring that filters are applied contextually and correctly.
-#'        The use of 'taxa_id' as a grouping variable is prohibited to maintain clarity and data integrity.
+#' @param .by Optional; a character vector specifying the columns to group data by before transformations.
+#'        Defaults to 'sample_id' for mgnet objects and c('mgnet', 'sample_id') for mgnetList objects.
+#'        Grouping ensures that transformations are contextually applied within each subgroup defined
+#'        by .by. If you do not wish to group the data, set .by to NULL.
 #'
 #' @details Leveraging the `tidyverse` functionalities, this function allows for the integration of
 #'          sophisticated data manipulation techniques. It supports conditional operations, group-based
@@ -47,8 +47,8 @@ setMethod("filter_meta", "mgnet", function(object, ..., .by = NULL) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
+  # Ensure there are sample to process
+  if(miss_sample(object)) stop("Error: No sample available in the 'mgnet' object.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -56,9 +56,8 @@ setMethod("filter_meta", "mgnet", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "sample", FALSE)
-  .by <- validate_required_groups(object, .by, "sample")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- "sample_id"
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -68,13 +67,14 @@ setMethod("filter_meta", "mgnet", function(object, ..., .by = NULL) {
 
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  metadata <- initialize_meta(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  metadata <- gather_meta(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
   filtered_samples <- apply_filter_verb(metadata, long_abun, expressions, .by, "sample")
-    
+  
+  filtered_samples <- lapply(filtered_samples, \(x) dplyr::pull(x, sample_id))
   filtered_samples <- purrr::reduce(filtered_samples, intersect) 
   filtered_samples <- filtered_samples[order(which(sample_id(object) %in% filtered_samples))]
 
@@ -87,10 +87,8 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
   
   # CHECKS
   #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if (any(nsample(object) == 0)) {
-    stop("Error: No samples available in the 'mgnet' object.")
-  }
+  # Ensure there are sample to process
+  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -98,9 +96,8 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "sample", FALSE)
-  .by <- validate_required_groups(object, .by, "sample")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- c("mgnet", "sample_id")
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -110,12 +107,14 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  metadata <- initialize_meta(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  metadata <- gather_meta(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_samples <- apply_filter_verb(metadata, long_abun, expressions, .by, "sample")
+  filtered_samples <- apply_filter_verb(metadata, long_abun, expressions, .by, "sample") 
+  
+  filtered_samples <- purrr::reduce(filtered_samples, dplyr::semi_join, by = c("mgnet", "sample_id")) 
   
   for(i in names(object)){
     filtered_i <- dplyr::filter(filtered_samples, mgnet == i) %>% dplyr::pull("sample_id")
@@ -142,10 +141,10 @@ setMethod("filter_meta", "mgnetList", function(object, ..., .by = c("mgnet", "sa
 #' @param ... Dynamic expressions or functions to apply for filtering.
 #'        Users can specify conditions involving both metadata and abundance data, facilitating
 #'        complex and targeted filtering strategies that are essential in data-driven studies.
-#' @param .by Optional; a character vector specifying the columns to group data by before filtering.
-#'        Defaults to 'taxa_id' for `mgnet` objects and c('mgnet', 'taxa_id') for `mgnetList` objects.
-#'        Proper grouping is essential for ensuring that filters are applied contextually and correctly.
-#'        The use of 'sample_id' as a grouping variable is prohibited to maintain clarity and data integrity.
+#' @param .by Optional; a character vector specifying the columns to group data by before transformations.
+#'        Defaults to 'taxa_id' for mgnet objects and c('mgnet', 'taxa_id') for mgnetList objects.
+#'        Grouping ensures that transformations are contextually applied within each subgroup defined
+#'        by .by. If you do not wish to group the data, set .by to NULL.
 #'
 #' @details Leveraging the `tidyverse` functionalities, this function allows for the integration of
 #'          sophisticated data manipulation techniques. It supports conditional operations, group-based
@@ -179,7 +178,7 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = NULL) {
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are taxa to process
-  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
+  if(miss_taxa(object)) stop("Error: No taxa available in the 'mgnet' object.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -187,9 +186,8 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
-  .by <- validate_required_groups(object, .by, "taxa")
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- "taxa_id"
   
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
@@ -199,13 +197,14 @@ setMethod("filter_taxa", "mgnet", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  metadata <- initialize_taxa(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  metadata <- gather_taxa(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
   filtered_taxa <- apply_filter_verb(metadata, long_abun, expressions, .by, "taxa")
-
+  
+  filtered_taxa <- lapply(filtered_taxa, \(x) dplyr::pull(x, taxa_id))
   filtered_taxa <- purrr::reduce(filtered_taxa, intersect) 
   filtered_taxa <- filtered_taxa[order(which(taxa_id(object) %in% filtered_taxa))]
   return(object[, filtered_taxa])
@@ -217,9 +216,7 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = NULL) {
   # CHECKS
   #----------------------------------------------------------------------------#
   # Ensure there are taxa to process
-  if (any(miss_taxa(object) == 0)) {
-    stop("Error: No taxa available in the 'mgnet' object.")
-  }
+  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
   
   # Capture all the expressions provided
   expressions <- rlang::enquos(...)
@@ -227,10 +224,9 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = NULL) {
   # Check the reserved keywords
   check_reserved_keywords(expressions)
   
-  # Store and validate needed keys and groups
-  needed_keys <- validate_required_variables(object, expressions, "taxa", FALSE)
-  .by <- validate_required_groups(object, .by, "taxa")
-  
+  # Initialize groups with default values if it is empty.
+  if(missing(.by)) .by <- c("mgnet", "taxa_id")
+
   # Forbidden functions and disallowed variables
   check_forbidden_expressions(expressions)
   
@@ -239,13 +235,14 @@ setMethod("filter_taxa", "mgnetList", function(object, ..., .by = NULL) {
   
   # CREATE THE BASE FOR THE SOLUTION
   #----------------------------------------------------------------------------#
-  metadata <- initialize_taxa(object)
-  long_abun <- long_abundance_join(object, needed_keys$abundance)  
+  metadata <- gather_taxa(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
   
   # APPLY FILTER
   #----------------------------------------------------------------------------#
-  filtered_taxa <- apply_filter_verb(metadata, long_abun, expressions, .by, "taxa")
-  
+  filtered_taxa <- apply_filter_verb(metadata, long_abun, expressions, .by, "taxa") 
+
+  filtered_taxa <- purrr::reduce(filtered_taxa, dplyr::semi_join, by = c("mgnet", "taxa_id")) 
   for(i in names(object)){
     filtered_i <- dplyr::filter(filtered_taxa, mgnet == i) %>% dplyr::pull("taxa_id")
     filtered_i <- filtered_i[order(which(taxa_id(object[[i]]) %in% filtered_i))]

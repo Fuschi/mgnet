@@ -57,7 +57,7 @@
 .assertNoReservedKeywords <- function(obj, slotName, errors) {
   # Define the list of reserved keywords
   reservedKeywords <- c(
-    "sample_id", "taxa_id", "comm_id",
+    "sample_id", "taxa_id", "comm_id", "link_id",
     "abun", "rela", "norm",
     "meta", "taxa",
     "netw", "comm",

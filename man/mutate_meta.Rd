@@ -6,7 +6,7 @@
 \alias{mutate_meta,mgnetList-method}
 \title{Modify and Augment \code{mgnet} Objects by Transforming the \code{meta} Slot}
 \usage{
-mutate_meta(object, ..., .by = NULL)
+mutate_meta(object, ..., .by)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.
@@ -18,10 +18,9 @@ metadata within the sample slot. This allows for a comprehensive data transforma
 experience that supports all standard and custom \code{tidyverse} manipulation techniques.}
 
 \item{.by}{Optional; a character vector specifying the columns to group data by before transformations.
-Defaults to 'sample_id' for \code{mgnet} objects and c('mgnet', 'sample_id') for \code{mgnetList} objects.
+Defaults to 'sample_id' for mgnet objects and c('mgnet', 'sample_id') for mgnetList objects.
 Grouping ensures that transformations are contextually applied within each subgroup defined
-by \code{.by}. Usage of 'taxa_id' as a grouping variable is strictly prohibited to maintain
-data consistency and avoid misinterpretation.}
+by .by. If you do not wish to group the data, set .by to NULL.}
 }
 \value{
 Returns the \code{mgnet} or \code{mgnetList} object with updated \code{sample} slots reflecting the applied transformations.

@@ -4,21 +4,24 @@
 \alias{taxa<-}
 \alias{taxa<-,mgnet-method}
 \alias{taxa<-,mgnetList-method}
-\title{Set Taxa Metadata}
+\title{Update Taxa Metadata for mgnet and mgnetList Objects}
 \usage{
 taxa(object) <- value
 }
 \arguments{
-\item{object}{An \code{mgnet} or \code{mgnetList} object.}
+\item{object}{An \code{mgnet} or \code{mgnetList} object to be updated.}
 
-\item{value}{The new taxa metadata to be set.}
+\item{value}{The new taxa metadata to set, either a dataframe or a named list
+of dataframes as per the object type.}
 }
 \value{
-The \code{mgnet} or \code{mgnetList} object with updated taxa metadata.
+The updated \code{mgnet} or \code{mgnetList} object with new taxa metadata.
 }
 \description{
-This setter function updates the taxa metadata for \code{mgnet} objects and
-each \code{mgnet} object within a \code{mgnetList}. The taxa metadata must be provided as a dataframe
-for \code{mgnet} objects. For \code{mgnetList} objects, the taxa metadata should be a named list of dataframes
-corresponding to each \code{mgnet} object within the list.
+This function sets the taxa metadata for \code{mgnet} objects and also updates
+each \code{mgnet} object within a \code{mgnetList}. The metadata for \code{mgnet} objects must be
+provided as a dataframe. For \code{mgnetList} objects, the metadata should be either
+a named list of dataframes corresponding to each \code{mgnet} object within the list,
+or a single dataframe containing a 'mgnet' and 'taxa_id' columns to split the
+metadata accordingly.
 }

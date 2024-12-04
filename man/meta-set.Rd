@@ -4,21 +4,24 @@
 \alias{meta<-}
 \alias{meta<-,mgnet-method}
 \alias{meta<-,mgnetList-method}
-\title{Set Sample Metadata}
+\title{Update Sample Metadata for mgnet and mgnetList Objects}
 \usage{
 meta(object) <- value
 }
 \arguments{
-\item{object}{An \code{mgnet} or \code{mgnetList} object.}
+\item{object}{An \code{mgnet} or \code{mgnetList} object to be updated.}
 
-\item{value}{The new sample metadata to be set.}
+\item{value}{The new sample metadata to set, either a dataframe or a named list
+of dataframes as per the object type.}
 }
 \value{
-The \code{mgnet} or \code{mgnetList} object with updated sample metadata.
+The updated \code{mgnet} or \code{mgnetList} object with new sample metadata.
 }
 \description{
-This setter function updates the sample metadata for \code{mgnet} objects and
-each \code{mgnet} object within a \code{mgnetList}. The metadata must be provided as a dataframe
-for \code{mgnet} objects. For \code{mgnetList} objects, the metadata should be a named list of dataframes
-corresponding to each \code{mgnet} object within the list.
+This function sets the sample metadata for \code{mgnet} objects and also updates
+each \code{mgnet} object within a \code{mgnetList}. The metadata for \code{mgnet} objects must be
+provided as a dataframe. For \code{mgnetList} objects, the metadata should be either
+a named list of dataframes corresponding to each \code{mgnet} object within the list,
+or a single dataframe containing a 'mgnet' and 'sample_id' columns to split the
+metadata accordingly.
 }

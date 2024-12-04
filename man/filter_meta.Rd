@@ -17,10 +17,10 @@ of samples based on both metadata in the sample field and various forms of abund
 Users can specify conditions involving both metadata and abundance data, facilitating
 complex and targeted filtering strategies that are essential in data-driven studies.}
 
-\item{.by}{Optional; a character vector specifying the columns to group data by before filtering.
-Defaults to 'sample_id' for \code{mgnet} objects and c('mgnet', 'sample_id') for \code{mgnetList} objects.
-Proper grouping is essential for ensuring that filters are applied contextually and correctly.
-The use of 'taxa_id' as a grouping variable is prohibited to maintain clarity and data integrity.}
+\item{.by}{Optional; a character vector specifying the columns to group data by before transformations.
+Defaults to 'sample_id' for mgnet objects and c('mgnet', 'sample_id') for mgnetList objects.
+Grouping ensures that transformations are contextually applied within each subgroup defined
+by .by. If you do not wish to group the data, set .by to NULL.}
 }
 \value{
 Returns the \code{mgnet} or \code{mgnetList} object with updated content reflecting the applied filters.

@@ -15,23 +15,28 @@
 #' @param adjust Character string specifying the method for p-value adjustment ("holm", "hochberg", "hommel",
 #'               "bonferroni", "BH", "BY", "fdr", "none"). Default is "holm".
 #' @param alpha Numeric value specifying the significance level for the adjusted p-values. Default is 0.05.
+#' @param keep.psych Logical indicating whether to return the full result object from `psych::corr.test`
+#'                   or `psych::corr.p`. Default is FALSE.
 #'
 #' @return An adjacency matrix derived from the correlation matrix, where elements are set to zero
-#'         if their corresponding adjusted p-value is greater than `alpha`.
+#'         if their corresponding adjusted p-value is greater than `alpha`. If `keep.psych` is TRUE,
+#'         a list containing the adjacency matrix and the result from `psych::corr.test` or `psych::corr.p`.
 #'
+#' @importFrom psych corr.test corr.p
 #' @export
-#' @importFrom stats p.adjust cor
-adjacency_p_adjust <- function(x = NULL, r = NULL, n = NULL, method = "pearson", adjust = "holm", alpha = 0.05) {
+#' @seealso 
+#' For more on correlation and statistical testing, see \code{\link[psych]{psych-package}}, 
+#' which offers a variety of psychological, psychometric, and multivariate analysis tools.
+adjacency_p_adjust <- function(x=NULL, r=NULL, n=NULL, method="pearson", adjust="holm", alpha=0.05, keep.psych=FALSE) {
   
   # CHECKS
   #----------------------------------------------------------------------------#
-
-  if (!is.null(x) && (!is.null(r) || !is.null(n))) {
-    stop("Provide either 'x' OR both 'r' and 'n', not a combination.")
+  if(!is.null(x) && (!is.null(r) || !is.null(n))) {
+    stop("Only 'x' OR 'r' and 'n' should be provided, not both.")
   }
   
-  if (!is.null(r) && is.null(n)) {
-    stop("'r' and 'n' must be provided together.")
+  if((!is.null(r) && is.null(n)) || (is.null(r) && !is.null(n))) {
+    stop("Both 'r' and 'n' must be provided together.")
   }
   
   if(!is.null(x) && (!is.matrix(x) || !is.numeric(x))) {
@@ -50,36 +55,49 @@ adjacency_p_adjust <- function(x = NULL, r = NULL, n = NULL, method = "pearson",
   method <- match.arg(method, c("pearson", "spearman", "kendall"))
   adjust <- match.arg(adjust, c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY", "fdr", "none"))
   
+  if(!is.logical(keep.psych)) {
+    stop("'keep.psych' must be logical.")
+  }
   # END CHECKS
   #----------------------------------------------------------------------------#
   
-  # Calculate correlation matrix if not provided
-  if (is.null(r)) {
-    r <- cor(x, use = "pairwise.complete.obs", method = method)
-    n <- nrow(x) 
-  }
   
-  # Calculate p-values from the correlation matrix
-  p_vals <- matrix(nrow = ncol(r), ncol = ncol(r), dimnames = list(colnames(r), colnames(r)))
-  for (i in 1:(ncol(r) - 1)) {
-    for (j in (i + 1):ncol(r)) {
-      test <- cor.test(r[, i], r[, j], method = method)
-      p_vals[i, j] <- test$p.value
-      p_vals[j, i] <- test$p.value
+  # Get adjusted p-values
+  if(!is.null(x)){
+    res.psych <- psych::corr.test(x=x,use="pairwise",method=method,adjust=adjust,
+                                  alpha=alpha,ci=FALSE)
+    
+    if(adjust!="none"){
+      padj <- res.psych$p
+      padj[upper.tri(padj)] <- res.psych$p.adj
+      padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    } else {
+      padj <- res.psych$p
     }
+    diag(padj) <- 1
+    adj <- res.psych$r*(padj<=alpha)
+    
+  } else {
+    
+    res.psych <- psych::corr.p(r=r,n=n,adjust=adjust,
+                               alpha=alpha,ci=FALSE)
+    
+    if(adjust!="none"){
+      padj <- res.psych$p
+      padj[lower.tri(padj)] <- t(padj)[lower.tri(padj)]
+    } else {
+      padj <- res.psych$p
+    }
+    
+    diag(padj) <- 1
+    adj <- res.psych$r*(padj<=alpha)
   }
   
-  # Adjust p-values
-  if (adjust != "none") {
-    p_vals[upper.tri(p_vals, diag = FALSE)] <- p.adjust(p_vals[upper.tri(p_vals, diag = FALSE)], method = adjust)
-    p_vals[lower.tri(p_vals, diag = FALSE)] <- t(p_vals)[lower.tri(p_vals, diag = FALSE)]
-  }
+  # return
+  if(keep.psych){return(list("adj"=adj,
+                             "psyc"=res.psych))
+  } else {return(adj)}
   
-  # Create adjacency matrix
-  adjacency_matrix <- (r * (p_vals <= alpha))
-  diag(adjacency_matrix) <- 0  
-  
-  return(adjacency_matrix)
 }
 
 

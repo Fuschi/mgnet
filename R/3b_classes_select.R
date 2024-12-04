@@ -25,27 +25,15 @@ setGeneric("select_meta", function(object, ...) standardGeneric("select_meta"))
 
 setMethod("select_meta", signature(object = "mgnet"), function(object, ...) {
   if(miss_sample(object)) {stop("Error: No sample available.")}
-  new_meta <- dplyr::select(meta(object), ...)
-  meta(object) <- new_meta
+  selection <- rlang::enquos(...)
+  meta(object) <- gather_meta(object) %>% dplyr::select(sample_id, !!!selection)
   object
 })
 
 setMethod("select_meta", signature(object = "mgnetList"), function(object, ...) {
-  
   if(miss_sample(object, "any")) {stop("Error: No sample available in any of the mgnet objects.")}
-  
-  meta_new <- meta(object, .fmt = "tbl") %>%
-    dplyr::select("mgnet", "sample_id", ...) %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(sample_id, sample_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-"mgnet") %>%
-        tibble::column_to_rownames("sample_id")
-    })
-  
-  meta(object) <- meta_new
+  selection <- rlang::enquos(...)
+  meta(object) <- gather_meta(object) %>% dplyr::select(mgnet, sample_id, !!!selection)
   object
 })
 
@@ -79,28 +67,14 @@ setGeneric("select_taxa", function(object, ...) standardGeneric("select_taxa"))
 
 setMethod("select_taxa", signature(object = "mgnet"), function(object, ...) {
   if(miss_taxa(object)) {stop("Error: No taxa available.")}
-  new_taxa <- dplyr::select(taxa(object, .fmt = "tbl"), ...) %>%
-    dplyr::select(-tidyselect::any_of("comm_id")) %>%
-    tibble::column_to_rownames("taxa_id")
-  taxa(object) <- new_taxa
+  selection <- rlang::enquos(...)
+  taxa(object) <- gather_taxa(object) %>% dplyr::select(taxa_id, !!!selection)
   object
 })
 
 setMethod("select_taxa", signature(object = "mgnetList"), function(object, ...) {
-  
   if(miss_taxa(object, "any")) {stop("Error: No taxa available in any of the mgnet objects.")}
-  
-  taxa_new <- taxa(object, .fmt = "tbl") %>%
-    dplyr::select("mgnet", "taxa_id", ...) %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x,y){
-      dplyr::arrange(x, match(taxa_id, taxa_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x){
-      x %>% dplyr::select(-tidyselect::any_of("mgnet", "comm_id")) %>%
-        tibble::column_to_rownames("taxa_id")
-    })
-  
-  taxa(object) <- taxa_new
+  selection <- rlang::enquos(...)
+  taxa(object) <- gather_taxa(object) %>% dplyr::select(mgnet, taxa_id, !!!selection)
   object
 })
