@@ -159,22 +159,22 @@ setMethod("set_norm_CLR", "mgnetList", function(object, clr_variant = "clr", zer
 #' or a list of numeric matrices for `mgnetList` objects.
 #' @return The modified `mgnet` or `mgnetList` object with the updated sample data.
 #' @export
-#' @name set_sample
-#' @aliases set_sample,mgnet-method set_sample,mgnetList-method
+#' @name set_meta
+#' @aliases set_meta,mgnet-method set_meta,mgnetList-method
 #' @importFrom methods validObject
-setGeneric("set_sample", function(object, value) standardGeneric("set_sample"))
+setGeneric("set_meta", function(object, value) standardGeneric("set_meta"))
 
-setMethod("set_sample", "mgnet", function(object, value) {
+setMethod("set_meta", "mgnet", function(object, value) {
   object@sample <- value
   validObject(object)
   return(object)
 })
 
-setMethod("set_sample", "mgnetList", function(object, value) {
+setMethod("set_meta", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   
   for (i in names(object)) {
-    object@mgnets[[i]] <- set_sample(object@mgnets[[i]], value[[i]])
+    object@mgnets[[i]] <- set_meta(object@mgnets[[i]], value[[i]])
     validObject(object@mgnets[[i]])
   }
   

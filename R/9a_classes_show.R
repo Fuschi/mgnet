@@ -16,8 +16,10 @@ setMethod("show", "mgnet", function(object) {
   } else if (length(object@rela) > 0) {
     zeroPercentage <- sum(object@rela == 0) / length(object@rela)
     cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+  } else if (length(object@norm) > 0){
+    cat("  Only normalized data available.\n")
   } else {
-    cat("  No abundance or rela available.\n")
+    cat("  No abundances available.\n")
   }
   
   
@@ -102,8 +104,10 @@ setMethod("show", "mgnetList", function(object) {
       } else if (length(mgnetObj@rela) > 0) {
         zeroPercentage <- sum(mgnetObj@rela == 0) / length(mgnetObj@rela)
         cat(sprintf("  Zeros Percentage: ~%.2f%%\n", 100 * zeroPercentage))
+      } else if (length(object@norm) > 0){
+        cat("  Only normalized data available.\n")
       } else {
-        cat("  No abundance or rela available.\n")
+        cat("  No abundances available.\n")
       }
       
       # Display a simplified network and community info if available

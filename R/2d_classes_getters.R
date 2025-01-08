@@ -472,155 +472,51 @@ setMethod("taxa", "mgnetList", function(object, .fmt = "df") {
 })
 
 
-# NETWORK
-#------------------------------------------------------------------------------#
-#' Retrieve Network Graph from mgnet Objects
+#' @title Retrieve Network Graph from mgnet Objects
 #'
-#' Retrieves the network graph stored in the `network` slot of an `mgnet` object
-#' or from each `mgnet` object within an `mgnetList`. This network graph is typically an `igraph` object
-#' representing the interactions among different taxa.
+#' @description
+#' Retrieves the network graph stored in the \code{netw} slot of an \code{mgnet} object,
+#' or from each \code{mgnet} object within an \code{mgnetList}. The network graph is
+#' an \code{igraph} object representing interactions among different taxa.
 #'
-#' @param object An `mgnet` or `mgnetList` object.
-#' @param add_vertex_attr A logical indicating whether to attach all available taxa information as attributes of the vertices. Defaults to FALSE.
-#' @return An `igraph` object containing the network from an `mgnet` object, or a list of `igraph` objects
-#'         from an `mgnetList`, each representing the network graph of a contained `mgnet` object.
-#' @export
+#' If the object has a non-empty \code{taxa} slot, all taxa information is automatically
+#' attached as vertex attributes in the returned graph, making node-level metadata 
+#' immediately accessible for further analysis or visualization.
+#'
+#' @param object An \code{mgnet} or \code{mgnetList} object.
+#'
+#' @return 
+#' \itemize{
+#'   \item For an \code{mgnet}, a single \code{igraph} object is returned, potentially 
+#'         with vertex attributes derived from the \code{taxa} slot.
+#'   \item For an \code{mgnetList}, a \code{list} of \code{igraph} objects is returned
+#'         (one per contained \code{mgnet}), each enriched with node-level attributes
+#'         if available.
+#' }
+#'
 #' @importFrom igraph vertex_attr set_edge_attr is_weighted E membership
 #' @aliases netw,mgnet-method netw,mgnetList-method
-setGeneric("netw", function(object, add_vertex_attr = FALSE) standardGeneric("netw"))
+#' @export
+setGeneric("netw", function(object) standardGeneric("netw"))
 
-setMethod("netw", "mgnet", function(object, add_vertex_attr = FALSE) {
-
+setMethod("netw", "mgnet", function(object) {
+  
   g <- object@netw
   if (length(g) == 0) return(g)
-
-  if (add_vertex_attr) {
-
-    # Add vertex attributes
-    if (length(object@taxa) != 0) {
-      for (vertex_attr in names(object@taxa)) {
-        igraph::vertex_attr(g, vertex_attr) <- object@taxa[[vertex_attr]]
-      }
-    }
-    
-    if (length(object@comm) != 0){
-      igraph::vertex_attr(g, "comm_id") <- igraph::membership(object@comm)
-    }
-  }
-
-  return(g)
-})
-
-
-setMethod("netw", "mgnetList", function(object, add_vertex_attr) {
-  sapply(object@mgnets, function(x) netw(x, add_vertex_attr), simplify = FALSE, USE.NAMES = TRUE)
-})
-
-
-# LINK
-#------------------------------------------------------------------------------#
-#' Retrieve Edge List with Metadata from mgnet Object(s)
-#'
-#' Extracts an edge list from the network slot of an `mgnet` or `mgnetList` object, including edge attributes 
-#' and associated taxa metadata for both vertices in each link.
-#'
-#' @param object An `mgnet` or `mgnetList` object.
-#'               For `mgnet`, the method will extract the network's edge list and merge taxa metadata 
-#'               for both source and target nodes. For `mgnetList` the method will be applied on each element.
-#' @param .suffix A character vector of length 2 providing suffixes to append to the taxa 
-#'        metadata columns to distinguish the nodes connected from an edge. 
-#'        Default is c("_1", "_2"). The values must be distinct to prevent column name overlap.
-#'
-#' @details
-#' This method leverages the network structure within `mgnet` objects to generate a detailed edge tibble that includes:
-#' - `Node Identifiers`: Each identifier for the nodes connected by an edge begins with the string "taxa" and is 
-#'   appended with `.suffix` to indicate the source and target nodes, respectively (e.g., `taxa_id_1`, `taxa_id_2`).
-#' - `Link Attributes`: Includes all available attributes associated with the links, such as weight.
-#' - `Metadata`: Metadata from both source and target taxa are included, with column names appended 
-#'   with `_1` and `_2` as suffixes. These suffixes help distinguish between the source and target taxa metadata.
-#'
-#' For `mgnetList` objects, this transformation is applied individually to each `mgnet` object.
-#'
-#' @importFrom igraph E is_weighted as_data_frame
-#' @importFrom dplyr left_join
-#' @importFrom purrr map imap list_rbind
-#' @export
-#' @name link
-#' @aliases link,mgnet-method link,mgnetList-method
-setGeneric("link", function(object, .suffix = c("_1", "_2")) standardGeneric("link"))
-
-setMethod("link", "mgnet", function(object, .suffix = c("_1", "_2")) {
   
-  # Ensure the network is available
-  if (miss_slot(object, "netw")) stop("Error: No network available.")
-  
-  # Check .suffix
-  if(length(.suffix) != 2 || !is.character(.suffix) || .suffix[1] == .suffix[2]){
-    stop(".suffix must be a character vector of length 2 with distinct values")
-  }
-  
-  # Check if is requirred the edge filter
-  selected_links <- get_selected_links(object)
-  if (!is.null(selected_links)) {
-    netw0 <- netw(object)
-    netw(object) <- igraph::subgraph_from_edges(graph = netw(object),
-                                                eids = get_selected_links(object),
-                                                delete.vertices = FALSE)
-  }
-  
-  # Extract edge list with weights
-  net <- netw(object)
-  edges_df <- igraph::as_data_frame(net, what = "edges")
-  edges_df <- as_tibble(edges_df)
-  colnames(edges_df)[1:2] <- paste0("taxa_id", .suffix)
-  
-  new_taxa_info_cols <- paste0(taxa_vars(object), .suffix[1])
-  new_taxa_info_cols <- c(new_taxa_info_cols, paste0(taxa_vars(object), .suffix[2]))
-  
-  # Check for potential column name overlaps
-  if (any(new_taxa_info_cols %in% names(edges_df)[-c(1,2)])) {
-    overlapping_columns <- new_taxa_info_cols[new_taxa_info_cols %in% names(edges_df)]
-    stop("Overlap detected in column names between nodes and edges: ", paste(overlapping_columns, collapse = ", "))
-  }
-
-  # First, ensure you get the network correctly and extract attribute names
-  edges__attr_names <- names(igraph::edge_attr(netw(object)))
-  
-  if (!is.null(edges__attr_names) && length(edges__attr_names) > 0) {
-    
-    # Create a regex pattern to match any of the suffixes at the end of strings
-    pattern <- stringr::str_c(.suffix, collapse = "|", suffix = "$")
-    
-    # Use str_detect to find elements ending with any suffix
-    invalid_names <- edges__attr_names[stringr::str_detect(edges__attr_names, pattern)]
-    if (length(invalid_names) > 0) {
-      # Construct a concise error message that lists the problematic attribute names and the disallowed suffixes
-      suffix_list <- paste(.suffix, collapse = ", ")
-      error_message <- sprintf(
-        "Edge attributes '%s' end with disallowed suffixes (%s). " +
-          "Suffixes must differ between nodes and edges to discern them. Please adjust the .suffix values or rename the edge or vertex attributes accordingly.",
-        paste(invalid_names, collapse = ", "), suffix_list
-      )
-      stop(error_message)
+  # If taxa slot is non-empty, set each column as a vertex attribute
+  if (has_metataxa(object)) {
+    metataxa <- taxa(object)
+    for (vertex_attr in colnames(metataxa)) {
+      igraph::vertex_attr(g, vertex_attr) <- object@taxa[[vertex_attr]]
     }
   }
   
-  # Merge with taxa metadata for source nodes
-  tbl_1 <- gather_taxa(object)
-  colnames(tbl_1) <- paste0(colnames(tbl_1), .suffix[1])
-  edges_df <- dplyr::left_join(edges_df, tbl_1, by = paste0("taxa_id", .suffix[1]))
-  
-  # Merge with taxa metadata for target nodes
-  tbl_2 <- gather_taxa(object)
-  colnames(tbl_2) <- paste0(colnames(tbl_2), .suffix[2])
-  edges_df <- dplyr::left_join(edges_df, tbl_2, by = paste0("taxa_id", .suffix[2]))
-  
-  return(edges_df)
-  
+  g
 })
 
-setMethod("link", "mgnetList", function(object, .suffix = c("_1", "_2")){
-  sapply(object, \(x) link(x, .suffix), simplify = FALSE, USE.NAMES = TRUE)
+setMethod("netw", "mgnetList", function(object) {
+  sapply(object@mgnets, function(x) netw(x), simplify = FALSE, USE.NAMES = TRUE)
 })
 
 
@@ -765,4 +661,3 @@ setMethod("taxa_vars", "mgnetList", function(object, .fmt = "list") {
   }
   
 })
-

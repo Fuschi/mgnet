@@ -15,7 +15,7 @@
 #'         of specified column values.
 #'
 #' @details
-#' The `split_sample` function leverages `dplyr` functionality to identify unique combinations
+#' The `split_meta` function leverages `dplyr` functionality to identify unique combinations
 #' of specified column values in the `meta` data frame. It then creates a new `mgnet`
 #' object for each combination, allowing for tailored analysis per group.
 #'
@@ -27,14 +27,14 @@
 #' and loaded in your R session.
 #'
 #' @export
-#' @aliases split_sample,mgnet-method
+#' @aliases split_meta,mgnet-method
 #' @importFrom dplyr select distinct group_by group_split semi_join
 #' @importFrom rlang enquos
-setGeneric("split_sample", function(object, ...) {
-  standardGeneric("split_sample")
+setGeneric("split_meta", function(object, ...) {
+  standardGeneric("split_meta")
 })
 
-setMethod("split_sample", "mgnet", function(object, ...) {
+setMethod("split_meta", "mgnet", function(object, ...) {
   
   if(miss_sample(object)) stop("Error: No sample available.")
   

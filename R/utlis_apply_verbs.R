@@ -25,13 +25,6 @@ apply_mutate_verb <- function(info_mutated, long_abun, expressions, .by, sample_
     
     expr_vars <- all.vars(expressions[[i]])
     
-    if (any(c("netw", "comm") %in% expr_vars)) {
-      
-      result <- expression(object@netw....)
-      
-    }
-    
-    
     if(any(expr_vars %in% c("abun","rela","norm"))){
       
       # EXPRESSION WITH ABUNDANCES

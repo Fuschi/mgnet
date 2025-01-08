@@ -6,19 +6,26 @@
 \alias{netw,mgnetList-method}
 \title{Retrieve Network Graph from mgnet Objects}
 \usage{
-netw(object, add_vertex_attr = FALSE)
+netw(object)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.}
-
-\item{add_vertex_attr}{A logical indicating whether to attach all available taxa information as attributes of the vertices. Defaults to FALSE.}
 }
 \value{
-An \code{igraph} object containing the network from an \code{mgnet} object, or a list of \code{igraph} objects
-from an \code{mgnetList}, each representing the network graph of a contained \code{mgnet} object.
+\itemize{
+\item For an \code{mgnet}, a single \code{igraph} object is returned, potentially
+with vertex attributes derived from the \code{taxa} slot.
+\item For an \code{mgnetList}, a \code{list} of \code{igraph} objects is returned
+(one per contained \code{mgnet}), each enriched with node-level attributes
+if available.
+}
 }
 \description{
-Retrieves the network graph stored in the \code{network} slot of an \code{mgnet} object
-or from each \code{mgnet} object within an \code{mgnetList}. This network graph is typically an \code{igraph} object
-representing the interactions among different taxa.
+Retrieves the network graph stored in the \code{netw} slot of an \code{mgnet} object,
+or from each \code{mgnet} object within an \code{mgnetList}. The network graph is
+an \code{igraph} object representing interactions among different taxa.
+
+If the object has a non-empty \code{taxa} slot, all taxa information is automatically
+attached as vertex attributes in the returned graph, making node-level metadata
+immediately accessible for further analysis or visualization.
 }

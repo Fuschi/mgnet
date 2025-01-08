@@ -61,8 +61,7 @@
     "abun", "rela", "norm",
     "meta", "taxa",
     "netw", "comm",
-    "mgnet", ".", "_internal_"
-  )
+    "mgnet", ".", "_internal_")
 
   slotData <- slot(obj, slotName)
 

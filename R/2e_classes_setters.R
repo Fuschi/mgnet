@@ -123,7 +123,7 @@ setMethod("meta<-", c("mgnet", "ANY"), function(object, value) {
     stop(sprintf("Error: %s cannot have both the 'sample_id' column and row names set.", deparse(substitute(value))))
   }
 
-  if (!"sample_id" %in% colnames(value) && !has_rownames(value)) {
+  if (!"sample_id" %in% colnames(value) && !tibble::has_rownames(value)) {
     stop(sprintf("Error: %s must have either a 'sample_id' column or row names set.", deparse(substitute(value))))
   }
 
@@ -293,53 +293,6 @@ setMethod("netw<-", "mgnet", function(object, value) {
 setMethod("netw<-", "mgnetList", function(object, value) {
   are_list_assign(object, value)
   for(i in names(object)) { object@mgnets[[i]]@netw <- value[[i]] }
-  validObject(object)
-  object
-})
-
-
-# LINK
-#------------------------------------------------------------------------------#
-setGeneric("link<-", function(object, value, .suffix = c("_1", "_2")) standardGeneric("link<-"))
-
-setMethod("link<-", c("mgnet", "ANY"), function(object, value) {
-  
-  if(miss_slot(object, "netw")) stop("Error: No network available.")
-  
-  correct_taxa_ids <- paste0("taxa", .suffix)
-  col_names <- colnames(value)
-  if(all(correct_taxa_ids %in% col_names)) stop("I didn't find the identifiers of the taxa for the nodes....")
-  
-  tbl_link <- value %>%
-    dplyr::select(-tidyselect::ends_with(.suffix[1]),
-                  -tidyselect::ends_with(.suffix[2]))
-  
-})
-
-setMethod("taxa<-", c("mgnetList","ANY"), function(object, value){
-  
-  if(class(value)[[1]] == "list"){
-    
-    are_list_assign(object, value)
-    for(i in names(object)) taxa(object[[i]]) <- value[[i]] 
-    
-  } else if(is.data.frame(value)){
-    
-    is_assign_tbl(object, value, "taxa")
-    splitted_value <- split(value, value$mgnet)
-    splitted_value <- lapply(splitted_value, \(x){
-      x$mgnet <- NULL
-      return(x)
-    })
-    for(i in names(object)) taxa(object[[i]]) <- splitted_value[[i]]
-    
-  } else {
-    
-    valueName <- deparse(substitute(value))
-    stop(sprintf("Error: %s must could be only a list of data.frame or a single data.frame but with `mgnet` and `taxa_id` columns"))
-    
-  }
-  
   validObject(object)
   object
 })

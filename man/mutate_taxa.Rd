@@ -6,7 +6,7 @@
 \alias{mutate_taxa,mgnetList-method}
 \title{Modify and Augment \code{mgnet} Objects by Transforming the \code{taxa} Slot}
 \usage{
-mutate_taxa(object, ..., .by = NULL)
+mutate_taxa(object, ..., .by)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.

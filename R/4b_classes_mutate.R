@@ -45,74 +45,189 @@ setGeneric("mutate_meta", function(object, ..., .by) {standardGeneric("mutate_me
 
 setMethod("mutate_meta", "mgnet", function(object, ..., .by) {
   
-  # CHECKS
-  #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if (miss_sample(object)) stop("Error: No samples available in the 'mgnet' object.")
+  # 1) Quick check for samples
+  if (miss_sample(object)) {
+    stop("Error: No samples available in the 'mgnet' object.")
+  }
   
-  # Capture all the expressions provided
-  expressions <- rlang::enquos(...)
+  # 2) Capture main expressions
+  exprs <- rlang::enquos(...)
+  check_reserved_keywords(exprs)
+  check_forbidden_expressions(exprs)
   
-  # Check the reserved keywords
-  check_reserved_keywords(expressions)
+  # 3) Gather data frames for meta & abundance
+  meta_df   <- gather_meta(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(exprs))
   
-  # Initialize groups with default values if it is empty.
-  if(missing(.by)) .by <- "sample_id"
+  # --------------------------------------------------------------------------
+  # 4) Handle `.by`: 
+  #    - If missing => user didn't specify .by
+  #    - If NULL    => no grouping
+  #    - If character => group by those columns
+  # --------------------------------------------------------------------------
+  by_is_missing <- missing(.by)
+  if (!by_is_missing && !is.null(.by) && !is.character(.by)) {
+    stop("`.by` must be either missing, NULL, or a character vector of column names.")
+  }
   
-  # Forbidden functions and disallowed variables
-  check_forbidden_expressions(expressions)
+  # A helper function to decide the grouping columns per expression
+  get_local_group_cols <- function(evars) {
+    
+    # 1) If `.by` was provided (not missing)
+    if (!by_is_missing) {
+      # .by is either NULL or character
+      if (is.null(.by) || length(.by) == 0) {
+        # .by = NULL or .by = character(0) => explicitly no grouping
+        return(NULL)
+      } else {
+        # .by is a non-empty character vector
+        return(rlang::syms(.by))
+      }
+    }
+    
+    # 2) .by is missing => rely on existing meta_groups or fallback logic
+    if (identical(get_group_meta(object), character(0))) {
+      # `is_meta_grouped(object)` returns character(0) => no grouping
+      return(NULL)
+    } else if (length(get_group_meta(object))) {
+      # Use stored meta group columns
+      return(rlang::syms(get_group_meta(object)))
+    } else if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Fallback to sample_id if abundance variables are used
+      return(rlang::syms("sample_id"))
+    } else {
+      # No grouping otherwise
+      return(NULL)
+    }
+  }
   
-  # END CHECKS
-  #----------------------------------------------------------------------------#
+  # --------------------------------------------------------------------------
+  # 5) Loop over each captured expression
+  # --------------------------------------------------------------------------
+  for (i in seq_along(exprs)) {
+    evars <- all.vars(exprs[[i]])  # variables used in current expression
+    
+    # Determine grouping columns
+    local_group_cols <- get_local_group_cols(evars)
+    
+    # Apply mutate logic
+    if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Abundance-related expression => join abundance first
+      meta_df <- long_abun %>%
+        dplyr::left_join(meta_df, by = "sample_id") %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
+        dplyr::distinct()
+    } else {
+      # Non-abundance expression => mutate in-place
+      meta_df <- meta_df %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup()
+    }
+  }
   
-  # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#
-  meta_mutated <- gather_meta(object)
-  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
-  
-  # LOOP OVER THE EXPRESSIONS
-  #----------------------------------------------------------------------------#
-  meta(object) <- apply_mutate_verb(meta_mutated, long_abun, expressions, .by, "sample")
-  return(object)
-  
+  # --------------------------------------------------------------------------
+  # 6) Overwrite meta slot and return
+  # --------------------------------------------------------------------------
+  meta(object) <- meta_df
+  object
 })
 
-#------------------------------------------------------------------------------#
-#------------------------------------------------------------------------------#
+
 setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
   
-  # CHECKS
-  #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if(miss_sample(object, "any")) stop("Error: No sample available in at least one of the mgnet objects.")
+  # 1) Quick check for samples
+  if (miss_sample(object, "any")) {
+    stop("Error: No samples available in at least one 'mgnet' object.")
+  }
   
-  # Capture all the expressions provided
-  expressions <- rlang::enquos(...)
+  # 2) Capture main expressions
+  exprs <- rlang::enquos(...)
+  check_reserved_keywords(exprs)
+  check_forbidden_expressions(exprs)
   
-  # Check the reserved keywords
-  check_reserved_keywords(expressions)
+  # 3) Gather data frames for meta & abundance
+  meta_df   <- gather_meta(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(exprs))
   
-  # Initialize groups with default values if it is empty.
-  if(missing(.by)) .by <- c("mgnet", "sample_id")
+  # --------------------------------------------------------------------------
+  # 4) Handle `.by`: 
+  #    - If missing => user didn't specify .by
+  #    - If NULL    => no grouping
+  #    - If character => group by those columns
+  # --------------------------------------------------------------------------
+  by_is_missing <- missing(.by)
+  if (!by_is_missing && !is.null(.by) && !is.character(.by)) {
+    stop("`.by` must be either missing, NULL, or a character vector of column names.")
+  }
   
-  # Forbidden functions and disallowed variables
-  check_forbidden_expressions(expressions)
+  # A helper function to decide the grouping columns per expression
+  get_local_group_cols <- function(evars) {
+    
+    # 1) If `.by` was provided (not missing)
+    if (!by_is_missing) {
+      # .by is either NULL or character
+      if (is.null(.by) || length(.by) == 0) {
+        # .by = NULL or .by = character(0) => explicitly no grouping
+        return(NULL)
+      } else {
+        # .by is a non-empty character vector
+        return(rlang::syms(.by))
+      }
+    }
+    
+    # 2) .by is missing => rely on existing meta_groups or fallback logic
+    if (identical(get_group_meta(object), character(0))) {
+      # `get_group_meta(object)` returns character(0) => no grouping
+      return(NULL)
+    } else if (length(get_group_meta(object))) {
+      # Use stored meta group columns
+      return(rlang::syms(get_group_meta(object)))
+    } else if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Fallback to sample_id if abundance variables are used
+      return(rlang::syms(c("mgnet", "sample_id")))
+    } else {
+      # No grouping otherwise
+      return(rlang::syms("mgnet"))
+    }
+  }
   
-  # END CHECKS
-  #----------------------------------------------------------------------------#
+  # --------------------------------------------------------------------------
+  # 5) Loop over each captured expression
+  # --------------------------------------------------------------------------
+  for (i in seq_along(exprs)) {
+    evars <- all.vars(exprs[[i]])  # variables used in current expression
+    
+    # Determine grouping columns
+    local_group_cols <- get_local_group_cols(evars)
+    
+    # Apply mutate logic
+    if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Abundance-related expression => join abundance first
+      meta_df <- long_abun %>%
+        dplyr::left_join(meta_df, by = c("mgnet","sample_id")) %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-tidyselect::any_of(c("taxa_id", "abun", "rela", "norm"))) %>%
+        dplyr::distinct()
+    } else {
+      # Non-abundance expression => mutate in-place
+      meta_df <- meta_df %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup()
+    }
+  }
   
-  # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#
-  meta_mutated_merged <- gather_meta(object)
-  long_abun_merged <- long_abundance_join(object, get_abundance_keys(expressions)) 
-  
-  # LOOP OVER THE EXPRESSIONS
-  #----------------------------------------------------------------------------#
-  meta_mutated_merged <- apply_mutate_verb(meta_mutated_merged, long_abun_merged, expressions, .by, "sample")
-  
-  meta_mutated_splitted <- split_arrange_merged_meta(meta_mutated_merged, object)
-  meta(object) <- meta_mutated_splitted
-  return(object)
+  # --------------------------------------------------------------------------
+  # 6) Overwrite meta slot and return
+  # --------------------------------------------------------------------------
+  meta(object) <- meta_df
+  object
 })
 
 
@@ -154,79 +269,192 @@ setMethod("mutate_meta", "mgnetList", function(object, ..., .by) {
 #' @importFrom purrr map imap list_rbind
 #' @importFrom methods slot
 #' @importFrom tibble column_to_rownames tibble add_column
-setGeneric("mutate_taxa", function(object, ..., .by = NULL) {standardGeneric("mutate_taxa")})
+setGeneric("mutate_taxa", function(object, ..., .by) {standardGeneric("mutate_taxa")})
 
-setMethod("mutate_taxa", "mgnet", function(object, ..., .by = NULL) {
+setMethod("mutate_taxa", "mgnet", function(object, ..., .by) {
   
-  # CHECKS
-  #----------------------------------------------------------------------------#
-  # Ensure there are samples to process
-  if (miss_taxa(object)) stop("Error: No taxa available in the 'mgnet' object.")
+  # 1) Quick check for samples
+  if (miss_taxa(object)) {
+    stop("Error: No taxa available in the 'mgnet' object.")
+  }
   
-  # Capture all the expressions provided
-  expressions <- rlang::enquos(...)
-
-  # Check the reserved keywords
-  check_reserved_keywords(expressions)
+  # 2) Capture main expressions
+  exprs <- rlang::enquos(...)
+  check_reserved_keywords(exprs)
+  check_forbidden_expressions(exprs)
   
-  # Initialize groups with default values if it is empty.
-  if(missing(.by)) .by <- "taxa_id"
+  # 3) Gather data frames for taxa & abundance
+  taxa_df   <- gather_taxa(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(exprs))
   
-  # Forbidden functions and disallowed variables
-  check_forbidden_expressions(expressions)
+  # --------------------------------------------------------------------------
+  # 4) Handle `.by`: 
+  #    - If missing => user didn't specify .by
+  #    - If NULL    => no grouping
+  #    - If character => group by those columns
+  # --------------------------------------------------------------------------
+  by_is_missing <- missing(.by)
+  if (!by_is_missing && !is.null(.by) && !is.character(.by)) {
+    stop("`.by` must be either missing, NULL, or a character vector of column names.")
+  }
   
-  # END CHECKS
-  #----------------------------------------------------------------------------#
+  # A helper function to decide the grouping columns per expression
+  get_local_group_cols <- function(evars) {
+    
+    # 1) If `.by` was provided (not missing)
+    if (!by_is_missing) {
+      # .by is either NULL or character
+      if (is.null(.by) || length(.by) == 0) {
+        # .by = NULL or .by = character(0) => explicitly no grouping
+        return(NULL)
+      } else {
+        # .by is a non-empty character vector
+        return(rlang::syms(.by))
+      }
+    }
+    
+    # 2) .by is missing => rely on existing taxa_groups or fallback logic
+    if (identical(get_group_taxa(object), character(0))) {
+      # `is_taxa_grouped(object)` returns character(0) => no grouping
+      return(NULL)
+    } else if (length(get_group_taxa(object))) {
+      # Use stored taxa group columns
+      return(rlang::syms(get_group_taxa(object)))
+    } else if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Fallback to sample_id if abundance variables are used
+      return(rlang::syms("taxa_id"))
+    } else {
+      # No grouping otherwise
+      return(NULL)
+    }
+  }
   
-  # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#
-  taxa_mutated <- gather_taxa(object)
-  long_abun <- long_abundance_join(object, get_abundance_keys(expressions))  
-
-  # LOOP OVER THE EXPRESSIONS
-  #----------------------------------------------------------------------------#
-  taxa_mutated <- apply_mutate_verb(taxa_mutated, long_abun, expressions, .by, "taxa") %>%
-    dplyr::select(-tidyselect::any_of("comm_id"))
+  # --------------------------------------------------------------------------
+  # 5) Loop over each captured expression
+  # --------------------------------------------------------------------------
+  for (i in seq_along(exprs)) {
+    evars <- all.vars(exprs[[i]])  # variables used in current expression
+    
+    # Determine grouping columns
+    local_group_cols <- get_local_group_cols(evars)
+    
+    # Apply mutate logic
+    if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Abundance-related expression => join abundance first
+      taxa_df <- long_abun %>%
+        dplyr::left_join(taxa_df, by = "taxa_id") %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
+        dplyr::distinct()
+    } else {
+      # Non-abundance expression => mutate in-place
+      taxa_df <- taxa_df %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup()
+    }
+  }
   
-  taxa(object) <- tibble::column_to_rownames(taxa_mutated, "taxa_id")
-  return(object)
+  # --------------------------------------------------------------------------
+  # 6) Overwrite taxa_df slot and return
+  # --------------------------------------------------------------------------
+  taxa(object) <- taxa_df
+  object
   
 })
 
-#------------------------------------------------------------------------------#
-#------------------------------------------------------------------------------#
 setMethod("mutate_taxa", "mgnetList", function(object, ..., .by) {
   
-  # CHECKS
-  #----------------------------------------------------------------------------#
-  # Ensure there are taxa to process
-  if(miss_taxa(object, "any")) stop("Error: No taxa available in at least one of the mgnet objects.")
+  # 1) Quick check for samples
+  if (miss_taxa(object, "any")) {
+    stop("Error: No taxa available in at least one 'mgnet' object.")
+  }
   
-  # Capture all the expressions provided
-  expressions <- rlang::enquos(...)
+  # 2) Capture main expressions
+  exprs <- rlang::enquos(...)
+  check_reserved_keywords(exprs)
+  check_forbidden_expressions(exprs)
   
-  # Check the reserved keywords
-  check_reserved_keywords(expressions)
+  # 3) Gather data frames for taxa & abundance
+  taxa_df   <- gather_taxa(object)
+  long_abun <- long_abundance_join(object, get_abundance_keys(exprs))
   
-  # Initialize groups with default values if it is empty.
-  if(missing(.by)) .by <- c("mgnet", "taxa_id")
+  # --------------------------------------------------------------------------
+  # 4) Handle `.by`: 
+  #    - If missing => user didn't specify .by
+  #    - If NULL    => no grouping
+  #    - If character => group by those columns
+  # --------------------------------------------------------------------------
+  by_is_missing <- missing(.by)
+  if (!by_is_missing && !is.null(.by) && !is.character(.by)) {
+    stop("`.by` must be either missing, NULL, or a character vector of column names.")
+  }
   
-  # Forbidden functions and disallowed variables
-  check_forbidden_expressions(expressions)
+  # A helper function to decide the grouping columns per expression
+  get_local_group_cols <- function(evars) {
+    
+    # 1) If `.by` was provided (not missing)
+    if (!by_is_missing) {
+      # .by is either NULL or character
+      if (is.null(.by) || length(.by) == 0) {
+        # .by = NULL or .by = character(0) => explicitly no grouping
+        return(NULL)
+      } else {
+        # .by is a non-empty character vector
+        return(rlang::syms(.by))
+      }
+    }
+    
+    # 2) .by is missing => rely on existing taxa_groups or fallback logic
+    if (identical(get_group_taxa(object), character(0))) {
+      # `is_taxa_grouped(object)` returns character(0) => no grouping
+      return(NULL)
+    } else if (length(get_group_taxa(object))) {
+      # Use stored taxa group columns
+      return(rlang::syms(get_group_taxa(object)))
+    } else if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Fallback to sample_id if abundance variables are used
+      return(rlang::syms(c("mgnet","taxa_id")))
+    } else {
+      # No grouping otherwise
+      return("mgnet")
+    }
+  }
   
-  # END CHECKS
-  #----------------------------------------------------------------------------#
+  # --------------------------------------------------------------------------
+  # 5) Loop over each captured expression
+  # --------------------------------------------------------------------------
+  for (i in seq_along(exprs)) {
+    evars <- all.vars(exprs[[i]])  # variables used in current expression
+    
+    # Determine grouping columns
+    local_group_cols <- get_local_group_cols(evars)
+    
+    # Apply mutate logic
+    if (any(evars %in% c("abun", "rela", "norm"))) {
+      # Abundance-related expression => join abundance first
+      taxa_df <- long_abun %>%
+        dplyr::left_join(taxa_df, by = "taxa_id") %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup() %>%
+        dplyr::select(-tidyselect::any_of(c("sample_id", "abun", "rela", "norm"))) %>%
+        dplyr::distinct()
+    } else {
+      # Non-abundance expression => mutate in-place
+      taxa_df <- taxa_df %>%
+        dplyr::group_by(!!!local_group_cols) %>%
+        dplyr::mutate(!!!rlang::eval_tidy(exprs[i])) %>%
+        dplyr::ungroup()
+    }
+  }
   
-  # CREATE THE BASE FOR THE SOLUTION
-  #----------------------------------------------------------------------------#
-  taxa_mutated_merged <- gather_taxa(object)
-  long_abun_merged <- long_abundance_join(object, get_abundance_keys(expressions)) 
+  # --------------------------------------------------------------------------
+  # 6) Overwrite taxa slot and return
+  # --------------------------------------------------------------------------
+  taxa(object) <- taxa_df
+  object
   
-  # LOOP OVER THE EXPRESSIONS
-  #----------------------------------------------------------------------------#
-  taxa_mutated_merged <- apply_mutate_verb(taxa_mutated_merged, long_abun_merged, expressions, .by, "taxa")
-
-  taxa_mutated_splitted <- split_arrange_merged_taxa(taxa_mutated_merged, object)
-  taxa(object) <- taxa_mutated_splitted
-  return(object)
 })

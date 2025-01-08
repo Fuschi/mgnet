@@ -51,75 +51,75 @@ long_abundance_join <- function(object, needed_keys) {
   }
 }
 
-
-#------------------------------------------------------------------------------#
-#' Split and Arrange Sample Info by mgnet
-#'
-#' This internal function splits the mutated sample info by `mgnet`, arranges 
-#' the samples to match their order in the corresponding `mgnet` object, and 
-#' returns the result with sample IDs as row names.
-#'
-#' @param merged_meta A tibble containing the merged sample info with `mgnet` column.
-#' @param object An `mgnetList` object to match the sample order.
+# OLD
+#' #------------------------------------------------------------------------------#
+#' #' Split and Arrange Sample Info by mgnet
+#' #'
+#' #' This internal function splits the mutated sample info by `mgnet`, arranges 
+#' #' the samples to match their order in the corresponding `mgnet` object, and 
+#' #' returns the result with sample IDs as row names.
+#' #'
+#' #' @param merged_meta A tibble containing the merged sample info with `mgnet` column.
+#' #' @param object An `mgnetList` object to match the sample order.
+#' #' 
+#' #' @importFrom purrr imap
+#' #' @importFrom dplyr arrange select
+#' #' @importFrom tibble column_to_rownames
+#' #'
+#' #' @return A list of tibbles with sample IDs as row names, one for each `mgnet` object.
+#' #' @keywords internal
+#' split_arrange_merged_meta <- function(merged_meta, object) {
+#'   
+#'   splitted_meta <- merged_meta %>%
+#'     base::split(.[, "mgnet"]) %>%
+#'     purrr::imap(\(x, y) {
+#'       dplyr::arrange(x, base::match(sample_id, sample_id(object[[y]])))
+#'     }) %>%
+#'     purrr::map(\(x) {
+#'       x %>%
+#'         dplyr::select(-"mgnet") %>%
+#'         tibble::column_to_rownames("sample_id")
+#'     })
+#'   
+#'   # Ensure the split list retains the original order of mgnet objects
+#'   splitted_meta <- splitted_meta[names(object)]
+#'   
+#'   return(splitted_meta)
+#' }
 #' 
-#' @importFrom purrr imap
-#' @importFrom dplyr arrange select
-#' @importFrom tibble column_to_rownames
-#'
-#' @return A list of tibbles with sample IDs as row names, one for each `mgnet` object.
-#' @keywords internal
-split_arrange_merged_meta <- function(merged_meta, object) {
-  
-  splitted_meta <- merged_meta %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x, y) {
-      dplyr::arrange(x, base::match(sample_id, sample_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x) {
-      x %>%
-        dplyr::select(-"mgnet") %>%
-        tibble::column_to_rownames("sample_id")
-    })
-  
-  # Ensure the split list retains the original order of mgnet objects
-  splitted_meta <- splitted_meta[names(object)]
-  
-  return(splitted_meta)
-}
-
-
-#------------------------------------------------------------------------------#
-#' Split and Arrange Taxa Info by mgnet
-#'
-#' This internal function splits the mutated taxa info by `mgnet`, arranges 
-#' the taxa to match their order in the corresponding `mgnet` object, and 
-#' returns the result with taxa IDs as row names.
-#'
-#' @param merged_taxa A tibble containing the merged taxa info with `mgnet` column.
-#' @param object An `mgnetList` object to match the sample order.
 #' 
-#' @importFrom purrr imap
-#' @importFrom dplyr arrange select
-#' @importFrom tibble column_to_rownames
-#' @importFrom tidyselect any_of
-#'
-#' @return A list of tibbles with taxa IDs as row names, one for each `mgnet` object.
-#' @keywords internal
-split_arrange_merged_taxa <- function(merged_taxa, object) {
-  
-  splitted_taxa <- merged_taxa %>%
-    base::split(.[, "mgnet"]) %>%
-    purrr::imap(\(x, y) {
-      dplyr::arrange(x, base::match(taxa_id, taxa_id(object[[y]])))
-    }) %>%
-    purrr::map(\(x) {
-      x %>%
-        dplyr::select(-tidyselect::any_of(c("mgnet", "comm_id"))) %>%
-        tibble::column_to_rownames("taxa_id")
-    })
-  
-  # Ensure the split list retains the original order of mgnet objects
-  splitted_taxa <- splitted_taxa[names(object)]
-  
-  return(splitted_taxa)
-}
+#' #------------------------------------------------------------------------------#
+#' #' Split and Arrange Taxa Info by mgnet
+#' #'
+#' #' This internal function splits the mutated taxa info by `mgnet`, arranges 
+#' #' the taxa to match their order in the corresponding `mgnet` object, and 
+#' #' returns the result with taxa IDs as row names.
+#' #'
+#' #' @param merged_taxa A tibble containing the merged taxa info with `mgnet` column.
+#' #' @param object An `mgnetList` object to match the sample order.
+#' #' 
+#' #' @importFrom purrr imap
+#' #' @importFrom dplyr arrange select
+#' #' @importFrom tibble column_to_rownames
+#' #' @importFrom tidyselect any_of
+#' #'
+#' #' @return A list of tibbles with taxa IDs as row names, one for each `mgnet` object.
+#' #' @keywords internal
+#' split_arrange_merged_taxa <- function(merged_taxa, object) {
+#'   
+#'   splitted_taxa <- merged_taxa %>%
+#'     base::split(.[, "mgnet"]) %>%
+#'     purrr::imap(\(x, y) {
+#'       dplyr::arrange(x, base::match(taxa_id, taxa_id(object[[y]])))
+#'     }) %>%
+#'     purrr::map(\(x) {
+#'       x %>%
+#'         dplyr::select(-tidyselect::any_of(c("mgnet", "comm_id"))) %>%
+#'         tibble::column_to_rownames("taxa_id")
+#'     })
+#'   
+#'   # Ensure the split list retains the original order of mgnet objects
+#'   splitted_taxa <- splitted_taxa[names(object)]
+#'   
+#'   return(splitted_taxa)
+#' }

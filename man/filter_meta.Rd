@@ -4,46 +4,96 @@
 \alias{filter_meta}
 \alias{filter_meta,mgnet-method}
 \alias{filter_meta,mgnetList-method}
-\title{Filter \code{mgnet} or \code{mgnetList} Objects Based on Sample Metadata and Abundances Criteria}
+\title{Filter \code{mgnet} or \code{mgnetList} Objects by Sample Metadata and Abundance Fields}
 \usage{
-filter_meta(object, ..., .by = NULL)
+filter_meta(object, ..., .by)
+
+\S4method{filter_meta}{mgnet}(object, ..., .by)
+
+\S4method{filter_meta}{mgnetList}(object, ..., .by)
 }
 \arguments{
-\item{object}{An \code{mgnet} or \code{mgnetList} object.
-This function operates on the entire structure of these objects, allowing for the filtering
-of samples based on both metadata in the sample field and various forms of abundance data.}
+\item{object}{An \code{mgnet} or \code{mgnetList} object. For \code{mgnetList}, each contained
+\code{mgnet} can be filtered according to the combined conditions, with a column
+\code{mgnet} distinguishing them in any joined data frames.}
 
-\item{...}{Dynamic expressions or functions to apply for filtering.
-Users can specify conditions involving both metadata and abundance data, facilitating
-complex and targeted filtering strategies that are essential in data-driven studies.}
+\item{...}{Unquoted expressions for filtering. These expressions can reference
+columns in the sample metadata (\code{meta}) or any of the abundance-related fields
+(\code{abun}, \code{rela}, \code{norm}). Each expression is applied sequentially, and only
+samples that satisfy \strong{all} expressions are retained.}
 
-\item{.by}{Optional; a character vector specifying the columns to group data by before transformations.
-Defaults to 'sample_id' for mgnet objects and c('mgnet', 'sample_id') for mgnetList objects.
-Grouping ensures that transformations are contextually applied within each subgroup defined
-by .by. If you do not wish to group the data, set .by to NULL.}
+\item{.by}{A character vector of grouping columns. The default differs by object
+type:
+\itemize{
+\item For \code{mgnet}, the default is \code{.by = "sample_id"}.
+\item For \code{mgnetList}, the default is \code{.by = c("mgnet", "sample_id")}.
+}
+If \code{.by} is \code{NULL}, no grouping is applied, and conditions are evaluated
+across all samples globally. If \code{.by} is missing, any existing meta grouping
+(from \code{group_meta()}) is used instead.}
 }
 \value{
-Returns the \code{mgnet} or \code{mgnetList} object with updated content reflecting the applied filters.
-This includes any transformations to sample metadata and adjustments based on abundance data.
-The structure outside the targeted data fields remains unchanged, preserving the integrity of the objects.
+An \code{mgnet} or \code{mgnetList} object containing only the samples (and their
+corresponding abundance data, if any) that satisfy all provided filter conditions.
+The rest are removed. If no samples match, an object with zero samples is returned
+(but the same structure otherwise).
 }
 \description{
-This function filters entire \code{mgnet} or \code{mgnetList} objects, including their sample and abundance data,
-based on user-specified conditions. It leverages the full suite of \code{tidyverse} tools, particularly
-\code{dplyr}, to enable powerful and flexible data transformations.
+Filters the samples in an \code{mgnet} or \code{mgnetList} object based on user-specified
+conditions provided through \code{...}. Each condition can reference columns in the
+sample metadata (\code{meta}) or abundance-related fields (\code{abun}, \code{rela}, \code{norm}).
+When multiple conditions are provided, they are combined using a logical AND,
+meaning a sample must satisfy \strong{all} conditions to be retained.
 }
 \details{
-Leveraging the \code{tidyverse} functionalities, this function allows for the integration of
-sophisticated data manipulation techniques. It supports conditional operations, group-based
-filtering, and data summarization, making it highly effective for analyses where detailed
-sample selection and data refinement are required. The ability to filter using both sample
-metadata and abundance data offers unparalleled flexibility and power in data handling.
+This function integrates closely with \strong{tidyverse} conventions. Each expression
+in \code{...} is captured and evaluated using tidy evaluation, allowing you to write
+conditions similarly to \code{dplyr::filter()}. When an expression references
+abundance variables (\code{abun}, \code{rela}, or \code{norm}), the function automatically
+joins the sample metadata with the relevant abundance data (\code{long_abun}) before
+filtering.
 
-\if{html}{\out{<div class="sourceCode">}}\preformatted{     ### Keywords in `mgnet` and `mgnetList`:
-     - **abun, rela, norm**: Slots within `mgnet` objects that store abundance data, which can be
-       directly manipulated or used in conjunction with metadata to perform advanced analyses.
-     - **sample_id**: An essential identifier used to uniquely reference individual samples within an `mgnet` object. 
-     - **mgnet**: Used exclusively within `mgnetList` objects to differentiate between multiple `mgnet` objects 
-       contained in the list supporting sophisticated multi-dataset management.
-}\if{html}{\out{</div>}}
+\strong{Grouping Logic}:
+\enumerate{
+\item \strong{If you provide an explicit \code{.by}} (a non-empty character vector), those
+columns define the grouping.
+\item \strong{If \code{.by} is \code{NULL}}, no grouping is applied.
+\item \strong{If \code{.by} is missing}:
+\itemize{
+\item \strong{If the object has existing meta grouping} (set via \code{group_meta()}), that
+grouping is used.
+\item \strong{Else}, if any filter expression references abundance variables,
+grouping defaults to:
+\itemize{
+\item \code{c("mgnet", "sample_id")} for \code{mgnetList} objects.
+\item \code{"sample_id"} for \code{mgnet} objects.
+}
+\item \strong{Otherwise}, no grouping is applied.
+}
+}
+
+\strong{Multiple Conditions}:
+Each condition in \code{...} is applied sequentially, narrowing down the set of
+remaining samples. After processing all conditions, only those samples that
+satisfied \strong{all} conditions remain.
+
+\strong{Behavior with \code{mgnetList}}:
+\itemize{
+\item The \code{mgnet} column in the joined data frames identifies which \code{mgnet} each sample
+belongs to.
+\item Filtering expressions can apply to metadata or abundance columns, referencing
+each \code{mgnet}'s data.
+\item Samples are filtered \strong{independently} for each \code{mgnet} based on the conditions.
+}
+
+\strong{Return Value}:
+\itemize{
+\item For an \code{mgnet} object, an updated \code{mgnet} containing only the samples that
+passed all filters.
+\item For a \code{mgnetList}, an updated list of \code{mgnet} objects. Each \code{mgnet} is
+subset to the remaining samples.
+}
+
+This approach provides a flexible, \code{dplyr}-like interface for complex filtering
+of both sample metadata and abundance data, respecting the specified grouping context.
 }

@@ -4,39 +4,41 @@
 \alias{gather_link}
 \alias{gather_link,mgnet-method}
 \alias{gather_link,mgnetList-method}
-\title{Retrieve Edge List with Metadata from mgnet Object(s)}
+\title{Retrieve Edge List with Metadata from mgnet Objects}
 \usage{
-gather_link(object, .suffix = c("_from", "_to"))
+gather_link(object, .suffix)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnetList} object.
-For \code{mgnet}, the method will extract the network's edge list and merge taxa metadata
-for both source and target nodes.
-For \code{mgnetList}, the method will apply the transformation to each \code{mgnet} in the list
-and bind the results, including an additional column \code{mgnet} to track the source object.}
+For \code{mgnet}, the method extracts the network's edges and merges taxa metadata
+(if requested).
+For \code{mgnetList}, the method applies the transformation to each \code{mgnet} in
+the list and combines the results, adding a \code{mgnet} column for the source.}
 
-\item{.suffix}{A character vector of length 2 providing suffixes to append to the taxa
-metadata columns to distinguish the nodes connected from an edge.
-Default is c("_from", "_to"). The values must be distinct to prevent column name overlap.}
+\item{.suffix}{A character vector of length 2 providing suffixes to append
+to the taxa metadata columns for the two nodes in each link. The two suffixes
+must be distinct (e.g. \code{c("_from", "_to")}). If missing or \code{NULL},
+no metadata join is performed.}
 }
 \value{
-A dataframe containing the edge list with additional metadata columns for both vertices involved in each link.
-For \code{mgnetList} objects, the output is a single dataframe where results from all \code{mgnet} objects are bound together.
+A dataframe (tibble) containing the edges plus node-level metadata
+(if requested). For \code{mgnetList}, the result is a single tibble with
+an extra \code{mgnet} column identifying each sub-object.
 }
 \description{
-Extracts an edge list from the network slot of an \code{mgnet} or \code{mgnetList} object, including edge attributes
-and associated taxa metadata for both vertices in each link.
+Extracts edge information from the network slot of an \code{mgnet} or \code{mgnetList} object,
+optionally merging metadata from both vertices (nodes) into each link.
+Internally uses \code{igraph::as_data_frame()} to get the edge list, then
+joins with taxa metadata if \code{.suffix} is provided.
 }
 \details{
-This method leverages the network structure within \code{mgnet} objects to generate a detailed edge tibble that includes:
 \itemize{
-\item \verb{Node Identifiers}: Each identifier for the nodes connected by an edge begins with the string "taxa" and is
-appended with \code{.suffix} to indicate the source and target nodes, respectively (e.g., \code{taxa_id_1}, \code{taxa_id_2}).
-\item \verb{Link Attributes}: Includes all available attributes associated with the links, such as weight.
-\item \code{Metadata}: Metadata from both source and target taxa are included, with column names appended
-with \verb{_1} and \verb{_2} as suffixes. These suffixes help distinguish between the source and target taxa metadata.
+\item \strong{Edge Attributes}: All available attributes on the edges (e.g., weight) are
+preserved.
+\item \strong{Node Metadata}: If \code{.suffix} is given, columns from the \code{from} and
+\code{to} nodes' metadata are appended with the respective suffixes, so they
+do not overwrite each other or edge attributes.
+\item \strong{Filtering}: If the \code{mgnet} object has selected links (via \code{select_link}),
+only those links are kept.
 }
-
-For \code{mgnetList} objects, the transformation is applied individually to each \code{mgnet} object, and the results
-are combined into a single dataframe with an additional column named \code{mgnet} that identifies the source object.
 }

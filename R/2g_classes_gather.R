@@ -209,53 +209,155 @@ setMethod("gather_taxa", "mgnetList", function(object) {
 })
 
 
-#' Retrieve Edge List with Metadata from mgnet Object(s)
+#' @title Retrieve Edge List with Metadata from mgnet Objects
 #'
-#' Extracts an edge list from the network slot of an `mgnet` or `mgnetList` object, including edge attributes 
-#' and associated taxa metadata for both vertices in each link.
+#' @description
+#' Extracts edge information from the network slot of an `mgnet` or `mgnetList` object,
+#' optionally merging metadata from both vertices (nodes) into each link. 
+#' Internally uses \code{igraph::as_data_frame()} to get the edge list, then
+#' joins with taxa metadata if \code{.suffix} is provided.
 #'
 #' @param object An `mgnet` or `mgnetList` object.
-#'               For `mgnet`, the method will extract the network's edge list and merge taxa metadata 
-#'               for both source and target nodes.
-#'               For `mgnetList`, the method will apply the transformation to each `mgnet` in the list 
-#'               and bind the results, including an additional column `mgnet` to track the source object.
-#' @param .suffix A character vector of length 2 providing suffixes to append to the taxa 
-#'        metadata columns to distinguish the nodes connected from an edge. 
-#'        Default is c("_from", "_to"). The values must be distinct to prevent column name overlap.
+#'   For `mgnet`, the method extracts the network's edges and merges taxa metadata
+#'   (if requested).
+#'   For `mgnetList`, the method applies the transformation to each `mgnet` in
+#'   the list and combines the results, adding a `mgnet` column for the source.
+#' @param .suffix A character vector of length 2 providing suffixes to append
+#'   to the taxa metadata columns for the two nodes in each link. The two suffixes
+#'   must be distinct (e.g. \code{c("_from", "_to")}). If missing or \code{NULL},
+#'   no metadata join is performed.
 #'
 #' @details
-#' This method leverages the network structure within `mgnet` objects to generate a detailed edge tibble that includes:
-#' - `Node Identifiers`: Each identifier for the nodes connected by an edge begins with the string "taxa" and is 
-#'   appended with `.suffix` to indicate the source and target nodes, respectively (e.g., `taxa_id_1`, `taxa_id_2`).
-#' - `Link Attributes`: Includes all available attributes associated with the links, such as weight.
-#' - `Metadata`: Metadata from both source and target taxa are included, with column names appended 
-#'   with `_1` and `_2` as suffixes. These suffixes help distinguish between the source and target taxa metadata.
+#' - **Edge Attributes**: All available attributes on the edges (e.g., weight) are
+#'   preserved.  
+#' - **Node Metadata**: If \code{.suffix} is given, columns from the \code{from} and 
+#'   \code{to} nodes' metadata are appended with the respective suffixes, so they
+#'   do not overwrite each other or edge attributes.  
+#' - **Filtering**: If the \code{mgnet} object has selected links (via \code{select_link}),
+#'   only those links are kept.
 #'
-#' For `mgnetList` objects, the transformation is applied individually to each `mgnet` object, and the results 
-#' are combined into a single dataframe with an additional column named `mgnet` that identifies the source object.
+#' @return A dataframe (tibble) containing the edges plus node-level metadata
+#'   (if requested). For \code{mgnetList}, the result is a single tibble with
+#'   an extra \code{mgnet} column identifying each sub-object.
 #'
-#' @return A dataframe containing the edge list with additional metadata columns for both vertices involved in each link.
-#'         For `mgnetList` objects, the output is a single dataframe where results from all `mgnet` objects are bound together.
-#'
-#' @importFrom igraph E is_weighted as_data_frame
-#' @importFrom dplyr left_join
+#' @importFrom igraph E as_data_frame
+#' @importFrom dplyr left_join mutate
 #' @importFrom purrr map imap list_rbind
+#' @importFrom tibble as_tibble
 #' @export
 #' @name gather_link
 #' @aliases gather_link,mgnet-method gather_link,mgnetList-method
-setGeneric("gather_link", function(object, .suffix = c("_from", "_to")) standardGeneric("gather_link"))
+setGeneric("gather_link", function(object, .suffix) standardGeneric("gather_link"))
 
-setMethod("gather_link", "mgnet", function(object, .suffix = c("_from", "_to")) {
+
+#----------------#
+# mgnet Method  #
+#----------------#
+setMethod("gather_link", "mgnet", function(object, .suffix) {
   
-  link(object)
+  ## 1) Check that the network slot is available
+  if (miss_slot(object, "netw")) {
+    stop("Error: No network available in this mgnet object.")
+  }
   
+  ## 2) Subset edges if there's a selection
+  selected_links <- get_selected_links(object)
+  if (!is.null(selected_links)) {
+    # create subgraph from selected edges only
+    netw(object) <- igraph::subgraph_from_edges(
+      graph = netw(object),
+      eids  = selected_links,
+      delete.vertices = FALSE
+    )
+  }
+  
+  ## 3) Extract the edges using igraph::as_data_frame()
+  net      <- netw(object)
+  edges_df <- tibble::as_tibble(igraph::as_data_frame(net, what = "edges"))
+  
+  ## 4) If .suffix is provided, do checks and merge node metadata
+  if (!missing(.suffix) && !is.null(.suffix)) {
+    
+    # Check .suffix length, type, distinctness
+    if (length(.suffix) != 2 || !is.character(.suffix) || .suffix[1] == .suffix[2]) {
+      stop(".suffix must be a character vector of length 2 with distinct values.")
+    }
+    
+    # Check for overlap between suffix-based node columns and existing edge columns
+    # We haven't created them yet, but we'll see if they'd conflict with edge columns:
+    # e.g., "family_from", "family_to" might already exist in edges_df.
+    # 1) Build the potential new column names for from/to node metadata
+    from_cols <- paste0(taxa_vars(object), .suffix[1])
+    to_cols   <- paste0(taxa_vars(object), .suffix[2])
+    new_taxa_info_cols <- c(from_cols, to_cols)
+    
+    # 2) If any of these new columns already appear in edges_df, that's a conflict
+    conflict_cols <- intersect(new_taxa_info_cols, names(edges_df))
+    if (length(conflict_cols) > 0) {
+      stop(
+        "Column name conflict: the following columns already exist in edges_df: ",
+        paste(conflict_cols, collapse = ", "),
+        ". Please pick different suffixes or rename edge columns."
+      )
+    }
+    
+    # 3) Also check that no existing edge attributes end with those suffixes
+    #    (if you want to enforce that rule). Only relevant if you specifically
+    #    want to disallow edge attributes named "weight_from", for instance.
+    edges_attr_names <- names(igraph::edge_attr(net))
+    if (!is.null(edges_attr_names) && length(edges_attr_names) > 0) {
+      # Build a small pattern like:  (?:_from|_to)$
+      # This pattern checks for any string that ends with one of the suffixes
+      pattern <- paste0("(", paste0(.suffix, collapse="|"), ")$")
+      invalid_names <- edges_attr_names[stringr::str_detect(edges_attr_names, pattern)]
+      if (length(invalid_names) > 0) {
+        stop(
+          "Edge attributes end with disallowed suffixes (", paste(.suffix, collapse=", "), 
+          "): ", paste(invalid_names, collapse=", "),
+          ". Suffixes must not match existing edge attribute endings."
+        )
+      }
+    }
+    
+    # 4) Merge with node metadata for source nodes
+    tbl_from <- gather_taxa(object)
+    colnames(tbl_from)[-1] <- paste0(colnames(tbl_from)[-1], .suffix[1])
+    edges_df <- dplyr::left_join(edges_df, tbl_from, 
+                                 by = dplyr::join_by(from == taxa_id))
+    
+    # 5) Merge with node metadata for target nodes
+    tbl_to <- gather_taxa(object)
+    colnames(tbl_to)[-1] <- paste0(colnames(tbl_to), .suffix[2])[-1]
+    edges_df <- dplyr::left_join(edges_df, tbl_to, 
+                                 by = dplyr::join_by(to == taxa_id))
+  }
+  
+  ## 5) Return the final edges df
+  edges_df
 })
 
-setMethod("gather_link", "mgnetList", function(object, .suffix = c("_from", "_to")) {
+
+#------------------#
+# mgnetList Method #
+#------------------#
+setMethod("gather_link", "mgnetList", function(object, .suffix) {
   
-  purrr::map(object, link, .suffix = .suffix) %>% 
-    purrr::imap(~ dplyr::mutate(.x, mgnet = .y, .before = 1)) %>%  
-    purrr::list_rbind() 
+  # For each mgnet in the list, gather_link() individually
+  # .suffix might be missing or provided
+  result <- purrr::imap(object, ~ {
+    if (missing(.suffix) || is.null(.suffix)) {
+      gather_link(.x)  # no suffix
+    } else {
+      gather_link(.x, .suffix = .suffix)
+    }
+  })
   
+  # Add a mgnet column to each tibble, then bind them
+  # .x is the tibble, .y is the mgnet name
+  combined <- purrr::imap(result, ~ dplyr::mutate(.x, mgnet = .y, .before = 1)) %>%
+    purrr::list_rbind()
+  
+  combined
 })
+
 

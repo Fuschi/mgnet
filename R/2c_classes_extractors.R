@@ -159,11 +159,32 @@ setMethod(f="[", signature="mgnet",function(x, i, j) {
       adj_reorder <- as.matrix(adj[j,j])
       rownames(adj_reorder) <- colnames(adj_reorder) <- V(x@netw)$name[j]
       
+      # Extract edge attributes as a data frame
+      edge_df <- igraph::as_data_frame(x@netw, what = "edges")
+      
       # Reconstruct the graph from the reordered adjacency matrix
       netw.new <- igraph::graph_from_adjacency_matrix(adj_reorder, 
                                                       mode = "undirected", 
                                                       weighted = TRUE, 
                                                       diag = FALSE)
+      
+      # Match reordered edges with the original edge attributes
+      new_edge_df <- igraph::as_data_frame(netw.new, what = "edges")
+      original_names <- paste(edge_df$from, edge_df$to, sep = "_")
+      reordered_names <- paste(new_edge_df$from, new_edge_df$to, sep = "_")
+      
+      # Transfer edge attributes
+      for (col in colnames(edge_df)) {
+        if (!col %in% c("from", "to", "weight")) {  # Skip 'from', 'to', and 'weight'
+          new_edge_df[[col]] <- edge_df[[col]][match(reordered_names, original_names)]
+        }
+      }
+      
+      for (col in colnames(new_edge_df)) {
+        if (!col %in% c("from", "to", "weight")) {
+          netw.new <- igraph::set_edge_attr(netw.new, name = col, value = new_edge_df[[col]])
+        }
+      }
       
       
       if(length(x@comm) != 0){

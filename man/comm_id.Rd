@@ -23,11 +23,3 @@ The default is \code{"list"}.}
 This function retrieves community IDs from an \code{mgnet} or \code{mgnetList} object, providing a flexible output
 format. For \code{mgnetList}, the community IDs can be output as either a list or a structured tibble.
 }
-\examples{
-data(mg, package = "mgnet")
-comm_id(mg)  
-
-data(mgl, package = "mgnet")
-comm_id(mgl, .fmt = "list")  
-comm_id(mgl, .fmt = "tbl")   
-}
