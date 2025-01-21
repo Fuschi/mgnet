@@ -28,6 +28,7 @@ It can utilize columns from the "from" and "to" nodes via local helpers:
 \item \code{either(expr)}: For each edge, returns \code{TRUE} if \emph{either} side meets \code{expr}.
 \item \code{both(expr)}: For each edge, returns \code{TRUE} if \emph{both} sides meet \code{expr}.
 \item \code{neither(expr)}: For each edge, returns \code{TRUE} if \emph{neither} side meets \code{expr}.
+\item \code{one(expr)}: Returns \code{TRUE} if \emph{exactly one} side satisfies \code{expr}.
 }
 
 After constructing (or modifying) columns, the new columns are attached as

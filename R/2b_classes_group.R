@@ -100,7 +100,7 @@ setMethod("group_taxa", "mgnet", function(object, ...) {
   var_names <- sapply(group_vars, rlang::as_name)
   missing_vars <- setdiff(var_names, taxa_vars(object))
   if (length(missing_vars)) {
-    stop("Invalid meta variables: ", paste(missing_vars, collapse = ", "))
+    stop("Invalid taxa variables: ", paste(missing_vars, collapse = ", "))
   }
   
   # Set grouping
@@ -121,12 +121,65 @@ setMethod("group_taxa", "mgnetList", function(object, ...) {
   var_names <- sapply(group_vars, rlang::as_name)
   missing_vars <- setdiff(var_names, taxa_vars(object, "unique"))
   if (length(missing_vars)) {
-    stop("Invalid meta variables: ", paste(missing_vars, collapse = ", "))
+    stop("Invalid taxa variables: ", paste(missing_vars, collapse = ", "))
   }
   
   # Store the variable names as an attribute
-  attr(object[[i]], "taxa_groups") <- var_names
+  attr(object, "taxa_groups") <- var_names
   return(object)
+})
+
+
+#' Set Taxa-wise Operation Mode for an mgnet Object
+#'
+#' This function sets the operation mode of an `mgnet` or `mgnetList` object to be taxa-wise,
+#' similar to dplyr's rowwise but specific to taxa elements.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#'
+#' @details
+#' - For `mgnet` objects, sets the grouping variable to `taxa_id`.
+#' - For `mgnetList` objects, sets the grouping variable to `mgnet`, `taxa_id`.
+#'
+#' @return The modified `mgnet` object or `mgnetList` with updated grouping attributes.
+#' @export
+setGeneric("taxawise", function(object) standardGeneric("taxawise"))
+
+#' @rdname taxawise
+#' @export
+setMethod("taxawise", "mgnet", function(object) {
+  attr(object, "taxa_groups") <- "taxa_id"
+  return(object)
+})
+
+#' @rdname taxawise
+#' @export
+setMethod("taxawise", "mgnetList", function(object) {
+    attr(x, "taxa_groups") <- c("mgnet", "taxa_id")
+})
+
+#' Check if an mgnet or mgnetList Object is Grouped by Taxa
+#'
+#' Returns `TRUE` if the `mgnet` or `mgnetList` object has non-empty taxa grouping,
+#' and `FALSE` otherwise.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return Logical value indicating if the object is grouped.
+#' @export
+setGeneric("is_grouped_taxa", function(object) standardGeneric("is_grouped_taxa"))
+
+#' @rdname is_grouped_taxa
+#' @export
+setMethod("is_grouped_taxa", "mgnet", function(object) {
+  groups <- attr(object, "taxa_groups")
+  !is.null(groups) && length(groups) > 0
+})
+
+#' @rdname is_grouped_taxa
+#' @export
+setMethod("is_grouped_taxa", "mgnetList", function(object) {
+  groups <- attr(object, "taxa_groups")
+  !is.null(groups) && length(groups) > 0
 })
 
 
@@ -257,4 +310,58 @@ setMethod("group_meta", "mgnetList", function(object, ...) {
   # Store the variable names as an attribute
   attr(object, "meta_groups") <- var_names
   return(object)
+})
+
+
+#' Set Meta-wise Operation Mode for an mgnet Object
+#'
+#' This function sets the operation mode of an `mgnet` or `mgnetList` object to be sample-wise,
+#' similar to dplyr's rowwise but specific to meta elements.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#'
+#' @details
+#' - For `mgnet` objects, sets the grouping variable to `sample_id`.
+#' - For `mgnetList` objects, sets the grouping variable to `mgnet`, `sample_id`.
+#'
+#' @return The modified `mgnet` object or `mgnetList` with updated grouping attributes.
+#' @export
+setGeneric("metawise", function(object) standardGeneric("metawise"))
+
+#' @rdname metawise
+#' @export
+setMethod("metawise", "mgnet", function(object) {
+  attr(object, "meta_groups") <- "sample_id"
+  return(object)
+})
+
+#' @rdname metawise
+#' @export
+setMethod("metawise", "mgnetList", function(object) {
+  attr(x, "meta_groups") <- c("mgnet", "sample_id")
+})
+
+
+#' Check if an mgnet or mgnetList Object is Grouped by Meta
+#'
+#' Returns `TRUE` if the `mgnet` or `mgnetList` object has non-empty meta grouping,
+#' and `FALSE` otherwise.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#' @return Logical value indicating if the object is grouped.
+#' @export
+setGeneric("is_grouped_meta", function(object) standardGeneric("is_grouped_meta"))
+
+#' @rdname is_grouped_meta
+#' @export
+setMethod("is_grouped_meta", "mgnet", function(object) {
+  groups <- attr(object, "meta_groups")
+  !is.null(groups) && length(groups) > 0
+})
+
+#' @rdname is_grouped_meta
+#' @export
+setMethod("is_grouped_meta", "mgnetList", function(object) {
+  groups <- attr(object, "meta_groups")
+  !is.null(groups) && length(groups) > 0
 })

@@ -37,9 +37,11 @@ setMethod("mutate_netw", "mgnet", function(object, ..., group_taxa) {
   check_reserved_keywords(quosures)
   
   # Initialize groups with default values if it is empty.
-  if(missing(group_taxa) && length(get_group_taxa(object))){
+  if(missing(group_taxa) && is_grouped_taxa(object)){
     group_taxa <- get_group_taxa(object)
-  } 
+  } else if(missing(group_taxa) && !is_grouped_taxa(object)){
+    group_taxa <- NULL
+  }
   
   # Check if is required the edge filter
   selected_links <- get_selected_links(object)
@@ -61,9 +63,9 @@ setMethod("mutate_netw", "mgnet", function(object, ..., group_taxa) {
   # Modify each expression
   for(i in seq_along(quosures)){
     
-    text <- expr_text(get_expr(quosures[[i]]))
+    text <- rlang::expr_text(rlang::get_expr(quosures[[i]]))
 
-    if(missing(group_taxa)){
+    if(!length(group_taxa)){
           modified_text <- str_replace_all(text, "netw", "netw(object)")
           modified_text <- str_replace_all(modified_text, "comm", "comm(object)")
     } else {
@@ -74,13 +76,13 @@ setMethod("mutate_netw", "mgnet", function(object, ..., group_taxa) {
     quosures[[i]]  <- set_env(quosures[[i]], current_env())
   }
 
-  
   # Evaluate expressions and update the object
-  if (missing(group_taxa)) {
+  if (!length(group_taxa)) {
     
     for (i in seq_along(quosures)) {
       taxa(object) <- gather_taxa(object) %>%
-        dplyr::mutate(!!quosures_names[i] := rlang::eval_tidy(quosures[[i]], env = current_env()))
+        dplyr::mutate(!!quosures_names[i] := rlang::eval_tidy(quosures[[i]], 
+                                                              env = current_env()))
     }
     
   } else {
@@ -119,7 +121,7 @@ setMethod("mutate_netw", "mgnetList", function(object, ..., group_taxa) {
   check_reserved_keywords(quosures)
   
   # Initialize groups with default values if it is empty.
-  if(missing(group_taxa) & is_taxa_grouped(object)){
+  if(missing(group_taxa) & length(get_group_taxa(object))){
     group_taxa <- get_group_taxa(object)
   } 
   
@@ -151,8 +153,8 @@ setMethod("mutate_netw", "mgnetList", function(object, ..., group_taxa) {
       modified_text <- str_replace_all(text, "netw", "netw(object[[mg]])")
       modified_text <- str_replace_all(modified_text, "comm", "comm(object[[mg]])")
     } else {
-      modified_text <- str_replace_all(text, "netw", "netw(object_subset[[mg]])")
-      modified_text <- str_replace_all(modified_text, "comm", "comm(object_subset[[mg]])")
+      modified_text <- str_replace_all(text, "netw", "netw(object[[mg]][, idx_key])")
+      modified_text <- str_replace_all(modified_text, "comm", "comm(object[[mg]][, [, idx_key]])")
     }
     quosures[[i]]  <- set_expr(quosures[[i]], parse_expr(modified_text))
     quosures[[i]]  <- set_env(quosures[[i]], current_env())
@@ -171,20 +173,18 @@ setMethod("mutate_netw", "mgnetList", function(object, ..., group_taxa) {
   } else {
     
     subgroups <- gather_taxa(object) %>%
-      dplyr::select(tidyselect::all_of(group_taxa)) %>%
+      dplyr::select(tidyselect::all_of(c("mgnet", group_taxa))) %>%
       tidyr::unite("_internal_", remove = FALSE) %>%
-      split[.[["mgnet"]]]
+      split(.[["mgnet"]])
     
     subgroups <- sapply(subgroups, \(x) dplyr::pull(x, "_internal_"), USE.NAMES = TRUE, simplify = FALSE)
-    
-    
+
     for(mg in seq_along(object)){
       unique_keys <- unique(subgroups[[mg]])
       for(quo in 1:length(quosures)){
         result <- vector(length = ntaxa(object[[mg]]))
         for(key in unique_keys){
           idx_key <- which(subgroups[[mg]] == key)
-          object_subset <- object[[mg]][, idx_key]
           result_key <- rlang::eval_tidy(quosures[[quo]], env = current_env())
           result[idx_key] <- result_key
         } 

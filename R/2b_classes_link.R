@@ -419,6 +419,39 @@ setMethod("group_link", "mgnetList", function(object, ...) {
   object
 })
 
+#' Apply Functions Link-wise in an mgnet Object
+#'
+#' Sets the operation mode of an `mgnet` or `mgnetList` object to be link-wise,
+#' allowing subsequent operations to consider each link (or edge) individually
+#' or in specified groups.
+#'
+#' @param object An `mgnet` or `mgnetList` object.
+#'
+#' @details
+#' For `mgnet` objects, the function sets the operation mode so that subsequent
+#' manipulations with [mutate_link()] can apply to individual links or defined groups of links.
+#' For `mgnetList` objects, the function applies the settings to each contained `mgnet`.
+#' 
+#' @importFrom igraph ecount
+#' @return The same `mgnet` object or `mgnetList` with the operation mode set for link-wise manipulation.
+#' @export
+setGeneric("linkwise", function(object) standardGeneric("linkwise"))
+
+#' @rdname linkwise
+#' @export
+setMethod("linkwise", "mgnet", function(object) {
+  attr(object, "link_groups") <- 1 : igraph::ecount(netw(object))
+  return(object)
+})
+
+#' @rdname linkwise
+#' @export
+setMethod("linkwise", "mgnetList", function(object) {
+  for(mg in seq_along(object)){
+    attr(object[[mg]], "link_groups") <- 1 : igraph::ecount(netw(object[[mg]]))
+  }
+})
+
 
 #' @title Link Helper Functions
 #'

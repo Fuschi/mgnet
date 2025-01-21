@@ -11,6 +11,7 @@
 #' - `either(expr)`: For each edge, returns `TRUE` if \emph{either} side meets `expr`.
 #' - `both(expr)`: For each edge, returns `TRUE` if \emph{both} sides meet `expr`.
 #' - `neither(expr)`: For each edge, returns `TRUE` if \emph{neither} side meets `expr`.
+#' - `one(expr)`: Returns \code{TRUE} if \emph{exactly one} side satisfies `expr`.
 #'
 #' After constructing (or modifying) columns, the new columns are attached as
 #' edge attributes in the igraph object. The `mgnet` object is then returned
