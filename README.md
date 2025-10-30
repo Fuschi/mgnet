@@ -6,7 +6,7 @@ The mgnet package provides a comprehensive toolkit for analyzing and visualizing
 
 ```
 # install.packages("devtools")
-devtools::install_github("your_github_username/mgnet")
+devtools::install_github("Fuschi/mgnet")
 ```
 
 ## Features
