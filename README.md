@@ -8,10 +8,3 @@ The mgnet package provides a comprehensive toolkit for analyzing and visualizing
 # install.packages("devtools")
 devtools::install_github("Fuschi/mgnet")
 ```
-
-## Features
-
-- **Data Handling:** Easy management of metagenomic data, including abundance data, sample metadata, and taxonomic information.
-- **Network Analysis:** Tools for constructing and analyzing interaction networks among microbial taxa.
-- **Community Detection:** Functions for identifying microbial communities within complex networks.
-- **Visualization:** Integrated visualization tools for exploring metagenomic data and networks.

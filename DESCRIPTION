@@ -1,27 +1,57 @@
 Package: mgnet
-Title: Network Analysis and Visualization for Metagenomics Communities
+Title: Tidy S4 Classes and Tools for Metagenomic Network Analysis
 Version: 0.0.0.9000
 Authors@R: 
   person("Alessandro", "Fuschi", role = c("aut", "cre"), email="alessandro.fuschi.work@gmail.com")
-Description: This package provides tools for constructing, analyzing, and visualizing networks of microbial community interactions. It integrates methods for data processing for compositional data and sparsity, network construction based on correlation and association measures, and advanced visualization capabilities to help researchers understand complex microbial relationships.
-License: GPL (>= 3)
+Description: S4 classes and tidyverse-friendly tools for managing abundance data, metadata, and metagenomic networks in a unified structure.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-LazyData: true
+RoxygenNote: 7.3.3
 Depends: 
-  R (>= 4.0),
-  methods (>= 4.0),
-  igraph (>= 1.3),
-  dplyr (>= 1.0.9),
-  tidyr (>= 1.2.0),
-  tibble (>= 3.1.0),
-  rlang (>= 1.0.0),
-  stringr (>= 1.4),
-  qualpalr (>= 0.4),
-  psych (>= 2.0),
-  purrr (>= 0.3.4),
-  tidyselect
+    R (>= 4.1.0)
+Imports:
+    methods (>= 4.1.0),
+    igraph (>= 1.3.0),
+    cli (>= 3.4.0),
+    purrr (>= 1.0.0),
+    tibble (>= 3.1.0),
+    rlang (>= 1.1.0),
+    dplyr (>= 1.1.0),
+    tidyr (>= 1.3.0),
+    tidyselect (>= 1.2.0)
+LazyData: true
 Suggests: 
-    testthat (>= 3.0.0)
+    ggraph (>= 2.1.0),
+    testthat (>= 3.0.0),
+    tidygraph (>= 1.2.0)
 Config/testthat/edition: 3
+Collate: 
+    'aaa-constants.R'
+    'class-mgnet.R'
+    'class-mgnets.R'
+    'class-getters.R'
+    'class-base-methods.R'
+    'class-links.R'
+    'class-grouping.R'
+    'class-extractor.R'
+    'class-filter-netw.R'
+    'class-filter.R'
+    'class-longer.R'
+    'class-merge.R'
+    'class-mgnet-validity.R'
+    'class-mutate-link.R'
+    'class-mutate-netw.R'
+    'class-mutate.R'
+    'class-pull.R'
+    'class-set.R'
+    'class-setters.R'
+    'class-show.R'
+    'class-split.R'
+    'data.R'
+    'graph-coercion.R'
+    'utils-check-assign.R'
+    'utils-join.R'
+    'utils-link.R'
+    'utils-verbs-check-expressions.R'
+    'utils-verbs-join-abun.R'
+License: MIT + file LICENSE

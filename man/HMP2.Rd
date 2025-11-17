@@ -3,9 +3,9 @@
 \docType{data}
 \name{HMP2}
 \alias{HMP2}
-\title{MGNet Object from HMP2 Gut Dataset}
+\title{Example omic object derived from the Human Microbiome Project}
 \format{
-An S4 object of class \code{mgnet} with multiple slots containing matrices and data.frames structured as described above.
+An object of class \code{omic} with \code{1112} samples and \code{1953} taxa (OTU in this case).
 }
 \source{
 Human Microbiome Project Phase 2
@@ -14,22 +14,7 @@ Human Microbiome Project Phase 2
 data(HMP2)
 }
 \description{
-This MGNet object is constructed from the OTU, sample metadata, and taxa lineage information from the Human Microbiome
-Project Phase 2 (HMP2) focusing on gut microbiome samples. It integrates these datasets into a structured object suitable
-for metagenomic network analysis, providing a comprehensive framework for analyzing microbial communities and their interactions.
-}
-\details{
-The object includes:
-\itemize{
-\item \strong{abun}: A numeric matrix representing the raw abundance data of OTUs across samples.
-\item \strong{rela}: A numeric matrix representing the relative abundance of each OTU within each sample.
-\item \strong{norm}: A numeric matrix of normalized abundance data, suitable for various types of analyses.
-\item \strong{meta}: A data.frame containing metadata for samples, which includes details such as subject ID, insulin resistance status, and other health indicators.
-\item \strong{taxa}: A data.frame providing taxonomic classification for each OTU from phylum to species level.
-\item \strong{netw}: An \code{igraph} object representing the network of taxa interactions, based on co-occurrence and other metrics.
-\item \strong{comm}: An object storing community detection results, facilitating analysis of microbial community structure.
-}
-
-This object allows researchers to perform advanced metagenomic analyses, such as identifying key taxa, exploring community structures, and understanding the ecological roles of different microbes within the gut microbiome.
+This object contains OTU counts, sample metadata, and taxonomic information
+for a subset of the HMP2 dataset, stored as an \code{omic} class.
 }
 \keyword{datasets}
