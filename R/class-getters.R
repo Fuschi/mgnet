@@ -451,8 +451,8 @@ setMethod("taxa", "mgnet", function(object, .fmt = "df", .collapse = FALSE) {
   
   if(length(object@taxa) == 0 && length(object@comm) != 0){
     switch(.fmt,
-           df  = {return(data.frame(taxa_id = taxa_id(object),
-                                    comm_id = comm_id(object)))},
+           df  = {return(data.frame(comm_id = comm_id(object),
+                                    row.names = taxa_id(object)))},
            tbl = {return(comm_id(object, .fmt = "tbl"))})
   }
   

@@ -226,7 +226,7 @@ setMethod("mutate_netw", "mgnets", function(object, ..., .ungroup = FALSE, .dese
           result_key <- rlang::eval_tidy(quosures[[i]], data = mask_subset, env = rlang::current_env())
           result[idx_key] <- result_key
         }
-        taxa(object[[om]]) <- taxa(object[[om]], .collapse = TRUE) %>%
+        taxa(object[[om]]) <- taxa(object[[om]], .fmt = "tbl") %>%
           dplyr::mutate(!!quosures_names[i] := result)
       }
     }
