@@ -22,8 +22,14 @@ Imports:
 LazyData: true
 Suggests: 
     ggraph (>= 2.1.0),
+    knitr,
+    netkit (>= 0.0.0.9000),
+    rmarkdown,
     testthat (>= 3.0.0),
-    tidygraph (>= 1.2.0)
+    tidygraph (>= 1.2.0),
+    tidyverse,
+    vegan,
+    zCompositions
 Config/testthat/edition: 3
 Collate: 
     'aaa-constants.R'
@@ -55,3 +61,6 @@ Collate:
     'utils-verbs-check-expressions.R'
     'utils-verbs-join-abun.R'
 License: MIT + file LICENSE
+VignetteBuilder: knitr
+Remotes: 
+    Fuschi/netkit

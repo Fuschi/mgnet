@@ -1,0 +1,296 @@
+---
+title: "Getting started with mgnet"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with mgnet}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, message=FALSE}
+library(tidyverse)
+library(mgnet)
+```
+
+```{r}
+library(mgnet)
+```
+
+## What is `mgnet`?
+
+`mgnet` provides an S4 class, also called `mgnet`, designed to **organize NGS-derived datasets**
+in a tidy and modular fashion. The class is meant to store and keep aligned:
+
+- abundance matrices (**samples × taxa**): raw (`abun`), relative (`rela`), normalized (`norm`)
+- sample metadata (`meta`)
+- taxa metadata (`taxa`)
+- a feature-level network (`netw`, an `igraph` object)
+- community assignments (`comm`, an `igraph::communities` object)
+
+A core design principle of the package is **structural consistency**: the constructor performs
+automatic checks to ensure that tables and networks can be safely combined and manipulated.
+
+In other words, `mgnet` focuses on *data integrity and tidy-style manipulation*, rather than
+performing modeling or normalization itself.
+
+## A key convention: identifiers live in row/column names
+
+Most operations in `mgnet` rely on a strict convention about where identifiers are stored:
+
+- **Abundance matrices** (`abun`, `rela`, `norm`) are **samples × taxa**
+  - `rownames` are **sample identifiers** (`sample_id`)
+  - `colnames` are **taxa identifiers** (`taxa_id`)
+- **Sample metadata** (`meta`) is **samples × variables**
+  - `rownames` are **sample identifiers** (`sample_id`)
+  - columns are sample-level variables (metadata)
+- **Taxa metadata** (`taxa`) is **taxa × variables**
+  - `rownames` are **taxa identifiers** (`taxa_id`)
+  - columns are taxa-level variables (annotations)
+
+These names are not cosmetic: they are the glue that allows `mgnet` to keep objects aligned.
+For example, if you remove a sample from the abundance matrix, the corresponding row must also be
+removed from `meta`. The same applies to taxa, and even to network nodes when `netw` is present.
+
+## Example data: Human Microbiome Project (HMP2)
+
+In this vignette we use example data derived from the Human Microbiome Project, version 2 (HMP2):
+
+- `otu_HMP2`: an abundance matrix (samples × taxa)
+- `meta_HMP2`: sample metadata
+- `taxa_HMP2`: taxa metadata
+
+```{r}
+data(otu_HMP2, package = "mgnet")
+data(meta_HMP2, package = "mgnet")
+data(taxa_HMP2, package = "mgnet")
+```
+
+## Inspect the three core tables
+
+### 1) Abundance matrix (samples × taxa)
+
+```{r}
+class(otu_HMP2)
+dim(otu_HMP2)
+```
+
+```{r}
+otu_HMP2[1:min(6, nrow(otu_HMP2)), 1:min(6, ncol(otu_HMP2)), drop = FALSE]
+```
+
+The identifiers used by `mgnet` are stored in the dimnames:
+
+```{r}
+sample_id <- rownames(otu_HMP2)
+taxa_id <- colnames(otu_HMP2)
+
+head(sample_id)
+head(taxa_id)
+```
+
+### 2) Sample metadata (rows = sample_id)
+
+```{r}
+class(meta_HMP2)
+dim(meta_HMP2)
+```
+
+```{r}
+meta_HMP2[1:10, , drop = FALSE]
+```
+
+```{r}
+head(rownames(meta_HMP2))
+head(colnames(meta_HMP2))
+```
+
+### 3) Taxa metadata (rows = taxa_id)
+
+```{r}
+class(taxa_HMP2)
+dim(taxa_HMP2)
+```
+
+```{r}
+taxa_HMP2[1:min(10, nrow(taxa_HMP2)), 1:min(10, ncol(taxa_HMP2)), drop = FALSE]
+```
+
+```{r}
+head(rownames(taxa_HMP2))
+head(colnames(taxa_HMP2))
+```
+
+## Why this structure matters (and what `mgnet` checks for you)
+
+When you build an `mgnet` object, the constructor and the validity checks enforce that:
+
+- abundance matrices are numeric and non-negative
+- row/column names are present, non-empty, and unique
+- `meta` and `taxa` are `data.frame` objects with valid row/column names
+- **samples are aligned**: `rownames(abun)` must match `rownames(meta)` exactly (same content and order)
+- **taxa are aligned**: `colnames(abun)` must match `rownames(taxa)` exactly (same content and order)
+- if you add `rela` or `norm`, they must have the same dimensions and identifiers as `abun`
+- if you add a network, node names must match the taxa identifiers
+
+This is the reason why `mgnet` forces row/column names as identifiers, not as
+optional decoration.
+
+## Create an `mgnet` object
+
+We can now create an `mgnet` object. If any structural inconsistency is present, the constructor
+will stop with an informative error message.
+
+```{r}
+HMP2 <- mgnet(
+  abun = otu_HMP2,
+  meta = meta_HMP2,
+  taxa = taxa_HMP2
+)
+HMP2
+```
+
+## A minimal tidy workflow (mutate + filter)
+
+A common first step is to derive additional matrices (e.g., relative abundances) and then subset
+samples and taxa while keeping *all* components aligned. In `mgnet`, this is done through methods
+that operate on the object while preserving identifier integrity through strict validity checks
+(e.g., non-negative matrices, unique identifiers, reciprocal alignment between `abun`/`rela`/`norm`,
+and consistency with `meta`, `taxa`, and (when present) `netw`/`comm`).
+
+In the following example we:
+1. compute and store **relative abundances** in the `rela` slot;
+2. subset the data to a **single subject** under a **healthy condition**;
+3. filter taxa by **prevalence** and **abundance magnitude**;
+4. build a correlation network from CLR-normalized data, then **retain only positive edges**;
+5. detect communities and keep communities with more than a minimal number of taxa;
+6. visualize the signed network and summarize communities by taxonomy.
+
+> **Note on identifiers and alignment.** Every step below relies on the convention that
+> abundance matrices are **samples × taxa**, where `rownames` are `sample_id` and `colnames`
+> are `taxa_id`. The `mgnet` constructor and validators enforce this alignment automatically.
+
+```{r}
+sub_69001H <- HMP2 %>%
+  # Store relative abundances (rela) computed from the raw count matrix (abun).
+  # This keeps the same sample_id (rows) and taxa_id (cols) as abun.
+  set_mgnet(rela = abun / rowSums(abun)) %>%
+  
+  # Subset to a single subject and a single condition.
+  # mgnet ensures meta stays aligned with the abundance matrices after filtering.
+  filter_meta(
+    SubjectID == "69-001",  # a single subject
+    CL4_2 == "Healthy"      # only healthy condition
+  ) %>%
+  
+  # Filter taxa using:
+  # - prevalence: proportion of samples where a taxon is present (>0)
+  # - magnitude: median abundance among non-zero observations
+  filter_taxa(
+    sum(abun > 0) / n() >= .33,        # prevalence
+    median(abun[abun > 0]) >= 5        # abundance magnitude (non-zero median)
+  )
+
+sub_69001H
+```
+
+## From curated abundances to networks (positive edges only)
+
+Once a curated `mgnet` object is available, we can compute a normalized matrix (`norm`) and build
+a correlation network (`netw`) among taxa. Here we:
+- perform a zero-replacement step (CZM) and compute CLR values;
+- build a Pearson correlation network with an absolute threshold;
+- **select only positive edges** (useful for signed-network workflows where we focus on co-occurrence);
+- compute communities on the resulting positive-edge graph.
+
+```{r}
+sub_69001H_netw <- sub_69001H %>%
+  set_mgnet(
+    # Store CLR-normalized data in the norm slot.
+    # Note: CZM replacement avoids issues with zeros before CLR.
+    norm = zCompositions::cmultRepl(X = abun, method = "CZM") %>%
+      vegan::decostand(method = "clr"),
+    
+    # Build a correlation network from the normalized matrix.
+    # The resulting igraph object is stored in the netw slot.
+    netw = netkit::build_corr_net(
+      x = norm,
+      cor_method = "pearson",
+      thresh_method = "absolute",
+      thresh_value = .6
+    )
+  ) %>%
+  
+  # Keep only positive associations (edges) for community detection.
+  select_link(weight > 0) %>%
+  
+  # Community detection on the (selected) network.
+  set_mgnet(comm = igraph::cluster_fast_greedy(netw)) %>%
+  
+  # Clear selection for downstream operations (work on the full object again).
+  deselect_link() %>%
+  
+  # Group by community and remove very small communities.
+  group_mgnet(comm_id) %>%
+  filter_taxa(n() > 2, .ungroup = TRUE)
+
+sub_69001H_netw
+```
+
+## Visualization (signed network; positive edges highlighted)
+
+This plot illustrates how `mgnet` integrates network data (`netw`), community membership (`comm_id`)
+and taxa-level attributes (`taxa`) into a single tidy workflow.
+
+```{r, fig.width=10, fig.height=10, message=FALSE}
+library(ggraph)
+
+sub_69001H_netw <- sub_69001H_netw %>%
+  group_mgnet(comm_id) %>%
+  select_link(weight > 0) %>%
+  
+  # Add network-level and edge-level attributes while keeping the object valid.
+  mutate_netw(
+    degree_comm_pos = igraph::degree(netw),
+    .ungroup = TRUE,
+    .deselect = TRUE
+  ) %>%
+  mutate_link(sign = if_else(weight > 0, "positive", "negative")) %>%
+  
+  # Add a taxa-level summary of the CLR values.
+  mutate_taxa(clr_mean = mean(norm))
+
+sub_69001H_netw %>%
+  to_tbl_graph() %>%
+  ggraph(layout = netkit::layout_signed(.)) +
+  geom_edge_link(aes(color = sign, linewidth = abs(weight))) +
+  geom_node_point(aes(fill = order, size = clr_mean, color = comm_id),
+                  shape = 21, stroke = 1.5) +
+  theme_graph() +
+  scale_edge_width(range = c(.3, 3), trans = "log") +
+  scale_edge_color_manual(values = c(positive = "#0000FF66", negative = "#FF000066")) +
+  scale_color_brewer(type = "qual")
+```
+
+## Community summary by taxonomy
+
+Finally, we can export a tidy representation, aggregate by `sample_id`, `comm_id` and taxonomy
+(e.g., `phylum`), and visualize how taxa composition changes across communities.
+
+```{r}
+sub_69001H_netw %>%
+  mgnet_longer() %>%
+  group_by(sample_id, comm_id, phylum) %>%
+  summarise(rela = sum(rela), .groups = "drop") %>%
+  complete(sample_id, comm_id, phylum, fill = list(rela = 0)) %>%
+  ggplot(aes(x = comm_id, y = rela, fill = phylum)) +
+  geom_boxplot()
+```
+
+
