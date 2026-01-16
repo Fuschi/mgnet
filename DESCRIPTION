@@ -41,13 +41,12 @@ Collate:
     'class-grouping.R'
     'class-extractor.R'
     'class-filter-netw.R'
-    'class-filter.R'
     'class-longer.R'
     'class-merge.R'
     'class-mgnet-validity.R'
+    'class-mutate-filter.R'
     'class-mutate-link.R'
     'class-mutate-netw.R'
-    'class-mutate.R'
     'class-pull.R'
     'class-set.R'
     'class-setters.R'
@@ -59,7 +58,6 @@ Collate:
     'utils-join.R'
     'utils-link.R'
     'utils-verbs-check-expressions.R'
-    'utils-verbs-join-abun.R'
 License: MIT + file LICENSE
 VignetteBuilder: knitr
 Remotes: 

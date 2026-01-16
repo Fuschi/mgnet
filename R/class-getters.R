@@ -336,73 +336,92 @@ setMethod("norm", "mgnets", function(object, .fmt = "mat", .var = NULL, .fun = s
 #' Get Sample Metadata Information
 #'
 #' Retrieves the sample information stored in the `meta` slot of an `mgnet` object
-#' or for each `mgnet` object within an `mgnets`, with the option to format the output as
-#' a `data.frame`, `tibble`.
+#' or for each `mgnet` object within an `mgnets`, with the option to format the
+#' output as a `data.frame` or `tibble`.
 #'
 #' @param object An `mgnet` or `mgnets` object.
 #' @param .fmt A character string specifying the output format of the result.
-#'        Possible choices are:
-#'        - "df": Returns the output as a `data.frame`.
-#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the row names of
-#'          the abundance matrix are converted into a new column named `sample_id`, ensuring alignment
-#'          with the reserved keyword in `mgnet-class`.
-#' @param .collapse Logical, only for `mgnets`. If TRUE, ignore `.fmt` and return
-#'   a single tibble with all metas row-bound together and an `mgnet` column  
-#'   indicating the source object. Default: FALSE.
-#'          
-#' @return The content of the `meta` slot for `mgnet` or a list of such contents for `mgnets`.
-#' 
+#'   Possible choices are:
+#'   - `"df"`: Returns the output as a `data.frame`.
+#'   - `"tbl"`: Returns the output as a `tibble`. For `mgnet` objects, row names of
+#'     the `meta` table are converted into a new column named `sample_id`, ensuring
+#'     alignment with the reserved keyword in `mgnet-class`.
+#' @param .empty A character string controlling the behavior when the `meta` slot
+#'   is empty (`length(object@meta) == 0`). Possible choices are:
+#'   - `"none"`: Return an empty object according to `.fmt` (default behavior).
+#'   - `"id"`: Return a tibble with a single column `sample_id` containing the
+#'     sample identifiers from the object.
+#'   Default: `"none"`.
+#' @param .collapse Logical, only for `mgnets`. If `TRUE`, ignore `.fmt` and return
+#'   a single tibble with all metas row-bound together and an `mgnet` column
+#'   indicating the source object. Default: `FALSE`.
+#'
+#' @return The content of the `meta` slot for `mgnet` or a list of such contents for
+#'   `mgnets`. If `.collapse = TRUE`, returns a single tibble.
+#'
 #' @importFrom purrr map imap list_rbind
 #' @importFrom tibble tibble
 #' @export
 #' @name meta
 #' @aliases meta,mgnet-method meta,mgnets-method
-setGeneric("meta", function(object, .fmt = "df", .collapse = FALSE) standardGeneric("meta"))
+setGeneric("meta", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) {standardGeneric("meta")})
 
-setMethod("meta", "mgnet", function(object, .fmt = "df", .collapse = FALSE) {
-  
-  .fmt <- match.arg(.fmt, c("df", "tbl"))
-  
-  if( length(object@meta) == 0 ){
+setMethod("meta", "mgnet", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) {
     
-    switch(.fmt,
-           df  = {return(data.frame())},
-           tbl = {return(tibble::tibble())})
+    .fmt   <- match.arg(.fmt, c("df", "tbl"))
+    .empty <- match.arg(.empty, c("none", "id"))
     
-  } else {
+    # Empty meta
+    if (length(object@meta) == 0L) {
+      
+      if (.empty == "id") {
+        return(tibble::tibble(sample_id = sample_id(object)))}
+      
+      return(switch(
+        .fmt,
+        df  = data.frame(),
+        tbl = tibble::tibble()))
+    }
     
-    switch(.fmt,
-           df  = {return(object@meta)},
-           tbl = {return(tibble::as_tibble(object@meta, rownames="sample_id"))})
-    
+    # Non-empty meta
+    return(switch(
+      .fmt,
+      df  = object@meta,
+      tbl = tibble::as_tibble(object@meta, rownames = "sample_id")
+    ))
   }
-})
+)
 
-setMethod("meta", "mgnets", function(object, .fmt = "df", .collapse = FALSE) {
-  
-  .fmt <- match.arg(.fmt, c("df", "tbl"))
-  
-  if (.collapse) {
-    meta_collapsed <- object %>% 
-      purrr::map(\(x) meta(x, .fmt = "tbl")) %>% 
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>% 
-      purrr::list_rbind()
+setMethod("meta", "mgnets", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) {
+    
+    .fmt   <- match.arg(.fmt, c("df", "tbl"))
+    .empty <- match.arg(.empty, c("none", "id"))
+    
+    # Collapsed output: always tibble
+    if (isTRUE(.collapse)) {
+      
+      if (length(object) == 0L) return(tibble::tibble())
+      
+      meta_collapsed <- object %>%
+        purrr::map(\(x) meta(x, .fmt = "tbl", .empty = .empty)) %>%
+        purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
+        purrr::list_rbind()
+      
       return(meta_collapsed)
+    }
+    
+    # Non-collapsed output: list
+    if (length(object) == 0L) {
+      return(switch(
+        .fmt,
+        df  = data.frame(),
+        tbl = tibble::tibble()
+      ))
+    }
+    
+    return(purrr::map(object, \(x) meta(x, .fmt = .fmt, .empty = .empty)))
   }
-  
-  if(.fmt == "df") {
-    
-    if(length(object) == 0) return(data.frame())
-    return(purrr::map(object, function(x) meta(x, .fmt = "df")))
-    
-  } else if(.fmt == "tbl") {
-    
-    if(length(object) == 0) return(tibble::tibble())
-    return(purrr::map(object, function(x) meta(x, .fmt = "tbl")))
-    
-  }
-  
-})
+)
 
 
 # TAXA
@@ -410,32 +429,46 @@ setMethod("meta", "mgnets", function(object, .fmt = "df", .collapse = FALSE) {
 #' Get Taxa Metadata Information
 #'
 #' Retrieves the taxa information stored in the `taxa` slot of an `mgnet` object
-#' or for each `mgnet` object within an `mgnets`, with the option to format the output as
-#' a `data.frame`, `tibble`, or a combined `tibble` for multiple mgnet objects.
+#' or for each `mgnet` object within an `mgnets`, with the option to format the
+#' output as a `data.frame`, `tibble`, or a combined `tibble` for multiple mgnet
+#' objects.
 #'
 #' @param object An `mgnet` or `mgnets` object.
 #' @param .fmt A character string specifying the output format of the result.
-#'        Possible choices are:
-#'        - "df": Returns the output as a `data.frame`.
-#'        - "tbl": Returns the output as a `tibble`. For `mgnet` objects, the the row names of
-#'          the abundance matrix are converted into a new column named `taxa_id`, ensuring alignment
-#'          with the reserved keyword in `mgnet-class`.
-#' @param .collapse Logical, only for `mgnets`. If TRUE, ignore `.fmt` and return
-#'   a single tibble with all taxas row-bound together and an `mgnet` column  
-#'   indicating the source object. Default: FALSE.
-#'          
-#' @return The content of the `taxa` slot for `mgnet` or a list of such contents for `mgnets`.
-#' 
+#'   Possible choices are:
+#'   - `"df"`: Returns the output as a `data.frame`.
+#'   - `"tbl"`: Returns the output as a `tibble`. For `mgnet` objects, the row
+#'     names of the taxa table are converted into a new column named `taxa_id`,
+#'     ensuring alignment with the reserved keyword in `mgnet-class`.
+#' @param .empty A character string controlling the behavior when the `taxa`
+#'   slot is empty (`length(object@taxa) == 0`). Possible choices are:
+#'   - `"none"`: Return an empty object according to `.fmt` (default behavior).
+#'   - `"id"`: Return a tibble with a single column `taxa_id` containing the taxa
+#'     identifiers from the object.
+#'   This option is applied **only when both `taxa` and `comm` slots are empty**.
+#'   Default: `"none"`.
+#' @param .collapse Logical, only for `mgnets`. If `TRUE`, ignore `.fmt` and return
+#'   a single tibble with all taxa row-bound together and an `mgnet` column
+#'   indicating the source object. Default: `FALSE`.
+#'
+#' @return The content of the `taxa` slot for `mgnet`, or a list of such contents
+#'   for `mgnets`. If `.collapse = TRUE`, returns a single tibble.
+#'
 #' @importFrom purrr map imap list_rbind
 #' @importFrom tibble tibble
 #' @export
 #' @name taxa
 #' @aliases taxa,mgnet-method taxa,mgnets-method
-setGeneric("taxa", function(object, .fmt = "df", .collapse = FALSE) standardGeneric("taxa"))
+setGeneric("taxa", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) standardGeneric("taxa"))
 
-setMethod("taxa", "mgnet", function(object, .fmt = "df", .collapse = FALSE) {
+setMethod("taxa", "mgnet", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) {
   
   .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("none", "id"))
+  
+  if (length(object@taxa) == 0 && length(object@comm) == 0 && .empty == "id") {
+    return(tibble::tibble(taxa_id = taxa_id(object)))
+  }
   
   if(length(object@taxa) == 0 && length(object@comm) == 0){
     switch(.fmt,
@@ -471,13 +504,14 @@ setMethod("taxa", "mgnet", function(object, .fmt = "df", .collapse = FALSE) {
   
 })
 
-setMethod("taxa", "mgnets", function(object, .fmt = "df", .collapse = FALSE) {
+setMethod("taxa", "mgnets", function(object, .fmt = "df", .empty = "none", .collapse = FALSE) {
   
   .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("none", "id"))
   
   if (.collapse) {
     taxa_collapsed <- object %>% 
-      purrr::map(\(x) taxa(x, .fmt = "tbl")) %>% 
+      purrr::map(\(x) taxa(x, .fmt = "tbl", .empty = .empty)) %>% 
       purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>% 
       purrr::list_rbind()
     return(taxa_collapsed)
@@ -486,12 +520,12 @@ setMethod("taxa", "mgnets", function(object, .fmt = "df", .collapse = FALSE) {
   if(.fmt == "df") {
     
     if(length(object) == 0) return(data.frame())
-    return(sapply(object, taxa, .fmt = "df", simplify = FALSE, USE.NAMES = TRUE))
+    return(sapply(object, taxa, .fmt = "df", .empty = .empty, simplify = FALSE, USE.NAMES = TRUE))
     
   } else if(.fmt == "tbl") {
     
     if(length(object) == 0) return(tibble::tibble())
-    return(sapply(object, taxa, .fmt = "tbl", simplify = FALSE, USE.NAMES = TRUE))
+    return(sapply(object, taxa, .fmt = "tbl", .empty = .empty, simplify = FALSE, USE.NAMES = TRUE))
     
   } 
   

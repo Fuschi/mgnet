@@ -6,27 +6,41 @@
 \alias{taxa,mgnets-method}
 \title{Get Taxa Metadata Information}
 \usage{
-taxa(object, .fmt = "df", .collapse = FALSE)
+taxa(object, .fmt = "df", .empty = "none", .collapse = FALSE)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 
 \item{.fmt}{A character string specifying the output format of the result.
 Possible choices are:
-- "df": Returns the output as a \code{data.frame}.
-- "tbl": Returns the output as a \code{tibble}. For \code{mgnet} objects, the the row names of
-the abundance matrix are converted into a new column named \code{taxa_id}, ensuring alignment
-with the reserved keyword in \code{mgnet-class}.}
+\itemize{
+\item \code{"df"}: Returns the output as a \code{data.frame}.
+\item \code{"tbl"}: Returns the output as a \code{tibble}. For \code{mgnet} objects, the row
+names of the taxa table are converted into a new column named \code{taxa_id},
+ensuring alignment with the reserved keyword in \code{mgnet-class}.
+}}
 
-\item{.collapse}{Logical, only for \code{mgnets}. If TRUE, ignore \code{.fmt} and return
-a single tibble with all taxas row-bound together and an \code{mgnet} column
-indicating the source object. Default: FALSE.}
+\item{.empty}{A character string controlling the behavior when the \code{taxa}
+slot is empty (\code{length(object@taxa) == 0}). Possible choices are:
+\itemize{
+\item \code{"none"}: Return an empty object according to \code{.fmt} (default behavior).
+\item \code{"id"}: Return a tibble with a single column \code{taxa_id} containing the taxa
+identifiers from the object.
+This option is applied \strong{only when both \code{taxa} and \code{comm} slots are empty}.
+Default: \code{"none"}.
+}}
+
+\item{.collapse}{Logical, only for \code{mgnets}. If \code{TRUE}, ignore \code{.fmt} and return
+a single tibble with all taxa row-bound together and an \code{mgnet} column
+indicating the source object. Default: \code{FALSE}.}
 }
 \value{
-The content of the \code{taxa} slot for \code{mgnet} or a list of such contents for \code{mgnets}.
+The content of the \code{taxa} slot for \code{mgnet}, or a list of such contents
+for \code{mgnets}. If \code{.collapse = TRUE}, returns a single tibble.
 }
 \description{
 Retrieves the taxa information stored in the \code{taxa} slot of an \code{mgnet} object
-or for each \code{mgnet} object within an \code{mgnets}, with the option to format the output as
-a \code{data.frame}, \code{tibble}, or a combined \code{tibble} for multiple mgnet objects.
+or for each \code{mgnet} object within an \code{mgnets}, with the option to format the
+output as a \code{data.frame}, \code{tibble}, or a combined \code{tibble} for multiple mgnet
+objects.
 }

@@ -43,40 +43,37 @@ is_mgnet_grouped(object)
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 
-\item{...}{One or more variable names (bare or strings). May also include a
-single \code{NULL} to drop all groups. In \code{ungroup_mgnet()}, names in \code{...} are
-removed from the current grouping vector.}
+\item{...}{Grouping variable names (bare or strings). In \code{group_mgnet()},
+a single \code{NULL} clears all groups.}
 
 \item{.add}{Logical; if \code{TRUE}, add to existing groups; if \code{FALSE}, replace.}
 }
 \value{
 \itemize{
-\item \code{group_mgnet()} returns the modified object.
-\item \code{ungroup_mgnet()} returns the modified object.
-\item \code{get_group_mgnet()} returns a character vector (possibly length-0).
-\item \code{is_mgnet_grouped()} returns logical.
+\item \code{group_mgnet()} / \code{ungroup_mgnet()} return the modified object.
+\item \code{get_group_mgnet()} returns a character vector or \code{NULL}.
+\item \code{is_mgnet_grouped()} returns a logical scalar.
 }
 }
 \description{
-Set or get grouping variables on \code{mgnet} / \code{mgnets} objects, with semantics
-similar to \code{dplyr::group_by()} / \code{dplyr::ungroup()}.
+Set, drop, or inspect grouping variables stored on \code{mgnet} / \code{mgnets},
+with semantics similar to \code{dplyr::group_by()} / \code{dplyr::ungroup()}.
 }
 \details{
-The grouping state is stored as an attribute named "mgnet_groups" on the
-object (for both \code{mgnet} and \code{mgnets}).
+Grouping variables are stored as an attribute named \code{"mgnet_groups"}.
 
 Semantics:
 \itemize{
-\item \code{group_mgnet(x, a, b)} replaces the current groups with \code{c("a","b")}.
-\item \code{group_mgnet(x, a, .add = TRUE)} adds \code{"a"} to the existing groups.
-\item \code{group_mgnet(x)} with no grouping vars returns \code{x} unchanged (keep current).
-\item \code{group_mgnet(x, NULL)} clears the groups (like \code{group_by(NULL)}).
+\item \code{group_mgnet(x, a, b)} replaces groups with \code{c("a","b")}.
+\item \code{group_mgnet(x, a, .add = TRUE)} adds \code{"a"} to existing groups.
+\item \code{group_mgnet(x)} returns \code{x} unchanged.
+\item \code{group_mgnet(x, NULL)} clears all groups.
 \item \code{ungroup_mgnet(x)} clears all groups.
-\item \code{ungroup_mgnet(x, a)} removes \code{"a"} from the current groups (if present).
-\item \code{is_mgnet_grouped(x)} returns TRUE if grouping vars are stored.
+\item \code{ungroup_mgnet(x, a)} removes \code{"a"} from the current groups.
+\item \code{get_group_mgnet(x)} returns the grouping vector (or \code{NULL}).
+\item \code{is_mgnet_grouped(x)} returns \code{TRUE} if grouping is active.
 }
 
 Validation:
-For \code{mgnet}, valid fields come from \code{meta_taxa_vars(object)}.
-For \code{mgnets}, valid fields come from \code{meta_taxa_vars(object, .fmt = "unique")}.
+Grouping variables must be present in \code{meta_taxa_vars(object, .fmt = "unique")}.
 }

@@ -7,44 +7,44 @@ NULL
 
 #' Grouping helpers for `mgnet` / `mgnets`
 #'
-#' Set or get grouping variables on `mgnet` / `mgnets` objects, with semantics
-#' similar to `dplyr::group_by()` / `dplyr::ungroup()`.
+#' Set, drop, or inspect grouping variables stored on `mgnet` / `mgnets`,
+#' with semantics similar to `dplyr::group_by()` / `dplyr::ungroup()`.
 #'
 #' @details
-#' The grouping state is stored as an attribute named "mgnet_groups" on the
-#' object (for both `mgnet` and `mgnets`).
+#' Grouping variables are stored as an attribute named \code{"mgnet_groups"}.
 #'
 #' Semantics:
-#' * `group_mgnet(x, a, b)` replaces the current groups with `c("a","b")`.
-#' * `group_mgnet(x, a, .add = TRUE)` adds `"a"` to the existing groups.
-#' * `group_mgnet(x)` with no grouping vars returns `x` unchanged (keep current).
-#' * `group_mgnet(x, NULL)` clears the groups (like `group_by(NULL)`).
+#' * `group_mgnet(x, a, b)` replaces groups with `c("a","b")`.
+#' * `group_mgnet(x, a, .add = TRUE)` adds `"a"` to existing groups.
+#' * `group_mgnet(x)` returns `x` unchanged.
+#' * `group_mgnet(x, NULL)` clears all groups.
 #' * `ungroup_mgnet(x)` clears all groups.
-#' * `ungroup_mgnet(x, a)` removes `"a"` from the current groups (if present).
-#' * `is_mgnet_grouped(x)` returns TRUE if grouping vars are stored.
+#' * `ungroup_mgnet(x, a)` removes `"a"` from the current groups.
+#' * `get_group_mgnet(x)` returns the grouping vector (or `NULL`).
+#' * `is_mgnet_grouped(x)` returns `TRUE` if grouping is active.
 #'
 #' Validation:
-#' For `mgnet`, valid fields come from `meta_taxa_vars(object)`.
-#' For `mgnets`, valid fields come from `meta_taxa_vars(object, .fmt = "unique")`.
+#' Grouping variables must be present in `meta_taxa_vars(object, .fmt = "unique")`.
 #'
 #' @param object An `mgnet` or `mgnets` object.
-#' @param ... One or more variable names (bare or strings). May also include a
-#' single `NULL` to drop all groups. In `ungroup_mgnet()`, names in `...` are
-#' removed from the current grouping vector.
+#' @param ... Grouping variable names (bare or strings). In `group_mgnet()`,
+#'   a single `NULL` clears all groups.
 #' @param .add Logical; if `TRUE`, add to existing groups; if `FALSE`, replace.
 #'
 #' @return
-#' - `group_mgnet()` returns the modified object.
-#' - `ungroup_mgnet()` returns the modified object.
-#' - `get_group_mgnet()` returns a character vector (possibly length-0).
-#' - `is_mgnet_grouped()` returns logical.
+#' * `group_mgnet()` / `ungroup_mgnet()` return the modified object.
+#' * `get_group_mgnet()` returns a character vector or `NULL`.
+#' * `is_mgnet_grouped()` returns a logical scalar.
 #'
 #' @name group-mgnet
 NULL
 
-# -----------------------------------------------------------------------------#
-# Getters
-# -----------------------------------------------------------------------------#
+#' @importFrom rlang enquos as_name quo_is_null
+NULL
+
+#------------------------------------------------------------------------------#
+# get_group_mgnet
+#------------------------------------------------------------------------------#
 
 #' @rdname group-mgnet
 #' @export
@@ -52,115 +52,130 @@ setGeneric("get_group_mgnet", function(object) standardGeneric("get_group_mgnet"
 
 #' @rdname group-mgnet
 #' @export
-setMethod("get_group_mgnet", "mgnet", function(object) {return(attr(object, "mgnet_groups"))})
+setMethod("get_group_mgnet", "mgnet", function(object) {
+  attr(object, "mgnet_groups", exact = TRUE)
+})
 
 #' @rdname group-mgnet
 #' @export
-setMethod("get_group_mgnet", "mgnets", function(object) {return(attr(object, "mgnet_groups"))})
+setMethod("get_group_mgnet", "mgnets", function(object) {
+  attr(object, "mgnet_groups", exact = TRUE)
+})
 
-#' @importFrom rlang enquos as_name quo_is_null
-NULL
-
-# -----------------------------------------------------------------------------#
-# Setters (group_mgnet)
-# -----------------------------------------------------------------------------#
-
-#' @noRd
-.group_mgnet <- function(object, ..., .add = FALSE){
-  qs <- rlang::enquos(..., .ignore_empty = "all")
-  
-  # No arguments or NULL remove all groups
-  if (length(qs) == 0L || (length(qs) == 1L && rlang::quo_is_null(qs[[1L]]))) {
-    attr(object, "mgnet_groups") <- NULL
-    return(object)
-  }
-  
-  # Convert quosures in strings
-  vars <- unique(vapply(qs, rlang::as_name, character(1)))
-  
-  # Validate the arguments
-  available <- meta_taxa_vars(object, .fmt = "unique")
-  missing_vars <- setdiff(vars, available)
-  if (length(missing_vars)) {
-    cli::cli_abort(c(
-      "x" = "Unknown grouping variable{?s}: {.val {missing_vars}}.",
-      "v" = "Available variables are: {.val {available}}."
-    ))
-  }
-  
-  if (isTRUE(.add)) {
-    current <- get_group_mgnet(object)
-    attr(object, "mgnet_groups") <- unique(c(current, vars))
-  } else {
-    attr(object, "mgnet_groups") <- vars
-  }
-  object
-}
+#------------------------------------------------------------------------------#
+# group_mgnet
+#------------------------------------------------------------------------------#
 
 #' @rdname group-mgnet
 #' @export
 setGeneric("group_mgnet", function(object, ..., .add = FALSE) standardGeneric("group_mgnet"))
 
-#' @rdname group-mgnet
-#' @export
-setMethod("group_mgnet", signature(object = "mgnet"),
-          function(object, ..., .add = FALSE) .group_mgnet(object, ..., .add = .add))
-
-#' @rdname group-mgnet
-#' @export
-setMethod("group_mgnet", signature(object = "mgnets"),
-          function(object, ..., .add = FALSE) .group_mgnet(object, ..., .add = .add))
-
-# -----------------------------------------------------------------------------#
-# Ungroup
-# -----------------------------------------------------------------------------#
-
-.ungroup_mgnet <- function(object, ...){
+#' @noRd
+.group_mgnet <- function(object, ..., .add = FALSE) {
   qs <- rlang::enquos(..., .ignore_empty = "all")
-  if (length(qs) == 0L) {
+  
+  # No args -> keep current
+  if (length(qs) == 0L) return(object)
+  
+  # Single NULL -> clear all groups
+  if (length(qs) == 1L && rlang::quo_is_null(qs[[1L]])) {
     attr(object, "mgnet_groups") <- NULL
     return(object)
   }
-  drop <- unique(vapply(qs, rlang::as_name, character(1)))
-  keep <- setdiff(get_group_mgnet(object), drop)
-  attr(object, "mgnet_groups") <- keep
+  
+  # Convert quosures to names
+  vars <- unique(vapply(qs, rlang::as_name, character(1)))
+  
+  # Validate names
+  available <- meta_taxa_vars(object, .fmt = "unique")
+  missing   <- setdiff(vars, available)
+  
+  if (length(missing) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = "Unknown grouping variable{?s}: {.val {missing}}.",
+        "v" = "Available variables are: {.val {available}}."
+      ),
+      class = "mgnet_validators_error"
+    )
+  }
+  
+  # Add or replace
+  if (isTRUE(.add)) {
+    current <- get_group_mgnet(object)
+    vars <- unique(c(if (is.null(current)) character(0) else current, vars))
+  }
+  
+  attr(object, "mgnet_groups") <- vars
   object
 }
 
 #' @rdname group-mgnet
 #' @export
+setMethod("group_mgnet", "mgnet",
+          function(object, ..., .add = FALSE) .group_mgnet(object, ..., .add = .add))
+
+#' @rdname group-mgnet
+#' @export
+setMethod("group_mgnet", "mgnets",
+          function(object, ..., .add = FALSE) .group_mgnet(object, ..., .add = .add))
+
+#------------------------------------------------------------------------------#
+# ungroup_mgnet
+#------------------------------------------------------------------------------#
+
+#' @rdname group-mgnet
+#' @export
 setGeneric("ungroup_mgnet", function(object, ...) standardGeneric("ungroup_mgnet"))
 
+#' @noRd
+.ungroup_mgnet <- function(object, ...) {
+  qs <- rlang::enquos(..., .ignore_empty = "all")
+  
+  if (length(qs) == 0L) {
+    attr(object, "mgnet_groups") <- NULL
+    return(object)
+  }
+  
+  drop <- unique(vapply(qs, rlang::as_name, character(1)))
+  current <- get_group_mgnet(object)
+  if (is.null(current)) return(object)
+  
+  keep <- setdiff(current, drop)
+  attr(object, "mgnet_groups") <- if (length(keep) == 0L) NULL else keep
+  object
+}
+
 #' @rdname group-mgnet
 #' @export
-setMethod("ungroup_mgnet", signature(object = "mgnet"), function(object, ...) {
+setMethod("ungroup_mgnet", "mgnet", function(object, ...) {
   .ungroup_mgnet(object, ...)
 })
 
 #' @rdname group-mgnet
 #' @export
-setMethod("ungroup_mgnet", signature(object = "mgnets"), function(object, ...) {
+setMethod("ungroup_mgnet", "mgnets", function(object, ...) {
   .ungroup_mgnet(object, ...)
 })
 
-# -----------------------------------------------------------------------------#
-# is_grouped
-# -----------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
+# is_mgnet_grouped
+#------------------------------------------------------------------------------#
 
 #' @rdname group-mgnet
 #' @export
 setGeneric("is_mgnet_grouped", function(object) standardGeneric("is_mgnet_grouped"))
 
 #' @rdname group-mgnet
-#' @aliases is_mgnet_grouped,mgnet-method
 #' @export
 setMethod("is_mgnet_grouped", "mgnet", function(object) {
-  !is.null(get_group_mgnet(object))
+  g <- get_group_mgnet(object)
+  is.character(g) && length(g) > 0L
 })
 
 #' @rdname group-mgnet
-#' @aliases is_mgnet_grouped,mgnets-method
 #' @export
 setMethod("is_mgnet_grouped", "mgnets", function(object) {
-  all(sapply(object, is_mgnet_grouped))
+  g <- get_group_mgnet(object)
+  is.character(g) && length(g) > 0L
 })

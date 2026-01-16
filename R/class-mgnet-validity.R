@@ -439,44 +439,61 @@ NULL
 .validate_mgnet_groups <- function(object) {
   groups <- attr(object, "mgnet_groups", exact = TRUE)
   
-  # No groups: nothing to control
+  # No groups (unset) -> ok
   if (is.null(groups)) return(invisible())
   
-  # Type
+  # Must be a character vector (not list, not numeric, ...)
   if (!is.character(groups)) {
     cli::cli_abort(
       c(
-        "x" = 'The "mgnet_groups" attribute must be a character vector.',
-        "i" = "Use {.fn group_mgnet}() to set grouping variables."
+        "x" = 'Attribute {.field "mgnet_groups"} must be a character vector or {.val NULL}.',
+        "i" = "Use {.fn group_mgnet}() / {.fn ungroup_mgnet}() to manage grouping."
       ),
       class = "mgnet_validators_error"
     )
   }
   
-  # NA / empty strings
-  if (anyNA(groups) || any(!nzchar(groups))) {
-    cli::cli_abort(
-      'Grouping variables in "mgnet_groups" must be non-NA, non-empty strings.',
-      class = "mgnet_validators_error"
-    )
-  }
-  
-  # Duplicates
-  if (anyDuplicated(groups) > 0L) {
-    cli::cli_abort(
-      'Grouping variables in "mgnet_groups" must be unique.',
-      class = "mgnet_validators_error"
-    )
-  }
-  
-  # Coherence with current meta/taxa variables
-  available <- meta_taxa_vars(object)
-  missing   <- setdiff(groups, available)
-  
-  if (length(missing)) {
+  # Disallow empty vector: in your semantics, "no grouping" == NULL
+  if (length(groups) == 0L) {
     cli::cli_abort(
       c(
-        "x" = 'Unknown grouping variable{?s} stored in attribute {.field "mgnet_groups"}: {.val {missing}}.',
+        "x" = 'Attribute {.field "mgnet_groups"} must be {.val NULL} or a non-empty character vector.',
+        "i" = "To clear grouping, use {.fn ungroup_mgnet}() (or set the attribute to {.val NULL})."
+      ),
+      class = "mgnet_validators_error"
+    )
+  }
+  
+  # No NA / empty strings
+  if (anyNA(groups) || any(!nzchar(groups))) {
+    cli::cli_abort(
+      c(
+        "x" = 'Grouping variables in {.field "mgnet_groups"} must be non-NA, non-empty strings.',
+        "v" = "Got: {.val {groups}}."
+      ),
+      class = "mgnet_validators_error"
+    )
+  }
+  
+  # Unique
+  if (anyDuplicated(groups) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = 'Grouping variables in {.field "mgnet_groups"} must be unique.',
+        "v" = "Got: {.val {groups}}."
+      ),
+      class = "mgnet_validators_error"
+    )
+  }
+  
+  # Must exist in current meta/taxa variables
+  available <- meta_taxa_vars(object, .fmt = "unique")
+  missing   <- setdiff(groups, available)
+  
+  if (length(missing) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = 'Unknown grouping variable{?s} stored in {.field "mgnet_groups"}: {.val {missing}}.',
         "v" = "Available variables are: {.val {available}}."
       ),
       class = "mgnet_validators_error"
