@@ -4,17 +4,20 @@
 \alias{deselect_link}
 \alias{deselect_link,mgnet-method}
 \alias{deselect_link,mgnets-method}
-\title{Deselect Links in an mgnet Object}
+\title{Clear link selection}
 \usage{
 deselect_link(object)
+
+\S4method{deselect_link}{mgnet}(object)
+
+\S4method{deselect_link}{mgnets}(object)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-The same object, with no \code{selected_links} attribute.
+The same object, with no active link selection.
 }
 \description{
-Clears the \code{selected_links} attribute from an \code{mgnet} or \code{mgnets} object,
-effectively removing any current link selection.
+Remove the \code{selected_links} attribute from an \code{mgnet} or \code{mgnets} object.
 }

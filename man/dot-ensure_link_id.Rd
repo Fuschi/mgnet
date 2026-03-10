@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils-link.R
 \name{.ensure_link_id}
 \alias{.ensure_link_id}
-\title{Ensure the graph has a link_id edge attribute}
+\title{Ensure that a graph has a \code{link_id} edge attribute}
 \usage{
 .ensure_link_id(g)
 }
@@ -10,10 +10,12 @@
 \item{g}{An \code{igraph} object.}
 }
 \value{
-The \code{igraph} object, with guaranteed link_id in the network if edges exist.
+The input graph, with a guaranteed \code{link_id} edge attribute whenever edges
+are present.
 }
 \description{
-This function checks whether the "link_id" attribute is defined. If missing,
-it generates link IDs using \code{.make_link_id()} and assigns them.
+Check whether an \code{igraph} object already has an edge attribute named
+\code{link_id}. If not, generate one with \code{\link[=.make_link_id]{.make_link_id()}} and attach it to the
+graph.
 }
 \keyword{internal}

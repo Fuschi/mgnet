@@ -17,24 +17,27 @@
 \S4method{[[}{mgnets,ANY,ANY,mgnet}(x, i, j) <- value
 }
 \arguments{
-\item{x}{An \code{mgnets} object.}
+\item{x}{An object of class \code{mgnets}.}
 
-\item{name}{Length-1 character: the element name (for \code{$}).}
+\item{name}{A single character string giving the element name for \code{$} and \verb{$<-}.}
 
-\item{value}{An \code{mgnet} object to assign.}
+\item{value}{An object of class \code{mgnet} to assign.}
 
-\item{i}{Index or name (for \code{[[} / \verb{[[<-}).}
+\item{i}{An index or name for \code{[[} and \verb{[[<-}.}
 
-\item{j}{Ignored (signature compatibility).}
+\item{j}{Ignored. Included only for signature compatibility.}
 
 \item{...}{Not used.}
 }
 \value{
 \itemize{
-\item \code{$} / \code{[[}: the selected \code{mgnet} object. \cr
-\item \verb{$<-} / \verb{[[<-}: the updated \code{mgnets} object.
+\item \code{$} and \code{[[} return a single \code{mgnet} object.
+\item \verb{$<-} and \verb{[[<-} return the updated \code{mgnets} object.
 }
 }
 \description{
-List-like accessors using \code{$}, \verb{$<-}, \code{[[}, and \verb{[[<-}.
+List-like accessors for \code{mgnets} objects using \code{$}, \verb{$<-}, \code{[[}, and \verb{[[<-}.
+
+These methods allow convenient extraction and replacement of individual
+\code{mgnet} objects stored in the collection.
 }

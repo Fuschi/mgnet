@@ -4,35 +4,45 @@
 \alias{select_link}
 \alias{select_link,mgnet-method}
 \alias{select_link,mgnets-method}
-\title{Select Links in an \code{mgnet} Object Based on Conditions}
+\title{Select links by condition}
 \usage{
 select_link(object, ...)
+
+\S4method{select_link}{mgnet}(object, ...)
+
+\S4method{select_link}{mgnets}(object, ...)
 }
 \arguments{
-\item{object}{An \code{mgnet} or \code{mgnets} object containing a network (edges).}
+\item{object}{An \code{mgnet} or \code{mgnets} object containing a network.}
 
-\item{...}{Conditions to be applied for selecting links, passed as expressions.}
+\item{...}{Filtering expressions evaluated on edge-level data. These
+expressions may use the local helpers documented in \code{\link[=helper_link]{helper_link()}}, such
+as \code{from()}, \code{to()}, \code{either()}, \code{both()}, \code{neither()}, and \code{one()}.}
 }
 \value{
-The same \code{mgnet} (or \code{mgnets}) object, updated with a \code{selected_links}
-attribute containing the numeric indices of the filtered links.
+The same object, updated with a \code{selected_links} attribute containing selected
+edge \code{link_id} values.
 }
 \description{
-This method \strong{highlights} links in the \code{mgnet} object according to specified
-conditions and stores the indices of these selected links in the \code{selected_links}
-attribute of the object.
+Select edges in an \code{mgnet} or \code{mgnets} object according to one or more
+filtering expressions and store the resulting edge \code{link_id} values in the
+\code{selected_links} attribute.
 
-In particular, you can use \code{select_link()} \emph{inside} a pipeline that calls
-\code{\link[=mutate_netw]{mutate_netw()}} to focus on only the selected edges in subsequent network operations.
+This selection can then be used by downstream methods such as \code{\link[=mutate_link]{mutate_link()}}
+or by helpers that explicitly query selected edges.
 }
 \details{
-Inside these expressions, you can call the local helper functions documented in
-\code{\link[=helper_link]{helper_link()}}, such as \code{from(var)}, \code{to(var)}, or \code{either(expr)}.
-These helpers allow you to reference and filter based on node-level metadata from
-the “from” or “to” side of each link.
+For \code{mgnets}, selection is evaluated on the combined edge table across the
+collection, but the resulting \code{link_id} vectors are stored back into each
+contained \code{mgnet}.
+
+If an individual \code{mgnet} in the collection has a network but no edges match
+the selection criteria, its \code{selected_links} attribute is set to
+\code{character(0)}. By contrast, \code{NULL} means that no selection has been set at
+all.
 }
 \seealso{
-\code{\link[=mutate_link]{mutate_link()}} for modifying link attributes,
-\code{\link[=get_selected_links]{get_selected_links()}} and \code{\link[=deselect_link]{deselect_link()}} for managing selection,
-\code{\link[=helper_link]{helper_link()}} for details on the local helper functions.
+\code{\link[=mutate_link]{mutate_link()}} for link-level transformations,
+\code{\link[=get_selected_links]{get_selected_links()}} and \code{\link[=deselect_link]{deselect_link()}} for selection management,
+\code{\link[=helper_link]{helper_link()}} for the local helper functions available inside expressions.
 }

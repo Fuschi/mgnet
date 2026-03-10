@@ -4,16 +4,14 @@
 \alias{filter_netw}
 \alias{filter_netw,mgnet-method}
 \alias{filter_netw,mgnets-method}
-\title{Filter using Network/Community Slots in an \code{mgnet} Object}
+\title{Filter an \code{mgnet} Object Using Network/Community Slots}
 \usage{
 filter_netw(object, ..., .ungroup = FALSE, .deselect = FALSE)
-
-\S4method{filter_netw}{mgnets}(object, ..., .ungroup = FALSE, .deselect = FALSE)
 }
 \arguments{
-\item{object}{An \code{mgnet} object.
+\item{object}{An \code{mgnet} or \code{mgnets} object.
 This function targets the \code{netw} (network graph) and \code{comm} (community/cluster)
-slots for computations, and filter the object.}
+slots to compute logical filters, and subsets taxa accordingly.}
 
 \item{...}{One or more expressions to be evaluated. Within each expression, the
 symbols \code{netw} and \code{comm} refer to the network and community slots respectively.}
@@ -25,11 +23,11 @@ from the object at the end.}
 from the object at the end.}
 }
 \value{
-The modified \code{mgnet} object, with new columns appended to \code{taxa(object)}.
+The filtered \code{mgnet} or \code{mgnets} object.
 }
 \description{
-Applies user-defined expressions to compute new columns for the \code{taxa} slot,
-using the network (\code{netw}) and community (\code{comm}) slots of an \code{mgnet} object.
+Filters taxa in an \code{mgnet} object by evaluating user-defined logical
+expressions on the network (\code{netw}) and community (\code{comm}) slots.
 Expressions are evaluated in a data mask where the symbols
 \code{netw} and \code{comm} are bound to the current object's slots—or, if the object
 is grouped via \code{group_mgnet()}, to the corresponding slots of each subgroup-
@@ -48,7 +46,8 @@ fragile text substitution.
 \item \strong{Selected links:} if \code{select_link()} has been used earlier, only those edges
 are present during the computation (via a temporary subgraph), then the original
 network is restored.
-\item \strong{Result length:} each expression must return a vector of
-length equal to the number of taxa in scope (whole object or subgroup).
+\item \strong{Result type:} each expression must return a logical vector. It may return
+either a scalar or a vector of length equal to the number of taxa in scope
+(whole object or subgroup).
 }
 }

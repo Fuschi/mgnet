@@ -27,114 +27,94 @@
 #'
 #' @keywords internal
 #' @noRd
-.link_prepare <- function(object, .) {
+.link_prepare <- function(object, ...) {
   
-  # Local environment used to expose helper functions in captured expressions
+  # 0) Define local_env as THIS function's environment
   local_env <- environment()
   
-  # Retrieve the network(s)
+  # 1) Retrieve the igraph network(s)
   g <- netw(object, selected = FALSE)
   
-  # Build edge data and aligned node metadata
+  # 2) Build the edge data
   if (inherits(object, "mgnet")) {
     
-    edges <- igraph::as_data_frame(g, what = "edges")
-    
+    edges <- igraph::as_data_frame(g, "edges")
     tbl_from <- edges %>%
       dplyr::select(from) %>%
-      dplyr::left_join(
-        taxa(object, .fmt = "tbl"),
-        by = dplyr::join_by(from == taxa_id)
-      ) %>%
+      dplyr::left_join(taxa(object, .fmt = "tbl"), by = dplyr::join_by(from == taxa_id)) %>%
       dplyr::rename(taxa_id = from)
-    
     tbl_to <- edges %>%
       dplyr::select(to) %>%
-      dplyr::left_join(
-        taxa(object, .fmt = "tbl"),
-        by = dplyr::join_by(to == taxa_id)
-      ) %>%
+      dplyr::left_join(taxa(object, .fmt = "tbl"), by = dplyr::join_by(to == taxa_id)) %>%
       dplyr::rename(taxa_id = to)
     
   } else {
     
     edges <- g %>%
-      purrr::map(\(x) igraph::as_data_frame(x, what = "edges")) %>%
+      purrr::map(\(x) igraph::as_data_frame(x, "edges")) %>%
       purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
       purrr::list_rbind()
-    
-    taxa_tbl <- taxa(object, .collapse = TRUE)
-    
     tbl_from <- edges %>%
       dplyr::select(mgnet, from) %>%
-      dplyr::left_join(
-        taxa_tbl,
-        by = dplyr::join_by(mgnet, from == taxa_id)
-      ) %>%
+      dplyr::left_join(taxa(object, .collapse = TRUE), by = dplyr::join_by(mgnet, from == taxa_id)) %>%
       dplyr::rename(taxa_id = from)
-    
     tbl_to <- edges %>%
       dplyr::select(mgnet, to) %>%
-      dplyr::left_join(
-        taxa_tbl,
-        by = dplyr::join_by(mgnet, to == taxa_id)
-      ) %>%
+      dplyr::left_join(taxa(object, .collapse = TRUE), by = dplyr::join_by(mgnet, to == taxa_id)) %>%
       dplyr::rename(taxa_id = to)
+    
   }
   
-  # Helper: retrieve one metadata column from the "from" endpoint
+  # 3) Create auxiliary functions
+  # from(var) => pull var from tbl_from
   from <- function(var) {
     var_sym <- rlang::ensym(var)
     dplyr::pull(tbl_from, !!var_sym)
   }
-  
-  # Helper: retrieve one metadata column from the "to" endpoint
+  # to(var) => pull var from tbl_to
   to <- function(var) {
     var_sym <- rlang::ensym(var)
     dplyr::pull(tbl_to, !!var_sym)
   }
-  
-  # Helper: OR between evaluation on "from" and "to"
+  # one(expr) => OR of expr in tbl_from and tbl_to
   either <- function(expr) {
-    expr_quo  <- rlang::enquo(expr)
+    expr_quo <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     from_vals | to_vals
   }
-  
-  # Helper: AND between evaluation on "from" and "to"
+  # both(expr) => AND of expr in tbl_from and tbl_to
   both <- function(expr) {
-    expr_quo  <- rlang::enquo(expr)
+    expr_quo <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     from_vals & to_vals
   }
-  
-  # Helper: NOR between evaluation on "from" and "to"
+  # neither(expr) => NOR (none side)
   neither <- function(expr) {
-    expr_quo  <- rlang::enquo(expr)
+    expr_quo <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     !(from_vals | to_vals)
   }
-  
-  # Helper: XOR between evaluation on "from" and "to"
+  # one(expr) => XOR, returns TRUE if ONLY one side is TRUE
   one <- function(expr) {
-    expr_quo  <- rlang::enquo(expr)
+    expr_quo <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
-    from_vals != to_vals
+    from_vals != to_vals  
   }
   
-  # Capture and re-root user expressions so that they see this local environment
-  quos <- rlang::enquos(.)
+  # 4) Capture and re-root user expressions so they see THIS environment
+  quos <- rlang::enquos(...)
   quos <- lapply(quos, function(q) {
     rlang::new_quosure(
       expr = rlang::quo_get_expr(q),
-      env  = local_env
+      env  = local_env   
     )
   })
   
+  # 5) Return a list of all the pieces you might need
   list(
     graph    = g,
     edges    = edges,

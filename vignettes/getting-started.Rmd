@@ -19,10 +19,6 @@ library(tidyverse)
 library(mgnet)
 ```
 
-```{r}
-library(mgnet)
-```
-
 ## What is `mgnet`?
 
 `mgnet` provides an S4 class, also called `mgnet`, designed to **organize NGS-derived datasets**
@@ -180,7 +176,7 @@ In the following example we:
 sub_69001H <- HMP2 %>%
   # Store relative abundances (rela) computed from the raw count matrix (abun).
   # This keeps the same sample_id (rows) and taxa_id (cols) as abun.
-  set_mgnet(rela = abun / rowSums(abun)) %>%
+  update_mgnet(rela = abun / rowSums(abun)) %>%
   
   # Subset to a single subject and a single condition.
   # mgnet ensures meta stays aligned with the abundance matrices after filtering.
@@ -211,7 +207,7 @@ a correlation network (`netw`) among taxa. Here we:
 
 ```{r}
 sub_69001H_netw <- sub_69001H %>%
-  set_mgnet(
+  update_mgnet(
     # Store CLR-normalized data in the norm slot.
     # Note: CZM replacement avoids issues with zeros before CLR.
     norm = zCompositions::cmultRepl(X = abun, method = "CZM") %>%
@@ -231,14 +227,14 @@ sub_69001H_netw <- sub_69001H %>%
   select_link(weight > 0) %>%
   
   # Community detection on the (selected) network.
-  set_mgnet(comm = igraph::cluster_fast_greedy(netw)) %>%
+  update_mgnet(comm = igraph::cluster_louvain(netw)) %>%
   
   # Clear selection for downstream operations (work on the full object again).
   deselect_link() %>%
   
   # Group by community and remove very small communities.
   group_mgnet(comm_id) %>%
-  filter_taxa(n() > 2, .ungroup = TRUE)
+  filter_taxa(n() > 1, .ungroup = TRUE)
 
 sub_69001H_netw
 ```
@@ -248,7 +244,7 @@ sub_69001H_netw
 This plot illustrates how `mgnet` integrates network data (`netw`), community membership (`comm_id`)
 and taxa-level attributes (`taxa`) into a single tidy workflow.
 
-```{r, fig.width=10, fig.height=10, message=FALSE}
+```{r, fig.width=12, fig.height=10, message=FALSE}
 library(ggraph)
 
 sub_69001H_netw <- sub_69001H_netw %>%

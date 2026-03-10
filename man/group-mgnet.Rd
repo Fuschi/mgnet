@@ -44,7 +44,7 @@ is_mgnet_grouped(object)
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 
 \item{...}{Grouping variable names (bare or strings). In \code{group_mgnet()},
-a single \code{NULL} clears all groups.}
+a single \code{NULL} clears all groups and cannot be combined with other variables.}
 
 \item{.add}{Logical; if \code{TRUE}, add to existing groups; if \code{FALSE}, replace.}
 }

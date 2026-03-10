@@ -17,7 +17,7 @@ from the full network.}
 }
 \value{
 \itemize{
-\item For an \code{mgnet}: an atmgnet vector (usually \code{character}) of link IDs taken
+\item For an \code{mgnet}: an mgnet vector (usually \code{character}) of link IDs taken
 from the edge attribute \code{link_id} of \code{netw(object, selected = selected)}.
 \item For an \code{mgnets}: a \strong{named list} with one element per contained \code{mgnet},
 each element being the vector described above.

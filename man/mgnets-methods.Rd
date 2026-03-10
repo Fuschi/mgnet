@@ -22,28 +22,28 @@
 
 \item{...}{Not used.}
 
-\item{value}{A character vector for the replacement form \verb{names<-}.}
+\item{value}{A character vector used in the replacement form \verb{names<-}.}
 }
 \value{
 \itemize{
-\item \code{as.list()} / \code{as(., 'list')}: a list of \code{mgnet} objects. \cr
-\item \code{length()}: an integer with the number of elements. \cr
-\item \code{names()}: a character vector with element names. \cr
-\item \verb{names<-()}: the updated \code{mgnets} object.
+\item \code{as.list()} and \code{as(., "list")} return a list of \code{mgnet} objects.
+\item \code{length()} returns an integer of length 1.
+\item \code{names()} returns a character vector.
+\item \verb{names<-()} returns the updated \code{mgnets} object.
 }
 }
 \description{
-Basic utilities to interact with \code{mgnets} objects: coerce to list, get length,
-get and set names.
+Basic utilities for interacting with \code{mgnets} objects, including coercion to
+a base list, retrieval of length, and access to element names.
 }
 \section{Methods}{
 
 \describe{
 \item{\code{as.list(x)}}{Convert an \code{mgnets} object to a plain list of \code{mgnet} objects.}
-\item{\code{as(x, 'list')}}{Coerce the \code{mgnets} object to a list.}
+\item{\code{as(x, "list")}}{Coerce an \code{mgnets} object to a base list.}
 \item{\code{length(x)}}{Return the number of contained \code{mgnet} objects.}
-\item{\code{names(x)}}{Return element names.}
-\item{\code{names(x) <- value}}{Set element names.}
+\item{\code{names(x)}}{Return the names of the contained \code{mgnet} objects.}
+\item{\code{names(x) <- value}}{Replace the names of the contained \code{mgnet} objects.}
 }
 }
 

@@ -38,6 +38,8 @@ It can utilize columns from the "from" and "to" nodes via local helpers:
 \item \code{one(expr)}: Returns \code{TRUE} if \emph{exactly one} side satisfies \code{expr}.
 }
 
+If link grouping is active, expressions are evaluated within link groups.
+
 After constructing (or modifying) columns, the new columns are attached as
 edge attributes in the igraph object. The \code{mgnet} object is then returned
 with an updated network.

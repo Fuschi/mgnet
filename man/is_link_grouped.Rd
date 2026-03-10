@@ -4,18 +4,26 @@
 \alias{is_link_grouped}
 \alias{is_link_grouped,mgnet-method}
 \alias{is_link_grouped,mgnets-method}
-\title{Check if Links Are Grouped in an mgnet Object}
+\title{Check whether links are grouped}
 \usage{
 is_link_grouped(object)
+
+\S4method{is_link_grouped}{mgnet}(object)
+
+\S4method{is_link_grouped}{mgnets}(object)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-A logical value: \code{TRUE} if links are grouped, \code{FALSE} otherwise.
-For an \code{mgnets}, returns \code{TRUE} only if all sub-objects are grouped.
+For an \code{mgnet}, \code{TRUE} if the \code{link_groups} attribute is set, \code{FALSE}
+otherwise.
+
+For an \code{mgnets}, \code{TRUE} only if \strong{all} contained \code{mgnet} objects currently
+carry link grouping information. This implements an all-or-none
+collection-level semantics.
 }
 \description{
-Determines whether an \code{mgnet} or \code{mgnets} object currently has grouped links,
-which would influence behavior inside \code{\link[=mutate_link]{mutate_link()}}.
+Determine whether an \code{mgnet} or \code{mgnets} object currently carries link
+grouping information.
 }

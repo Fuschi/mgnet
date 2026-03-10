@@ -4,37 +4,44 @@
 \alias{group_link}
 \alias{group_link,mgnet-method}
 \alias{group_link,mgnets-method}
-\title{Group Links in an mgnet Object}
+\title{Group links by condition}
 \usage{
 group_link(object, ...)
+
+\S4method{group_link}{mgnet}(object, ...)
+
+\S4method{group_link}{mgnets}(object, ...)
 }
 \arguments{
-\item{object}{An \code{mgnet} or \code{mgnets} object containing a network (edges).}
+\item{object}{An \code{mgnet} or \code{mgnets} object containing a network.}
 
-\item{...}{dplyr-style grouping expressions. For instance, \code{from(family)} or
-\code{to(genus)}. See \code{\link[=helper_link]{helper_link()}} for details on these local helper functions.}
+\item{...}{Grouping expressions evaluated on edge-level data. These
+expressions may use the local helpers documented in \code{\link[=helper_link]{helper_link()}}, such
+as \code{from()}, \code{to()}, \code{either()}, \code{both()}, \code{neither()}, and \code{one()}.}
 }
 \value{
-The same \code{mgnet} (or \code{mgnets}) object, updated with a \code{link_groups} attribute
-that indicates each link's group ID (or a list of IDs in the case of \code{mgnets}).
+The same object, updated with a \code{link_groups} attribute.
 }
 \description{
-Groups the links (edges) in an \code{mgnet} or \code{mgnets} object based on user-specified
-expressions, storing an integer group ID for each link in the \code{link_groups} attribute.
-These group IDs affect link-level operations within \code{\link[=mutate_link]{mutate_link()}}, allowing you
-to perform grouped calculations (e.g., grouped summaries or conditional logic) on
-edge attributes.
+Group edges in an \code{mgnet} or \code{mgnets} object according to one or more
+grouping expressions and store the resulting integer group IDs in the
+\code{link_groups} attribute.
 
-In particular, you can use \code{group_link()} \emph{inside} a pipeline with \code{\link[=mutate_link]{mutate_link()}}
-to ensure subsequent operations are evaluated by group.
+These group IDs can then be used by downstream methods such as \code{\link[=mutate_link]{mutate_link()}}
+to perform grouped edge-level calculations.
 }
 \details{
-The grouping expressions can reference node-level metadata in the “from” or “to” side
-of each link. Once grouped, any subsequent operations in \code{\link[=mutate_link]{mutate_link()}} can leverage
-these group IDs to compute grouped statistics or conditionals at the edge level.
+For a single \code{mgnet}, group IDs are computed on that object's edge table.
+
+For \code{mgnets}, grouping is computed at the \strong{collection level} on the
+combined edge table. This means that edges from different contained \code{mgnet}
+objects can receive the same group ID if they share the same grouping key.
+
+After grouping is computed on the combined table, each vector of group IDs is
+stored back into the corresponding contained \code{mgnet}.
 }
 \seealso{
-\code{\link[=mutate_link]{mutate_link()}} for grouped edge mutations,
+\code{\link[=mutate_link]{mutate_link()}} for grouped link-level transformations,
 \code{\link[=ungroup_link]{ungroup_link()}} for clearing group information,
-\code{\link[=helper_link]{helper_link()}} for the local helper functions (e.g., \code{from()}, \code{to()}, etc.).
+\code{\link[=helper_link]{helper_link()}} for the local helper functions available inside expressions.
 }

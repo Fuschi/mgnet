@@ -28,7 +28,7 @@ Subsets an \code{mgnet} object based on sample (i) and taxa (j) indices.
 \details{
 Subsetting by samples filters abundance matrices and sample metadata; subsetting by taxa
 filters taxa-related data and, if present, updates dependent structures accordingly.
-Subsetting by samples removes the \code{network} and \code{community} slots; a warning is issued.
+Subsetting by samples removes the \code{netw} and \code{comm} slots; a warning is issued.
 }
 \seealso{
 \code{\link[base]{Extract}}

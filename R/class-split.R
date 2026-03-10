@@ -1,152 +1,152 @@
-# SPLIT MGNET SAMPLE
-#------------------------------------------------------------------------------#
-#' Split an mgnet Object into an mgnets Based on Specified Columns
+#' @include class-mgnet.R class-mgnets.R
+NULL
+
+#' Split an `mgnet` object into multiple `mgnet` objects
 #'
 #' @description
-#' This method splits an `mgnet` object into subsets based on unique combinations
-#' of values in specified columns from the `meta` data frame. Each subset
-#' corresponds to an `mgnet` object in the resulting `mgnets`, facilitating
-#' analyses specific to each unique combination of metadata values.
+#' Split an `mgnet` object into multiple `mgnet` objects according to values of
+#' selected metadata columns. The resulting objects are returned inside an
+#' `mgnets` container.
 #'
-#' @param object An `mgnet` object.
-#' @param ... Columns in the `meta` data frame used to define subsets.
-#'        You can specify columns by name, using any of the selection methods supported by `dplyr::select()`.
-#' @return An `mgnets` object containing `mgnet` objects for each unique combination
-#'         of specified column values.
+#' `split_meta()` performs the split using **sample-level metadata** returned
+#' by [meta()], while `split_taxa()` performs the split using **taxa-level
+#' metadata** returned by [taxa()].
+#'
+#' @param object An object of class `mgnet`.
+#' @param ... One or more metadata columns used to define the split.
 #'
 #' @details
-#' The `split_meta` function leverages `dplyr` functionality to identify unique combinations
-#' of specified column values in the `meta` data frame. It then creates a new `mgnet`
-#' object for each combination, allowing for tailored analysis per group.
+#' Each unique combination of the selected columns defines a group. A new
+#' `mgnet` object is created for each group.
 #'
-#' This function is particularly useful in exploratory data analysis and pre-processing stages
-#' where data need to be examined or analyzed based on specific grouping variables.
+#' The names of the resulting objects are constructed by concatenating the
+#' values of the selected columns using `"-"`.
 #'
-#' @note
-#' This function depends on `dplyr` for data manipulation. Ensure that `dplyr` is installed
-#' and loaded in your R session.
+#' Group names must be unique.
 #'
-#' @export
-#' @aliases split_meta,mgnet-method
-#' @importFrom dplyr select distinct group_by group_split semi_join
-#' @importFrom rlang enquos
-setGeneric("split_meta", function(object, ...) {
-  standardGeneric("split_meta")
-})
+#' @return
+#' An object of class `mgnets` containing one `mgnet` per group.
+#'
+#' @examples
+#' \dontrun{
+#' split_meta(x, Country)
+#' split_meta(x, Country, Surface)
+#'
+#' split_taxa(x, Phylum)
+#' split_taxa(x, Phylum, Genus)
+#' }
+#'
+#' @name split_mgnet
+NULL
 
+#' @rdname split_mgnet
+#' @export
+setGeneric("split_meta", function(object, ...) standardGeneric("split_meta"))
+
+#' @rdname split_mgnet
+#' @export
 setMethod("split_meta", "mgnet", function(object, ...) {
   
-  if(miss_sample(object)) stop("Error: No sample available.")
-  
-  # Capture the column names as quosures
-  split_cols <- enquos(...)
-  
-  # Check if split_cols is empty
-  if (length(split_cols) == 0) {
-    stop("No columns specified for splitting. Please specify one or more columns.")
+  if (miss_sample(object)) {
+    cli::cli_abort("No sample available.")
   }
   
-  # Get the unique combinations from sample for the specified columns
-  meta <- meta(object, "tbl")
-  groups <- meta %>%
+  split_cols <- rlang::enquos(...)
+  
+  if (length(split_cols) == 0L) {
+    cli::cli_abort("No columns specified for splitting. Please specify one or more columns.")
+  }
+  
+  meta_tbl <- meta(object, .fmt = "tbl")
+  
+  groups <- meta_tbl %>%
     dplyr::select(!!!split_cols) %>%
-    dplyr::distinct() %>%
-    dplyr::group_by(!!!split_cols) %>%
-    dplyr::group_split()
+    dplyr::distinct()
   
-  # Initialize an empty list to store the subsetted mgnet objects
-  mgnet_list <- mgnets()
+  mgnet_list <- vector("list", nrow(groups))
+  group_names <- character(nrow(groups))
   
-  # For each group, filter the sample based on the unique combination and create a new mgnet object
-  for (i in seq_along(groups)) {
-    # Filter sample based on the group
-    group_df <- groups[[i]]
-    filtered_sample <- dplyr::semi_join(meta, group_df, by = names(group_df))
+  for (i in seq_len(nrow(groups))) {
+    group_df <- groups[i, , drop = FALSE]
     
-    # Filter the original mgnet object to create a subset based on the filtered sample
+    filtered_sample <- meta_tbl %>%
+      dplyr::semi_join(group_df, by = colnames(group_df))
+    
     subsetted_mgnet <- object[filtered_sample$sample_id, , drop = FALSE]
     
-    # Add the subsetted mgnet object to the list with a meaningful name
-    group_name <- apply(group_df, 1, function(row) {paste(row, collapse = "-")})
-    mgnet_list[[group_name]] <- subsetted_mgnet
+    group_names[i] <- paste(
+      unlist(group_df[1, , drop = TRUE], use.names = FALSE),
+      collapse = "-"
+    )
+    
+    mgnet_list[[i]] <- subsetted_mgnet
   }
   
-  return(mgnet_list)
+  if (anyDuplicated(group_names) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = "Generated group names are not unique.",
+        "i" = "Try selecting splitting variables whose value combinations produce unique names."
+      )
+    )
+  }
+  
+  names(mgnet_list) <- group_names
+  mgnets(mgnet_list)
 })
 
-
-# SPLIT MGNET TAXA
-#------------------------------------------------------------------------------#
-#' Split an mgnet Object into an mgnets Based on Specified Columns
-#'
-#' @description
-#' This method splits an `mgnet` object into subsets based on unique combinations
-#' of values in specified columns from the `taxa` data frame. Each subset
-#' corresponds to an `mgnet` object in the resulting `mgnets`, facilitating
-#' analyses specific to each unique combination of metadata values.
-#'
-#' @param object An `mgnet` object.
-#' @param ... Columns in the `taxa` data frame used to define subsets.
-#'        You can specify columns by name, using any of the selection methods supported by `dplyr::select()`.
-#' @return An `mgnets` object containing `mgnet` objects for each unique combination
-#'         of specified column values.
-#'
-#' @details
-#' The `split_taxa` function leverages `dplyr` functionality to identify unique combinations
-#' of specified column values in the `taxa` data frame. It then creates a new `mgnet`
-#' object for each combination, allowing for tailored analysis per group.
-#'
-#' This function is particularly useful in exploratory data analysis and pre-processing stages
-#' where data need to be examined or analyzed based on specific grouping variables.
-#'
-#' @note
-#' This function depends on `dplyr` for data manipulation. Ensure that `dplyr` is installed
-#' and loaded in your R session.
-#'
+#' @rdname split_mgnet
 #' @export
-#' @aliases split_taxa,mgnet-method
-#' @importFrom dplyr select distinct group_by group_split semi_join
-#' @importFrom rlang enquos
-setGeneric("split_taxa", function(object, ...) {
-  standardGeneric("split_taxa")
-})
+setGeneric("split_taxa", function(object, ...) standardGeneric("split_taxa"))
 
+#' @rdname split_mgnet
+#' @export
 setMethod("split_taxa", "mgnet", function(object, ...) {
   
-  if(miss_taxa(object)) stop("Error: No taxa available.")
-  
-  # Capture the column names as quosures
-  split_cols <- enquos(...)
-  
-  # Check if split_cols is empty
-  if (length(split_cols) == 0) {
-    stop("No columns specified for splitting. Please specify one or more columns.")
+  if (miss_taxa(object)) {
+    cli::cli_abort("No taxa available.")
   }
   
-  # Get the unique combinations from taxa for the specified columns
-  taxa <- taxa(object, "tbl")
-  groups <- taxa %>%
+  split_cols <- rlang::enquos(...)
+  
+  if (length(split_cols) == 0L) {
+    cli::cli_abort("No columns specified for splitting. Please specify one or more columns.")
+  }
+  
+  taxa_tbl <- taxa(object, .fmt = "tbl")
+  
+  groups <- taxa_tbl %>%
     dplyr::select(!!!split_cols) %>%
-    dplyr::distinct() %>%
-    dplyr::group_by(!!!split_cols) %>%
-    dplyr::group_split()
+    dplyr::distinct()
   
-  # Initialize an empty list to store the subsetted mgnet objects
-  mgnet_list <- mgnets()
+  mgnet_list <- vector("list", nrow(groups))
+  group_names <- character(nrow(groups))
   
-  # For each group, filter the taxa based on the unique combination and create a new mgnet object
-  for (i in seq_along(groups)) {
-    # Filter taxa based on the group
-    group_df <- groups[[i]]
-    filtered_taxa <- dplyr::semi_join(taxa, group_df, by = names(group_df))
+  for (i in seq_len(nrow(groups))) {
+    group_df <- groups[i, , drop = FALSE]
     
-    # Filter the original mgnet object to create a subset based on the filtered taxa
+    filtered_taxa <- taxa_tbl %>%
+      dplyr::semi_join(group_df, by = colnames(group_df))
+    
     subsetted_mgnet <- object[, filtered_taxa$taxa_id, drop = FALSE]
     
-    # Add the subsetted mgnet object to the list with a meaningful name
-    group_name <- apply(group_df, 1, function(row) {paste(row, collapse = "-")})
-    mgnet_list[[group_name]] <- subsetted_mgnet
+    group_names[i] <- paste(
+      unlist(group_df[1, , drop = TRUE], use.names = FALSE),
+      collapse = "-"
+    )
+    
+    mgnet_list[[i]] <- subsetted_mgnet
   }
   
-  return(mgnet_list)
+  if (anyDuplicated(group_names) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = "Generated group names are not unique.",
+        "i" = "Try selecting splitting variables whose value combinations produce unique names."
+      )
+    )
+  }
+  
+  names(mgnet_list) <- group_names
+  mgnets(mgnet_list)
 })

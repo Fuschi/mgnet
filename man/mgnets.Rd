@@ -7,13 +7,19 @@
 mgnets(...)
 }
 \arguments{
-\item{...}{\code{mgnet} objects, or a \emph{list} of \code{mgnet} objects.}
+\item{...}{\code{mgnet} objects, or a single named list of \code{mgnet} objects.}
 }
 \value{
-An object of class \code{mgnets}. If not empty, elements must be named with
-unique names.
+An object of class \code{mgnets}.
 }
 \description{
-Build an \code{mgnets} object to encapsulate a collection of \code{mgnet} objects.
-Accepts multiple \code{mgnet} arguments or a single \emph{list} of \code{mgnet}.
+Construct an \code{mgnets} object from multiple \code{\link{mgnet}} objects, or from a
+single named list of \code{mgnet} objects.
+
+This constructor performs basic input checks before creating the S4 object.
+If the collection is not empty, all elements must be valid \code{mgnet} objects,
+all names must be present and non-empty, and names must be unique.
+}
+\seealso{
+\code{\link[=mgnet]{mgnet()}} for creating individual \code{mgnet} objects.
 }

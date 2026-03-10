@@ -4,7 +4,7 @@
 \alias{ungroup_link}
 \alias{ungroup_link,mgnet-method}
 \alias{ungroup_link,mgnets-method}
-\title{Ungroup Links in an mgnet Object}
+\title{Clear link grouping}
 \usage{
 ungroup_link(object)
 
@@ -16,10 +16,8 @@ ungroup_link(object)
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-The same object, with no \code{link_groups} attribute.
+The same object, with no active link grouping.
 }
 \description{
-Removes any existing link grouping in an \code{mgnet} or \code{mgnets} object, clearing
-the \code{link_groups} attribute so that link operations within \code{\link[=mutate_link]{mutate_link()}}
-are no longer grouped.
+Remove the \code{link_groups} attribute from an \code{mgnet} or \code{mgnets} object.
 }

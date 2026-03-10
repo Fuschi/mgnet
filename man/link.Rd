@@ -4,42 +4,35 @@
 \alias{link}
 \alias{link,mgnet-method}
 \alias{link,mgnets-method}
-\title{Retrieve network links (edges)}
+\title{Get link-level data from \code{mgnet} and \code{mgnets} objects}
 \usage{
-link(object, selected = FALSE, .fmt = c("list", "tbl"))
+link(object, selected = TRUE, .fmt = c("list", "tbl"))
 
-\S4method{link}{mgnet}(object, selected = FALSE, .fmt = c("list", "tbl"))
+\S4method{link}{mgnet}(object, selected = TRUE, .fmt = c("list", "tbl"))
 
-\S4method{link}{mgnets}(object, selected = FALSE, .fmt = c("list", "tbl"))
+\S4method{link}{mgnets}(object, selected = TRUE, .fmt = c("list", "tbl"))
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 
-\item{selected}{Logical scalar. If \code{TRUE}, use the selected network (if your
-class distinguishes selected vs full network). For \code{mgnet} the default is
-\code{FALSE}. For \code{mgnets} the default is \code{TRUE}.}
+\item{selected}{Logical. Whether to return only selected links. Default is
+\code{TRUE}.}
 
-\item{.fmt}{For \code{mgnets} only, output format: one of \code{"list"} (named list of
-tibbles) or \code{"tbl"} (single tibble with column \code{mgnet}). Ignored for \code{mgnet}.}
+\item{.fmt}{For \code{mgnets}, output format. One of \code{"list"} or \code{"tbl"}.}
 }
 \value{
-\itemize{
-\item For an \code{mgnet}: a tibble/data frame of edges.
-\item For an \code{mgnets} with \code{.fmt = "list"}: a \strong{named list} of edge tibbles.
-\item For an \code{mgnets} with \code{.fmt = "tbl"}: a single tibble with an \code{mgnet} column.
-}
+For \code{mgnet}, a data.frame of links.
+
+For \code{mgnets}, either a named list of link tables or a single collapsed tibble
+with an additional \code{mgnet} column.
 }
 \description{
-\code{link()} returns the edge table of the network stored in an \code{mgnet} or, for an
-\code{mgnets}, returns one edge table per contained object (as a named list) or a
-single stacked tibble with an \code{mgnet} column.
-}
-\section{Edge table schema}{
+Retrieve edge tables from the network stored in an \code{mgnet} or \code{mgnets}
+object.
 
-Matches \code{igraph::as_data_frame(g, what = "edges")}, i.e. at minimum:
-\itemize{
-\item \code{from}, \code{to} (character vertex ids),
-\item any additional edge attributes (e.g., \code{weight}, \code{link_id}, ...).
+By default, only selected links are returned.
 }
+\details{
+This method calls \code{\link[=netw]{netw()}} and then converts the graph(s) to edge tables with
+\code{igraph::as_data_frame(..., what = "edges")}.
 }
-

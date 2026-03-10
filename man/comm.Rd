@@ -4,7 +4,7 @@
 \alias{comm}
 \alias{comm,mgnet-method}
 \alias{comm,mgnets-method}
-\title{Get Community Detection Results}
+\title{Access community detection results}
 \usage{
 comm(object)
 }
@@ -12,13 +12,11 @@ comm(object)
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-The community detection result object stored in the \code{comm} slot for an \code{mgnet} object,
-or a list of such objects for an \code{mgnets} object, each representing the community
-detection results of a contained \code{mgnet} object.
+For \code{mgnet}, the community detection object stored in the \code{comm} slot.
+
+For \code{mgnets}, a named list of community detection objects.
 }
 \description{
-Retrieves the community detection results stored in the \code{comm} slot of an \code{mgnet} object
-or each \code{mgnet} object within an \code{mgnets}. These results are typically derived from network
-analysis methods and indicate the grouping or clustering of taxa into communities based on their
-network interactions.
+Retrieve the community detection object stored in the \code{comm} slot of an
+\code{mgnet} object, or from each element of an \code{mgnets} object.
 }

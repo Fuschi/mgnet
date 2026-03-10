@@ -100,7 +100,7 @@ The value is validated internally by \code{.match_has_miss_fmt()}.
 \code{has_rela}   / \code{miss_rela}   \tab wrappers for \code{"rela"} \cr
 \code{has_norm}   / \code{miss_norm}   \tab wrappers for \code{"norm"} \cr
 \code{has_meta}   / \code{miss_meta}   \tab wrappers for \code{"meta"} \cr
-\code{has_netw}   / \code{miss_netw}   \tab wrappers for \code{"network"} \cr
+\code{has_netw}   / \code{miss_netw}   \tab wrappers for \code{"netw"} \cr
 \code{has_comm}   / \code{miss_comm}   \tab wrappers for \code{"comm"} \cr
 \code{has_metataxa} / \code{miss_metataxa} \tab presence/absence of at least one of \code{"taxa"} or \code{"comm"} \cr
 }

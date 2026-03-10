@@ -80,9 +80,9 @@ setMethod("mutate_netw", "mgnet", function(object, ..., .ungroup = FALSE, .desel
     )
     
     for (i in seq_along(quosures)) {
-
+      
       val <- rlang::eval_tidy(quosures[[i]], data = mask, env = rlang::current_env())
-
+      
       # Recycle scalar or validate vector length
       if (length(val) == 1L) {
         val <- rep(val, ntaxa(object))
@@ -123,17 +123,11 @@ setMethod("mutate_netw", "mgnet", function(object, ..., .ungroup = FALSE, .desel
             comm = comm(object_subset)
           )
         }, error = function(e) {
-          cli::cli_warn(c(
-            "!" = "Failed to build subgroup mask; returning the subgroup unchanged.",
+          cli::cli_abort(c(
+            "!" = "Failed to build subgroup mask.",
             ">" = conditionMessage(e)
           ))
-          NULL
         })
-        
-        if (is.null(mask_subset)) {
-          return(object_subset)
-        }
-        
         
         val_key <- rlang::eval_tidy(quosures[[i]], data = mask_subset, env = rlang::current_env())
         
@@ -224,7 +218,17 @@ setMethod("mutate_netw", "mgnets", function(object, ..., .ungroup = FALSE, .dese
             comm = comm(object_subset)
           )
           result_key <- rlang::eval_tidy(quosures[[i]], data = mask_subset, env = rlang::current_env())
-          result[idx_key] <- result_key
+          
+          # Recycle scalar or validate vector length for this group
+          if (length(result_key) == 1L) {
+            result[idx_key] <- rep(result_key, length(idx_key))
+          } else if (length(result_key) == length(idx_key)) {
+            result[idx_key] <- result_key
+          } else {
+            cli::cli_abort(
+              "Expression '{quosures_names[i]}' returned length {length(result_key)} for a group of size {length(idx_key)}."
+            )
+          }
         }
         taxa(object[[om]]) <- taxa(object[[om]], .fmt = "tbl") %>%
           dplyr::mutate(!!quosures_names[i] := result)

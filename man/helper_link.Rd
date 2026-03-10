@@ -8,53 +8,57 @@
 \alias{both}
 \alias{neither}
 \alias{one}
-\title{Link Helper Functions}
+\title{Link helper functions}
 \usage{
 helper_link()
 }
 \description{
-These \strong{helper functions} are designed to manage node-level metadata for the edges
-(links) in an \code{mgnet} or \code{mgnetList} object. They are primarily intended
-for use \emph{inside} link-based methods such as \code{\link{mutate_link}},
-\code{\link{select_link}}, and \code{\link{group_link}}. In those contexts, they
-have access to the "from" and "to" node metadata for each link.
+These helper functions are available inside link-oriented methods such as
+\code{\link[=mutate_link]{mutate_link()}}, \code{\link[=select_link]{select_link()}}, and \code{\link[=group_link]{group_link()}}. They expose node-level
+metadata aligned to the two endpoints of each edge.
 
-Below is an overview of each helper:
+They are intended for use with both \code{mgnet} and \code{mgnets} objects.
+}
+\details{
+The following helpers are available inside captured expressions:
 
 \describe{
 \item{\code{from(var)}}{
-\strong{Retrieves} the metadata column \code{var} from the \strong{first} (or "from") node
-of the link.
+Return the values of metadata column \code{var} for the \code{"from"} endpoint of
+each edge.
 }
 
 \item{\code{to(var)}}{
-\strong{Retrieves} the metadata column \code{var} from the \strong{second} (or "to") node
-of the link.
+Return the values of metadata column \code{var} for the \code{"to"} endpoint of
+each edge.
 }
 
 \item{\code{either(expr)}}{
-\strong{Evaluates} \code{expr} in both the "from" and "to" metadata tables for each link,
-returning \code{TRUE} if \emph{either} side satisfies \code{expr}. Conceptually,
-it's a logical OR of the two sides.
+Evaluate \code{expr} on both endpoints and return \code{TRUE} whenever at least one
+side is \code{TRUE}.
 }
 
 \item{\code{both(expr)}}{
-Similar to \code{either(expr)} but returns \code{TRUE} only if \emph{both} sides
-satisfy the condition (logical AND).
+Evaluate \code{expr} on both endpoints and return \code{TRUE} only when both sides
+are \code{TRUE}.
 }
 
 \item{\code{neither(expr)}}{
-Returns \code{TRUE} if \emph{neither} side satisfies \code{expr} (logical NOR).
-In other words, it is \code{TRUE} only if \emph{both} sides evaluate to \code{FALSE}.
+Evaluate \code{expr} on both endpoints and return \code{TRUE} only when neither
+side is \code{TRUE}.
 }
 
 \item{\code{one(expr)}}{
-Returns \code{TRUE} if \emph{exactly one} side satisfies \code{expr}—a logical XOR
-of the "from" side and "to" side.
+Evaluate \code{expr} on both endpoints and return \code{TRUE} only when exactly one
+side is \code{TRUE}.
 }
 }
 
-They \emph{cannot} be called at the top level by name. Instead, they
-become available \emph{only} within expressions captured by \code{\link{mutate_link}},
-\code{\link{select_link}}, or \code{\link{group_link}}.
+These helpers are only available inside expressions captured by
+\code{\link[=mutate_link]{mutate_link()}}, \code{\link[=select_link]{select_link()}}, and \code{\link[=group_link]{group_link()}}. They are not intended
+to be called directly at top level.
+
+Missing values are not coerced to \code{FALSE}: helper expressions follow standard
+R logical semantics. As a consequence, if an expression returns \code{NA}, it will
+usually be dropped by downstream \code{dplyr::filter()} calls.
 }

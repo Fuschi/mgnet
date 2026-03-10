@@ -4,16 +4,26 @@
 \alias{are_selected_links}
 \alias{are_selected_links,mgnet-method}
 \alias{are_selected_links,mgnets-method}
-\title{Check exist a link selection in an \code{mgnet} Object}
+\title{Check whether links are selected}
 \usage{
 are_selected_links(object)
+
+\S4method{are_selected_links}{mgnet}(object)
+
+\S4method{are_selected_links}{mgnets}(object)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-logical.
+For an \code{mgnet}, \code{TRUE} if the \code{selected_links} attribute is set, \code{FALSE}
+otherwise.
+
+For an \code{mgnets}, \code{TRUE} only if \strong{all} contained \code{mgnet} objects currently
+carry a link selection. This implements an all-or-none collection-level
+semantics.
 }
 \description{
-Retrieves TRUE/FALSE if links are previously selected by \code{\link[=select_link]{select_link()}}.
+Determine whether an \code{mgnet} or \code{mgnets} object currently carries an active
+link selection.
 }

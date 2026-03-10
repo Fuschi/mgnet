@@ -2,18 +2,27 @@
 % Please edit documentation in R/utils-link.R
 \name{.make_link_id}
 \alias{.make_link_id}
-\title{Create link_id values for a graph}
+\title{Create \code{link_id} values for a graph}
 \usage{
 .make_link_id(g)
 }
 \arguments{
-\item{g}{An igraph object.}
+\item{g}{An \code{igraph} object.}
 }
 \value{
-A character vector of length equal to the number of edges.
+A character vector of length equal to the number of edges in \code{g}.
 }
 \description{
-Generates a character vector of link IDs in the form:
-"\if{html}{\out{<from>}}--\if{html}{\out{<to>}}--\if{html}{\out{<index>}}".
+Generate a character vector of edge identifiers in the form
+\code{"<from>--<to>--<index>"}.
+
+These identifiers are intended to be unique within the current graph and are
+used internally to support persistent edge selection.
+}
+\details{
+The generated IDs depend on the current edge order returned by
+\code{igraph::as_data_frame(g, what = "edges")}. They are therefore stable within
+the current graph instance, but may change if the graph is rebuilt or edges
+are reordered.
 }
 \keyword{internal}

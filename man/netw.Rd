@@ -4,33 +4,31 @@
 \alias{netw}
 \alias{netw,mgnet-method}
 \alias{netw,mgnets-method}
-\title{Retrieve network graph(s)}
+\title{Get network objects from \code{mgnet} and \code{mgnets}}
 \usage{
 netw(object, selected = TRUE)
+
+\S4method{netw}{mgnet}(object, selected = TRUE)
+
+\S4method{netw}{mgnets}(object, selected = TRUE)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 
-\item{selected}{Logical (default \code{TRUE}). If \code{TRUE}, for each graph
-only edges whose \code{link_id} is currently selected (via \code{\link{select_link}})
-are kept; otherwise the full graph is returned.}
+\item{selected}{Logical (default TRUE). Whether to keep only selected links.}
 }
 \value{
-\itemize{
-\item \code{mgnet}: an \code{igraph} object.
-\item \code{mgnets}: a named \code{list} of \code{igraph} objects.
-}
+For \code{mgnet}, an \code{igraph} object.
+
+For \code{mgnets}, a named list of \code{igraph} objects.
 }
 \description{
-Return the network stored in the \code{netw} slot.
-For an \code{mgnet}, a single \code{igraph} is returned.
-For an \code{mgnets}, a named \code{list} of \code{igraph} (one per element).
-If the \code{taxa} slot is non-empty, its columns are attached as vertex attributes.
-}
-\details{
-Requires a non-missing network in the object. When \code{selected = TRUE} and no
-links are selected, an empty-edge graph is returned for that element.
-}
-\seealso{
-\code{\link{select_link}}, \code{\link{deselect_link}}, \code{\link{taxa}}
+Retrieve the network stored in the \code{netw} slot.
+
+If taxa-level information is available, it is added as vertex attributes
+before returning the graph.
+
+When \code{selected = TRUE}, only currently selected links are retained. If the
+current selection is empty, the returned graph contains zero edges while
+preserving all vertices.
 }

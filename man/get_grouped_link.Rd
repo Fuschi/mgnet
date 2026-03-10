@@ -4,7 +4,7 @@
 \alias{get_grouped_link}
 \alias{get_grouped_link,mgnet-method}
 \alias{get_grouped_link,mgnets-method}
-\title{Retrieve Link Grouping in an mgnet Object}
+\title{Retrieve link grouping}
 \usage{
 get_grouped_link(object)
 
@@ -16,14 +16,15 @@ get_grouped_link(object)
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-For an \code{mgnet}, a numeric vector indicating the group ID of each link.
-For an \code{mgnets}, a list of numeric vectors, one per sub-object.
+For an \code{mgnet}, an integer vector giving the group ID of each edge, or \code{NULL}
+if no grouping is currently set.
+
+For an \code{mgnets}, a named list of integer vectors, one per contained \code{mgnet}.
 }
 \description{
-Retrieves the integer group IDs (or list of group IDs for each sub-object)
-previously assigned by \code{\link[=group_link]{group_link()}}.
+Return the values currently stored in the \code{link_groups} attribute.
 }
 \seealso{
-\code{\link[=group_link]{group_link()}} for assigning these group IDs, and \code{\link[=ungroup_link]{ungroup_link()}}
-for removing them.
+\code{\link[=group_link]{group_link()}} for assigning link groups and \code{\link[=ungroup_link]{ungroup_link()}} for removing
+them.
 }

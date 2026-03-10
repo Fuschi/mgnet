@@ -3,28 +3,42 @@
 \docType{class}
 \name{mgnets-class}
 \alias{mgnets-class}
-\title{Class \code{mgnets} – a collection of \code{mgnet} objects}
+\title{Class \code{mgnets}: a collection of \code{mgnet} objects}
 \description{
-\code{mgnets} is an S4 class to hold and manage a collection of \code{mgnet} objects,
-enabling multi-dataset analyses with a consistent, type-safe interface.
+\code{mgnets} is an S4 container class designed to store and manage a named
+collection of \code{\link{mgnet}} objects.
+
+It provides a consistent, type-safe interface for workflows involving
+multiple metagenomic datasets, while preserving the integrity of each
+contained \code{mgnet} object.
+
+Grouping variables stored at the \code{mgnets} level are interpreted at the
+collection level. In this context, available grouping variables are computed
+on the union of metadata columns across the contained \code{mgnet} objects,
+assuming that downstream operations harmonize missing columns through
+\code{dplyr::bind_rows()}, with absent columns filled with \code{NA}.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{mgnets}}{A list whose elements are instances of class \code{mgnet}.
-If not empty, the list must be named and names must be unique.}
+\item{\code{mgnets}}{A list of objects of class \code{\link{mgnet}}. If not empty, the list must be named
+and names must be unique.}
 }}
 
 \section{Validity checks}{
 
-If not empty:
+If the collection is not empty:
 \itemize{
 \item all elements must inherit from class \code{mgnet};
 \item all elements must have non-empty names;
-\item names must be unique.
+\item element names must be unique;
+\item each contained \code{mgnet} object must itself be valid;
+\item if the attribute \code{mgnet_groups} is present, it must be a unique,
+non-empty character vector whose values belong to the union of variables
+available across the collection.
 }
 }
 
 \seealso{
-\code{\link[=mgnet]{mgnet()}} for details about the single-mgnet class used as elements.
+\code{\link[=mgnet]{mgnet()}} for the constructor of single \code{mgnet} objects.
 }

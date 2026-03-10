@@ -124,7 +124,7 @@ NULL
       cli::cli_abort(c("x" = "No samples available in the {.cls mgnet} object."),
                      class = c("mgnet_no_samples", "mgnet_error"))
     }
-    if (ctx$target == "taxa" && miss_taxa(object)) {
+    if (ctx$target == "taxa" && miss_metataxa(object)) {
       cli::cli_abort(c("x" = "No taxa available in the {.cls mgnet} object."),
                      class = c("mgnet_no_taxa", "mgnet_error"))
     }
@@ -135,7 +135,7 @@ NULL
     cli::cli_abort(c("x" = "No samples available in at least one {.cls mgnet} object."),
                    class = c("mgnet_no_samples_any", "mgnet_error"))
   }
-  if (ctx$target == "taxa" && miss_taxa(object, "any")) {
+  if (ctx$target == "taxa" && miss_metataxa(object, "any")) {
     cli::cli_abort(c("x" = "No taxa available in at least one {.cls mgnet} object."),
                    class = c("mgnet_no_taxa_any", "mgnet_error"))
   }

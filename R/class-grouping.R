@@ -28,7 +28,7 @@ NULL
 #'
 #' @param object An `mgnet` or `mgnets` object.
 #' @param ... Grouping variable names (bare or strings). In `group_mgnet()`,
-#'   a single `NULL` clears all groups.
+#'   a single `NULL` clears all groups and cannot be combined with other variables.
 #' @param .add Logical; if `TRUE`, add to existing groups; if `FALSE`, replace.
 #'
 #' @return
@@ -75,12 +75,23 @@ setGeneric("group_mgnet", function(object, ..., .add = FALSE) standardGeneric("g
   qs <- rlang::enquos(..., .ignore_empty = "all")
   
   # No args -> keep current
-  if (length(qs) == 0L) return(object)
+  if (length(qs) == 0L) {
+    methods::validObject(object)
+    return(object)
+  }
   
   # Single NULL -> clear all groups
   if (length(qs) == 1L && rlang::quo_is_null(qs[[1L]])) {
     attr(object, "mgnet_groups") <- NULL
+    methods::validObject(object)
     return(object)
+  }
+  
+  # NULL cannot be mixed with other grouping variables
+  if (any(vapply(qs, rlang::quo_is_null, logical(1))) && length(qs) > 1L) {
+    cli::cli_abort(
+      "`NULL` cannot be combined with other grouping variables in {.fn group_mgnet}()."
+    )
   }
   
   # Convert quosures to names
@@ -107,6 +118,7 @@ setGeneric("group_mgnet", function(object, ..., .add = FALSE) standardGeneric("g
   }
   
   attr(object, "mgnet_groups") <- vars
+  methods::validObject(object)
   object
 }
 
@@ -134,15 +146,21 @@ setGeneric("ungroup_mgnet", function(object, ...) standardGeneric("ungroup_mgnet
   
   if (length(qs) == 0L) {
     attr(object, "mgnet_groups") <- NULL
+    methods::validObject(object)
     return(object)
   }
   
   drop <- unique(vapply(qs, rlang::as_name, character(1)))
   current <- get_group_mgnet(object)
-  if (is.null(current)) return(object)
+  
+  if (is.null(current)) {
+    methods::validObject(object)
+    return(object)
+  }
   
   keep <- setdiff(current, drop)
   attr(object, "mgnet_groups") <- if (length(keep) == 0L) NULL else keep
+  methods::validObject(object)
   object
 }
 

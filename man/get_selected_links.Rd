@@ -4,17 +4,28 @@
 \alias{get_selected_links}
 \alias{get_selected_links,mgnet-method}
 \alias{get_selected_links,mgnets-method}
-\title{Get Selected Links from an \code{mgnet} Object}
+\title{Retrieve selected link IDs}
 \usage{
 get_selected_links(object)
+
+\S4method{get_selected_links}{mgnet}(object)
+
+\S4method{get_selected_links}{mgnets}(object)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}
 }
 \value{
-A numeric vector (or named list of numeric vectors, for \code{mgnets})
-containing the indices of selected links.
+For an \code{mgnet}, an atomic vector of selected \code{link_id} values, or \code{NULL} if
+no selection is currently set.
+
+For an \code{mgnets}, a named list with one element per contained \code{mgnet}, each
+element being either a vector of selected \code{link_id} values, \code{character(0)},
+or \code{NULL}.
 }
 \description{
-Retrieves the numeric indices of links previously selected by \code{\link[=select_link]{select_link()}}.
+Return the values currently stored in the \code{selected_links} attribute.
+
+Selected links are stored as edge \code{link_id} values, not as positional edge
+indices.
 }

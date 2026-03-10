@@ -1,222 +1,290 @@
-#' Merge Multiple `mgnet` or `mgnets` Objects
+#' @include class-mgnet.R class-mgnets.R
+NULL
+
+#==============================================================================#
+# Merge mgnet / mgnets
+#==============================================================================#
+
+#' Merge `mgnet` or `mgnets` objects
 #'
 #' @description
-#' Merges multiple `mgnet` or `mgnets` objects into a single `mgnet` or `mgnets` object by merging their respective slots according to user-specified functions. This method provides flexibility to define how each slot is combined, which is essential because a default merging behavior for such complex data structures is not feasible.
+#' Merge multiple `mgnet` objects into a single `mgnet`, or merge multiple
+#' `mgnets` objects name-by-name into a single `mgnets`.
 #'
-#' @param ... `mgnet` objects, `mgnets` objects, or lists of such objects to be merged.
-#' @param abun A function to merge the 'abun' (abundance) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param rela A function to merge the 'rela' (relative abundance) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param norm A function to merge the 'norm' (normalized abundance) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param meta A function to merge the 'meta' (metadata) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param taxa A function to merge the 'taxa' (taxonmgnet data) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param netw A function to merge the 'netw' (network) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
-#' @param comm A function to merge the 'comm' (community structure) slots from the provided `mgnet` objects, or `NULL` if no merging is required for this slot.
+#' Input objects must be all of class `mgnet` or all of class `mgnets`.
+#' Mixed input is not allowed.
 #'
-#' @return A new `mgnet` or `mgnets` object containing the merged data from the input objects. Each slot of the returned object is the result of the merging function applied to that slot, or remains `NULL` if no function was specified for that slot.
+#' For each slot, the user may supply a merge function. If a merge function is
+#' not provided for a given slot, that slot is left empty in the merged result.
+#'
+#' @param ... `mgnet` objects, `mgnets` objects, or lists of such objects.
+#' @param abun,rela,norm Functions used to merge abundance-like slots.
+#' @param meta,taxa Functions used to merge metadata tables.
+#' @param netw,comm Functions used to merge network and community slots.
+#'
+#' @return
+#' An object of class `mgnet` if the inputs are `mgnet` objects, or an object
+#' of class `mgnets` if the inputs are `mgnets` objects.
 #'
 #' @details
-#' The function allows specifying custom merging strategies for each slot:
-#' - **Abundance data (`abun`)**: Functions like `dplyr::bind_cols` or `dplyr::bind_rows` might be appropriate.
-#' - **Metadata (`meta`)**: Merging can be handled by functions such as `dplyr::full_join` or `dplyr::bind_rows`.
-#' - **Network structures (`netw`)**: These might be combined using `igraph::union` or similar graph-specific functions.
-#' This approach ensures flexibility in handling the complex and varied data stored within `mgnet` objects.
+#' Merge functions must return structures compatible with the corresponding
+#' target slot.
 #'
-#' The method checks for consistency among `mgnets` objects. If merging `mgnets` objects, it first ensures that all have identical names in the 'mgnets' slot. Mismatched names will cause the function to stop and issue an error.
+#' For example:
+#' \itemize{
+#'   \item abundance-like slots should return matrices or objects coercible to matrices;
+#'   \item metadata slots should return data.frames/tibbles with appropriate row names or ID columns;
+#'   \item `netw` should return an `igraph` object;
+#'   \item `comm` should return a valid community object.
+#' }
+#'
+#' @name merge_mgnet
 #' @export
-merge_mgnets <- function(..., 
-                         abun = NULL, rela = NULL, norm = NULL,
-                         meta = NULL, taxa = NULL,
-                         netw = NULL, comm = NULL) {
+merge_mgnet <- function(...,
+                        abun = NULL,
+                        rela = NULL,
+                        norm = NULL,
+                        meta = NULL,
+                        taxa = NULL,
+                        netw = NULL,
+                        comm = NULL) {
   
-  # Flatten input to handle lists of mgnet objects or mgnets
-  mgnets <- purrr::list_flatten(list(...))
+  objs <- list(...)
   
-  if(length(mgnets) <= 1) return(mgnets)
+  # Flatten one level if the user passed lists
+  objs <- unlist(objs, recursive = FALSE)
   
-  # Check for non-mgnet objects and stop execution if found
-  are_mgnet     <- all(purrr::map_lgl(mgnets, \(x) inherits(x, "mgnet")))
-  are_mgnets <- all(purrr::map_lgl(mgnets, \(x) inherits(x, "mgnets")))
-  if (isFALSE(are_mgnet) & isFALSE(are_mgnets)) {
-    stop("Error: All elements must be 'mgnet' or 'mgnets'.")
+  if (length(objs) == 0L) {
+    cli::cli_abort("No objects supplied.")
   }
   
-  # Define a helper function to check if all items are equal
+  are_mgnet  <- all(vapply(objs, methods::is, logical(1), class2 = "mgnet"))
+  are_mgnets <- all(vapply(objs, methods::is, logical(1), class2 = "mgnets"))
+  
+  if (!(are_mgnet || are_mgnets)) {
+    cli::cli_abort(
+      c(
+        "x" = "All inputs must be either {.cls mgnet} objects or {.cls mgnets} objects.",
+        "i" = "Mixed input is not supported."
+      )
+    )
+  }
+  
+  if (length(objs) == 1L) {
+    return(objs[[1L]])
+  }
+  
   all_equal <- function(items) {
-    all(sapply(2:length(items), function(i) identical(items[[1]], items[[i]])))
+    if (length(items) <= 1L) return(TRUE)
+    all(vapply(2:length(items), function(i) identical(items[[1]], items[[i]]), logical(1)))
   }
   
-  # MGNET
-  #--------------------------------------------#
-  if(are_mgnet){
-    new_mgnet <- new("mgnet")
+  #--------------------------------------------------------------------------#
+  # Merge mgnet objects
+  #--------------------------------------------------------------------------#
+  if (are_mgnet) {
     
-    # Merge each slot using the provided functions or leave them as NULL
-    if(!is.null(abun)){
-      new_mgnet@abun <- purrr::map(mgnets, \(x) mgnet::abun(x, .fmt = "df")) %>%
+    abun_merged <- matrix(numeric(0), nrow = 0, ncol = 0)
+    rela_merged <- matrix(numeric(0), nrow = 0, ncol = 0)
+    norm_merged <- matrix(numeric(0), nrow = 0, ncol = 0)
+    meta_merged <- data.frame()
+    taxa_merged <- data.frame()
+    netw_merged <- igraph::make_empty_graph(0, directed = FALSE)
+    comm_merged <- igraph::cluster_fast_greedy(
+      igraph::make_empty_graph(0, directed = FALSE)
+    )
+    
+    if (!is.null(abun)) {
+      abun_merged <- purrr::map(objs, \(x) abun(x, .fmt = "df")) %>%
         purrr::reduce(abun) %>%
         as.matrix()
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::abun(x)))){
-      new_mgnet@abun <- mgnet::abun(mgnets[[1]])
     }
     
-    if(!is.null(rela)){
-      new_mgnet@rela <- purrr::map(mgnets, \(x) mgnet::rela(x, .fmt = "df")) %>%
+    if (!is.null(rela)) {
+      rela_merged <- purrr::map(objs, \(x) rela(x, .fmt = "df")) %>%
         purrr::reduce(rela) %>%
         as.matrix()
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::rela(x)))){
-      new_mgnet@rela <- mgnet::rela(mgnets[[1]])
     }
     
-    if(!is.null(norm)){
-      new_mgnet@norm <- purrr::map(mgnets, \(x) mgnet::norm(x, .fmt = "df")) %>%
+    if (!is.null(norm)) {
+      norm_merged <- purrr::map(objs, \(x) norm(x, .fmt = "df")) %>%
         purrr::reduce(norm) %>%
         as.matrix()
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::norm(x)))){
-      new_mgnet@norm <- mgnet::norm(mgnets[[1]])
     }
     
-    if(!is.null(meta)){
-      new_mgnet@meta <- purrr::map(mgnets, \(x) mgnet::meta(x)) %>%
+    if (!is.null(meta)) {
+      meta_merged <- purrr::map(objs, \(x) meta(x, .fmt = "df")) %>%
         purrr::reduce(meta)
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::meta(x)))){
-      new_mgnet@meta <- mgnet::meta(mgnets[[1]])
     }
     
-    if(!is.null(taxa)){
-      new_mgnet@taxa <- purrr::map(mgnets, \(x) mgnet::taxa(x)) %>%
+    if (!is.null(taxa)) {
+      taxa_merged <- purrr::map(objs, \(x) taxa(x, .fmt = "df")) %>%
         purrr::reduce(taxa)
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::taxa(x)))){
-      new_mgnet@taxa <- mgnet::taxa(mgnets[[1]])
     }
     
-    if(!is.null(netw)){
-      new_mgnet@netw <- purrr::map(mgnets, \(x) mgnet::netw(x)) %>%
+    if (!is.null(netw)) {
+      netw_merged <- purrr::map(objs, \(x) netw(x, selected = FALSE)) %>%
         purrr::reduce(netw)
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::netw(x)))){
-      new_mgnet@netw <- mgnet::netw(mgnets[[1]])
     }
     
-    if(!is.null(comm)){
-      new_mgnet@comm <- purrr::map(mgnets, \(x) mgnet::comm(x)) %>%
+    if (!is.null(comm)) {
+      comm_merged <- purrr::map(objs, comm) %>%
         purrr::reduce(comm)
-    } else if(all_equal(purrr::map(mgnets, \(x) mgnet::comm(x)))){
-      new_mgnet@comm <- mgnet::comm(mgnets[[1]])
     }
     
-    validObject(new_mgnet)
-    return(new_mgnet)
+    return(
+      mgnet(
+        abun = abun_merged,
+        rela = rela_merged,
+        norm = norm_merged,
+        meta = meta_merged,
+        taxa = taxa_merged,
+        netw = netw_merged,
+        comm = comm_merged
+      )
+    )
   }
   
+  #--------------------------------------------------------------------------#
+  # Merge mgnets objects
+  #--------------------------------------------------------------------------#
+  names_list <- purrr::map(objs, names)
+  are_names_equal <- purrr::reduce(names_list, \(a, b) setequal(a, b))
   
-  # MGNETLIST
-  #--------------------------------------------#
-  if(are_mgnets){
-    
-    names_list <- purrr::map(mgnets, names)
-    
-    # Check if all lists of names are equal
-    are_names_equal <- purrr::reduce(names_list, \(a,b) all(a%in%b) & all(b%in%a))
-    
-    # If names are not equal, stop the execution and report the inconsistency
-    if (!are_names_equal) {
-      stop("Error: The mgnets objects have different names in the 'mgnets' slot.")
-    }
-    
-    unique_names <- unique(unlist(names_list))
-    merged_list <- purrr::map(unique_names, \(name) {
-      
-      mgnets_name <- purrr::map(mgnets, \(x){x[[name]]})
-      return(merge_mgnets(mgnets_name,
-                          abun = abun, rela = rela, norm = norm,
-                          meta = meta, taxa = taxa,
-                          netw = netw, comm = comm))
-    }) %>% 
-      stats::setNames(unique_names) %>% 
-      mgnets()
-    return(merged_list)
+  if (!are_names_equal) {
+    cli::cli_abort(
+      "All {.cls mgnets} objects must contain the same set of names."
+    )
   }
   
+  merged_names <- names(objs[[1]])
+  results <- stats::setNames(vector("list", length(merged_names)), merged_names)
+  
+  for (nm in merged_names) {
+    results[[nm]] <- do.call(
+      merge_mgnet,
+      c(
+        lapply(objs, `[[`, nm),
+        list(
+          abun = abun,
+          rela = rela,
+          norm = norm,
+          meta = meta,
+          taxa = taxa,
+          netw = netw,
+          comm = comm
+        )
+      )
+    )
+  }
+  
+  mgnets(results)
 }
 
 
-#' Collapse Specified Combinations within an mgnets
+#==============================================================================#
+# Collapse groups of mgnet objects inside an mgnets
+#==============================================================================#
+
+#' Collapse groups of `mgnet` objects within an `mgnets`
 #'
 #' @description
-#' Merges specific combinations of `mgnet` objects within an `mgnets` according to user-defined rules,
-#' allowing for targeted merging of subsets within the list. This function facilitates focused analyses
-#' by enabling the aggregation of related data into meaningful groups.
+#' Collapse subsets of an `mgnets` object into merged `mgnet` objects according
+#' to a user-specified grouping.
 #'
-#' @param object An `mgnets` containing multiple `mgnet` objects.
-#' @param by A list specifying the combinations of `mgnet` object names to be merged. Each element in
-#'           the list should be a character vector containing the names of the `mgnet` objects to merge.
-#'           If NULL, all `mgnet` objects in the list are merged into a single `mgnet` object.
-#' @param abun A function to merge the 'abun' (abundance) slots from the selected `mgnet` objects, or
-#'             NULL if no merging is required for this slot.
-#' @param rela A function to merge the 'rela' (relative abundance) slots, or NULL if not required.
-#' @param norm A function to merge the 'norm' (normalized abundance) slots, or NULL if not required.
-#' @param meta A function to merge the 'meta' (metadata) slots, or NULL if not required.
-#' @param taxa A function to merge the 'taxa' (taxonmgnet data) slots, or NULL if not required.
-#' @param netw A function to merge the 'netw' (network) slots, or NULL if not required.
-#' @param comm A function to merge the 'comm' (community structure) slots, or NULL if not required.
+#' @param object An object of class `mgnets`.
+#' @param by A named or unnamed list defining groups of `mgnet` names to merge.
+#' Each element must be a character vector of names found in `object`.
+#' @param abun,rela,norm,meta,taxa,netw,comm Functions used to merge the
+#' corresponding slots.
 #'
-#' @return An `mgnets` containing the merged `mgnet` objects. Each entry in the returned `mgnets`
-#'         corresponds to a merged group as defined in the `by` parameter. The names of the entries
-#'         reflect the groups specified in `by` or are derived by concatenating the names of the merged
-#'         `mgnet` objects with dashes if `by` is unnamed.
+#' @return
+#' An object of class `mgnets`, where each output element is the merge of one
+#' group specified in `by`.
 #'
 #' @details
-#' The function checks for the validity of names specified in the `by` parameter against the names
-#' of `mgnet` objects in the `mgnets`. It ensures that all specified groups contain valid `mgnet`
-#' object names and that each group's name is unique. This function is useful for scenarios where
-#' specific subsets of data within an `mgnets` need to be aggregated based on certain criteria
-#' or experimental conditions.
+#' If `by` is unnamed, names are generated by concatenating the grouped element
+#' names with `"-"`.
 #'
-#' If `by` is NULL, a default merge of all `mgnet` objects in the list is performed, resulting in a
-#' single `mgnet` object.
+#' Output group names must be unique.
 #'
 #' @name mgnet_collapse
-#' @aliases mgnet_collapse,mgnets-method
 #' @export
-setGeneric("mgnet_collapse", function(object, by = NULL,
-                                      abun = NULL, rela = NULL, norm = NULL, 
-                                      meta = NULL, taxa = NULL, 
-                                      netw = NULL, comm = NULL) {
-  standardGeneric("mgnet_collapse")
-})
-
-setMethod("mgnet_collapse", "mgnets", function(object, by = NULL,
-                                                  abun = NULL, rela = NULL, norm = NULL, 
-                                                  meta = NULL, taxa = NULL, 
-                                                  netw = NULL, comm = NULL) {
+mgnet_collapse <- function(object,
+                           by,
+                           abun = NULL,
+                           rela = NULL,
+                           norm = NULL,
+                           meta = NULL,
+                           taxa = NULL,
+                           netw = NULL,
+                           comm = NULL) {
   
-  if(is.null(by)){
-    return(merge_mgnets(as.list(object), 
-                        abun = abun, rela = rela, norm = norm,
-                        meta = meta, taxa = taxa, 
-                        netw = netw, comm = comm))
-  } 
+  if (!methods::is(object, "mgnets")) {
+    cli::cli_abort("{.arg object} must be an object of class {.cls mgnets}.")
+  }
   
   if (!is.list(by)) {
-    stop("'by' must be a list of character vectors specifying combinations of mgnet names.")
+    cli::cli_abort("{.arg by} must be a list of character vectors.")
   }
   
-  # Check the validity of elements in 'by'
-  if (!all(sapply(by, \(x) is.character(x) && all(x %in% names(object))))) {
-    stop("All elements in 'by' must be character vectors containing valid names of mgnet objects within the mgnets.")
+  if (length(by) == 0L) {
+    cli::cli_abort("{.arg by} must contain at least one group.")
   }
   
-  # Prepare names for the output based on 'by' or create descriptive names
-  names(by) <- ifelse(nzchar(names(by)), names(by), sapply(by, \(x) paste(x, collapse = "-")))
+  if (!all(vapply(by, is.character, logical(1)))) {
+    cli::cli_abort("Each element of {.arg by} must be a character vector.")
+  }
   
-  # Merge specified mgnet combinations
+  by_names <- names(by)
+  if (is.null(by_names)) {
+    by_names <- rep("", length(by))
+  }
+  
+  names(by) <- ifelse(
+    nzchar(by_names),
+    by_names,
+    vapply(by, function(x) paste(x, collapse = "-"), character(1))
+  )
+  
+  if (anyDuplicated(names(by)) > 0L) {
+    cli::cli_abort("Output group names in {.arg by} must be unique.")
+  }
+  
+  object_names <- names(object)
+  
+  unknown <- unique(setdiff(unlist(by, use.names = FALSE), object_names))
+  if (length(unknown) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = "Some names in {.arg by} are not present in {.arg object}.",
+        "v" = "Unknown names: {.val {unknown}}."
+      )
+    )
+  }
+  
   results <- stats::setNames(vector("list", length(by)), names(by))
+  object_list <- as.list(object)
+  
   for (i in seq_along(by)) {
-    sub_object <- mgnets(object)[by[[i]]]
-    results[[i]] <- merge_mgnets(sub_object, 
-                                 abun = abun, rela = rela, norm = norm,
-                                 meta = meta, taxa = taxa, 
-                                 netw = netw, comm = comm)
+    sub_object <- object_list[by[[i]]]
+    
+    results[[i]] <- do.call(
+      merge_mgnet,
+      c(
+        sub_object,
+        list(
+          abun = abun,
+          rela = rela,
+          norm = norm,
+          meta = meta,
+          taxa = taxa,
+          netw = netw,
+          comm = comm
+        )
+      )
+    )
   }
   
-  return(mgnets(results))
-})
+  mgnets(results)
+}
