@@ -1,22 +1,40 @@
 #' @include class-mgnet.R
 NULL
 
-#' Class `mgnets` – a collection of `mgnet` objects
+#' Class `mgnets`: a collection of `mgnet` objects
 #'
 #' @description
-#' `mgnets` is an S4 class to hold and manage a collection of `mgnet` objects,
-#' enabling multi-dataset analyses with a consistent, type-safe interface.
+#' `mgnets` is an S4 container class designed to store and manage a named
+#' collection of [`mgnet`] objects.
 #'
-#' @slot mgnets A list whose elements are instances of class `mgnet`.
-#' If not empty, the list must be named and names must be unique.
+#' It provides a consistent, type-safe interface for workflows involving
+#' multiple metagenomic datasets, while preserving the integrity of each
+#' contained `mgnet` object.
+#'
+#' Grouping variables stored at the `mgnets` level are interpreted at the
+#' collection level. In this context, available grouping variables are computed
+#' on the union of metadata columns across the contained `mgnet` objects,
+#' assuming that downstream operations harmonize missing columns through
+#' `dplyr::bind_rows()`, with absent columns filled with `NA`.
+#'
+#' @slot mgnets
+#' A list of objects of class [`mgnet`]. If not empty, the list must be named
+#' and names must be unique.
 #'
 #' @section Validity checks:
-#' If not empty:
-#' - all elements must inherit from class `mgnet`;
-#' - all elements must have non-empty names;
-#' - names must be unique.
+#' If the collection is not empty:
+#' \itemize{
+#'   \item all elements must inherit from class `mgnet`;
+#'   \item all elements must have non-empty names;
+#'   \item element names must be unique;
+#'   \item each contained `mgnet` object must itself be valid;
+#'   \item if the attribute `mgnet_groups` is present, it must be a unique,
+#'   non-empty character vector whose values belong to the union of variables
+#'   available across the collection.
+#' }
 #'
-#' @seealso [mgnet()] for details about the single-mgnet class used as elements.
+#' @seealso
+#' [`mgnet()`] for the constructor of single `mgnet` objects.
 #'
 #' @name mgnets-class
 #' @rdname mgnets-class
@@ -29,25 +47,34 @@ setClass(
   validity = function(object) {
     if (length(object@mgnets) == 0L) return(TRUE)
     
-    # all elements are mgnet
+    # All elements must be mgnet objects
     if (!all(vapply(object@mgnets, function(z) inherits(z, "mgnet"), logical(1)))) {
-      cli::cli_abort("All elements of {.cls mgnets} must be instances of the {.cls mgnet} class.")
+      cli::cli_abort(
+        "All elements of {.cls mgnets} must be instances of the {.cls mgnet} class."
+      )
     }
-    # names exist and are non-empty
+    
+    # Names must exist and be non-empty
     nm <- names(object@mgnets)
     if (is.null(nm) || any(!nzchar(nm))) {
-      cli::cli_abort("All elements of {.cls mgnets} must be named with non-empty strings.")
-    }
-    # names are unique
-    if (anyDuplicated(nm) > 0L) {
-      cli::cli_abort("All element names in {.cls mgnets} must be unique.")
+      cli::cli_abort(
+        "All elements of {.cls mgnets} must be named with non-empty strings."
+      )
     }
     
-    # 1) Ogni mgnet interno deve essere valido (inclusi group/link checks)
+    # Names must be unique
+    if (anyDuplicated(nm) > 0L) {
+      cli::cli_abort(
+        "All element names in {.cls mgnets} must be unique."
+      )
+    }
+    
+    # Each inner mgnet must be valid
     lapply(object@mgnets, methods::validObject)
     
-    # 2) Coerenza dell'attributo "mgnet_groups" a livello mgnets
+    # Consistency of the "mgnet_groups" attribute at collection level
     groups <- attr(object, "mgnet_groups", exact = TRUE)
+    
     if (!is.null(groups)) {
       if (!is.character(groups)) {
         cli::cli_abort(
@@ -57,25 +84,29 @@ setClass(
           )
         )
       }
+      
       if (anyNA(groups) || any(!nzchar(groups))) {
         cli::cli_abort(
-          'Grouping variables in "mgnet_groups" on {.cls mgnets} must be non-NA, non-empty strings.'
-        )
-      }
-      if (anyDuplicated(groups) > 0L) {
-        cli::cli_abort(
-          'Grouping variables in "mgnet_groups" on {.cls mgnets} must be unique.'
+          'Grouping variables in {.field "mgnet_groups"} on {.cls mgnets} must be non-NA, non-empty strings.'
         )
       }
       
-      # lista di variabili effettivamente disponibili in tutti gli mgnet (union)
+      if (anyDuplicated(groups) > 0L) {
+        cli::cli_abort(
+          'Grouping variables in {.field "mgnet_groups"} on {.cls mgnets} must be unique.'
+        )
+      }
+      
+      # Union of variables available across the collection;
+      # downstream bind_rows() harmonizes missing columns with NA
       available <- meta_taxa_vars(object, .fmt = "unique")
       missing   <- setdiff(groups, available)
+      
       if (length(missing)) {
         cli::cli_abort(
           c(
             "x" = 'Unknown grouping variable{?s} stored in attribute {.field "mgnet_groups"} on {.cls mgnets}: {.val {missing}}.',
-            "v" = "Available variables across all elements are: {.val {available}}."
+            "v" = "Available variables across the collection are: {.val {available}}."
           )
         )
       }
@@ -88,71 +119,87 @@ setClass(
 #' Create an `mgnets` object
 #'
 #' @description
-#' Build an `mgnets` object to encapsulate a collection of `mgnet` objects.
-#' Accepts multiple `mgnet` arguments or a single *list* of `mgnet`.
+#' Construct an `mgnets` object from multiple [`mgnet`] objects, or from a
+#' single named list of `mgnet` objects.
 #'
-#' @param ... `mgnet` objects, or a *list* of `mgnet` objects.
+#' This constructor performs basic input checks before creating the S4 object.
+#' If the collection is not empty, all elements must be valid `mgnet` objects,
+#' all names must be present and non-empty, and names must be unique.
 #'
-#' @return An object of class `mgnets`. If not empty, elements must be named with
-#' unique names.
+#' @param ... `mgnet` objects, or a single named list of `mgnet` objects.
+#'
+#' @return
+#' An object of class `mgnets`.
+#'
+#' @seealso
+#' [`mgnet()`] for creating individual `mgnet` objects.
 #'
 #' @importFrom methods new
 #' @export
 #' @name mgnets
 mgnets <- function(...) {
   x <- list(...)
-
-  # single list argument
+  
+  # Single list argument
   if (length(x) == 1L && is.list(x[[1L]])) {
     x <- x[[1L]]
   }
-
+  
   if (length(x) > 0L) {
-    # type check
+    # Type check
     if (!all(vapply(x, function(z) inherits(z, "mgnet"), logical(1)))) {
-      cli::cli_abort("All inputs must be {.cls mgnet} objects or a list of {.cls mgnet}.")
+      cli::cli_abort(
+        "All inputs must be {.cls mgnet} objects or a list of {.cls mgnet}."
+      )
     }
-    # names present, non-empty
+    
+    # Names must be present and non-empty
     nm <- names(x)
     if (is.null(nm) || any(!nzchar(nm))) {
-      cli::cli_abort("All mgnet objects must be named with non-empty strings.")
+      cli::cli_abort(
+        "All mgnet objects must be named with non-empty strings."
+      )
     }
-    # unique names
+    
+    # Names must be unique
     if (anyDuplicated(nm) > 0L) {
       cli::cli_abort("Names must be unique.")
     }
   }
-
+  
   methods::new("mgnets", mgnets = x)
 }
 
 #------------------------------------------------------------------------------#
-# `mgnets` General methods 
+# `mgnets` general methods
 #------------------------------------------------------------------------------#
 
 #' General methods for `mgnets` objects
 #'
-#' Basic utilities to interact with `mgnets` objects: coerce to list, get length,
-#' get and set names.
+#' @description
+#' Basic utilities for interacting with `mgnets` objects, including coercion to
+#' a base list, retrieval of length, and access to element names.
 #'
 #' @section Methods:
 #' \describe{
 #'   \item{`as.list(x)`}{Convert an `mgnets` object to a plain list of `mgnet` objects.}
-#'   \item{`as(x, 'list')`}{Coerce the `mgnets` object to a list.}
+#'   \item{`as(x, "list")`}{Coerce an `mgnets` object to a base list.}
 #'   \item{`length(x)`}{Return the number of contained `mgnet` objects.}
-#'   \item{`names(x)`}{Return element names.}
-#'   \item{`names(x) <- value`}{Set element names.}
+#'   \item{`names(x)`}{Return the names of the contained `mgnet` objects.}
+#'   \item{`names(x) <- value`}{Replace the names of the contained `mgnet` objects.}
 #' }
 #'
 #' @param x An object of class `mgnets`.
-#' @param value A character vector for the replacement form `names<-`.
+#' @param value A character vector used in the replacement form `names<-`.
 #' @param ... Not used.
 #'
 #' @return
-#' - `as.list()` / `as(., 'list')`: a list of `mgnet` objects. \cr
-#' - `length()`: an integer with the number of elements. \cr
-#' - `names()`: a character vector with element names. \cr
-#' - `names<-()`: the updated `mgnets` object.
+#' \itemize{
+#'   \item `as.list()` and `as(., "list")` return a list of `mgnet` objects.
+#'   \item `length()` returns an integer of length 1.
+#'   \item `names()` returns a character vector.
+#'   \item `names<-()` returns the updated `mgnets` object.
+#' }
 #'
 #' @aliases
 #' as.list.mgnets
@@ -166,32 +213,27 @@ mgnets <- function(...) {
 #' @rdname mgnets-methods
 NULL
 
-# --- as.list (S3) ---
 #' @rdname mgnets-methods
 #' @export
 as.list.mgnets <- function(x, ...) {
   x@mgnets
 }
 
-# --- Coercion to list (S4 setAs) ---
-# no roxigen
+# No roxygen block needed
 methods::setAs("mgnets", "list", function(from) from@mgnets)
 
-# --- length (S4) ---
 #' @rdname mgnets-methods
 #' @export
 setMethod("length", "mgnets", function(x) {
   length(x@mgnets)
 })
 
-# --- names (getter S4) ---
 #' @rdname mgnets-methods
 #' @export
 setMethod("names", "mgnets", function(x) {
   names(x@mgnets)
 })
 
-# --- names<- (replacement S4) ---
 #' @rdname mgnets-methods
 #' @export
 setReplaceMethod(
@@ -204,27 +246,33 @@ setReplaceMethod(
   }
 )
 
-
 #------------------------------------------------------------------------------#
 # List-like access for `mgnets`: $, $<-, [[, [[<-
 #------------------------------------------------------------------------------#
 
 #' Access or assign `mgnet` elements in an `mgnets` object
 #'
-#' List-like accessors using `$`, `$<-`, `[[`, and `[[<-`.
+#' @description
+#' List-like accessors for `mgnets` objects using `$`, `$<-`, `[[`, and `[[<-`.
 #'
-#' @param x An `mgnets` object.
-#' @param name Length-1 character: the element name (for `$`).
-#' @param i Index or name (for `[[` / `[[<-`).
-#' @param j Ignored (signature compatibility).
-#' @param value An `mgnet` object to assign.
+#' These methods allow convenient extraction and replacement of individual
+#' `mgnet` objects stored in the collection.
+#'
+#' @param x An object of class `mgnets`.
+#' @param name A single character string giving the element name for `$` and `$<-`.
+#' @param i An index or name for `[[` and `[[<-`.
+#' @param j Ignored. Included only for signature compatibility.
+#' @param value An object of class `mgnet` to assign.
 #' @param ... Not used.
 #'
 #' @return
-#' - `$` / `[[`: the selected `mgnet` object. \cr
-#' - `$<-` / `[[<-`: the updated `mgnets` object.
+#' \itemize{
+#'   \item `$` and `[[` return a single `mgnet` object.
+#'   \item `$<-` and `[[<-` return the updated `mgnets` object.
+#' }
 #'
-#' @aliases $,mgnets-method
+#' @aliases
+#' $,mgnets-method
 #' $<-,mgnets,mgnet-method
 #' [[,mgnets-method
 #' [[<-,mgnets,ANY,ANY,mgnet-method
@@ -233,17 +281,17 @@ setReplaceMethod(
 #' @rdname mgnets-access
 NULL
 
-# --- $ (getter S4) ---
 #' @rdname mgnets-access
 #' @export
 setMethod("$", "mgnets", function(x, name) {
   if (!name %in% names(x@mgnets)) {
-    cli::cli_abort("No {.cls mgnet} object named {.val {name}} found in the {.cls mgnets} object.")
+    cli::cli_abort(
+      "No {.cls mgnet} object named {.val {name}} found in the {.cls mgnets} object."
+    )
   }
   x@mgnets[[name]]
 })
 
-# --- $<- (replacement S4) ---
 #' @rdname mgnets-access
 #' @export
 methods::setReplaceMethod(
@@ -259,14 +307,12 @@ methods::setReplaceMethod(
   }
 )
 
-# --- [[ (getter S4) ---
 #' @rdname mgnets-access
 #' @export
 setMethod("[[", "mgnets", function(x, i, j, ...) {
   x@mgnets[[i]]
 })
 
-# --- [[<- (replacement S4) ---
 #' @rdname mgnets-access
 #' @export
 methods::setReplaceMethod(

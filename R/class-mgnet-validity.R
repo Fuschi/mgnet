@@ -523,7 +523,7 @@ NULL
     )
   }
   
-  # Must be an atomic vector (typically numeric or character)
+  # Must be an atomic vector
   if (!is.atomic(sel)) {
     cli::cli_abort(
       c(
@@ -541,7 +541,6 @@ NULL
     )
   }
   
-  # Retrieve current edges and their link_id
   edges <- igraph::as_data_frame(object@netw, what = "edges")
   
   if (!"link_id" %in% names(edges)) {
@@ -556,14 +555,12 @@ NULL
   
   valid_ids <- edges[["link_id"]]
   
-  # Optional: coerce to same type if needed (e.g. both to character)
-  sel_coerced    <- as.character(sel)
+  # Compare independently of numeric/character storage mode
+  sel_comp       <- as.character(sel)
   valid_ids_comp <- as.character(valid_ids)
-  missing_ids    <- setdiff(sel_coerced, valid_ids_comp)
+  missing_ids    <- setdiff(sel_comp, valid_ids_comp)
   
-  missing_ids <- setdiff(sel, valid_ids)
-  
-  if (length(missing_ids)) {
+  if (length(missing_ids) > 0L) {
     cli::cli_abort(
       c(
         "x" = 'Some values in {.field "selected_links"} do not match any current edge {.field "link_id"}.',

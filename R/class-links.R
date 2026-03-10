@@ -1,95 +1,140 @@
 #'@include class-mgnet.R class-mgnets.R
 
+#------------------------------------------------------------------------------#
+#' Prepare link-level data and helper functions
+#'
+#' @description
+#' Internal helper used by link-oriented methods such as [select_link()],
+#' [group_link()], and [mutate_link()]. It builds an edge-level table and the
+#' corresponding `"from"` / `"to"` node-level metadata tables, then exposes a
+#' set of local helper functions (`from()`, `to()`, `either()`, `both()`,
+#' `neither()`, `one()`) inside captured expressions.
+#'
+#' @param object An `mgnet` or `mgnets` object.
+#' @param . Captured expressions passed from a caller such as [select_link()] or
+#'   [group_link()].
+#'
+#' @return
+#' A list containing:
+#' \itemize{
+#'   \item `graph`: the underlying graph object, or list of graphs for `mgnets`;
+#'   \item `edges`: the edge-level tibble used for downstream filtering/grouping;
+#'   \item `tbl_from`: metadata table aligned to the `from` endpoint of each edge;
+#'   \item `tbl_to`: metadata table aligned to the `to` endpoint of each edge;
+#'   \item `from`, `to`, `either`, `both`, `neither`, `one`: local helper functions;
+#'   \item `quos`: captured expressions re-rooted to the local environment.
+#' }
+#'
 #' @keywords internal
 #' @noRd
-.link_prepare <- function(object, ...) {
+.link_prepare <- function(object, .) {
   
-  # 0) Define local_env as THIS function's environment
+  # Local environment used to expose helper functions in captured expressions
   local_env <- environment()
   
-  # 1) Retrieve the igraph network(s)
+  # Retrieve the network(s)
   g <- netw(object, selected = FALSE)
   
-  # 2) Build the edge data
+  # Build edge data and aligned node metadata
   if (inherits(object, "mgnet")) {
     
-    edges <- igraph::as_data_frame(g, "edges")
+    edges <- igraph::as_data_frame(g, what = "edges")
+    
     tbl_from <- edges %>%
       dplyr::select(from) %>%
-      dplyr::left_join(taxa(object, .fmt = "tbl"), by = dplyr::join_by(from == taxa_id)) %>%
+      dplyr::left_join(
+        taxa(object, .fmt = "tbl"),
+        by = dplyr::join_by(from == taxa_id)
+      ) %>%
       dplyr::rename(taxa_id = from)
+    
     tbl_to <- edges %>%
       dplyr::select(to) %>%
-      dplyr::left_join(taxa(object, .fmt = "tbl"), by = dplyr::join_by(to == taxa_id)) %>%
+      dplyr::left_join(
+        taxa(object, .fmt = "tbl"),
+        by = dplyr::join_by(to == taxa_id)
+      ) %>%
       dplyr::rename(taxa_id = to)
     
   } else {
     
     edges <- g %>%
-      purrr::map(\(x) igraph::as_data_frame(x, "edges")) %>%
+      purrr::map(\(x) igraph::as_data_frame(x, what = "edges")) %>%
       purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) %>%
       purrr::list_rbind()
+    
+    taxa_tbl <- taxa(object, .collapse = TRUE)
+    
     tbl_from <- edges %>%
       dplyr::select(mgnet, from) %>%
-      dplyr::left_join(taxa(object, .collapse = TRUE), by = dplyr::join_by(mgnet, from == taxa_id)) %>%
+      dplyr::left_join(
+        taxa_tbl,
+        by = dplyr::join_by(mgnet, from == taxa_id)
+      ) %>%
       dplyr::rename(taxa_id = from)
+    
     tbl_to <- edges %>%
       dplyr::select(mgnet, to) %>%
-      dplyr::left_join(taxa(object, .collapse = TRUE), by = dplyr::join_by(mgnet, to == taxa_id)) %>%
+      dplyr::left_join(
+        taxa_tbl,
+        by = dplyr::join_by(mgnet, to == taxa_id)
+      ) %>%
       dplyr::rename(taxa_id = to)
-    
   }
   
-  # 3) Create auxiliary functions
-  # from(var) => pull var from tbl_from
+  # Helper: retrieve one metadata column from the "from" endpoint
   from <- function(var) {
     var_sym <- rlang::ensym(var)
     dplyr::pull(tbl_from, !!var_sym)
   }
-  # to(var) => pull var from tbl_to
+  
+  # Helper: retrieve one metadata column from the "to" endpoint
   to <- function(var) {
     var_sym <- rlang::ensym(var)
     dplyr::pull(tbl_to, !!var_sym)
   }
-  # one(expr) => OR of expr in tbl_from and tbl_to
+  
+  # Helper: OR between evaluation on "from" and "to"
   either <- function(expr) {
-    expr_quo <- rlang::enquo(expr)
+    expr_quo  <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     from_vals | to_vals
   }
-  # both(expr) => AND of expr in tbl_from and tbl_to
+  
+  # Helper: AND between evaluation on "from" and "to"
   both <- function(expr) {
-    expr_quo <- rlang::enquo(expr)
+    expr_quo  <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     from_vals & to_vals
   }
-  # neither(expr) => NOR (none side)
+  
+  # Helper: NOR between evaluation on "from" and "to"
   neither <- function(expr) {
-    expr_quo <- rlang::enquo(expr)
+    expr_quo  <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
     !(from_vals | to_vals)
   }
-  # one(expr) => XOR, returns TRUE if ONLY one side is TRUE
+  
+  # Helper: XOR between evaluation on "from" and "to"
   one <- function(expr) {
-    expr_quo <- rlang::enquo(expr)
+    expr_quo  <- rlang::enquo(expr)
     from_vals <- rlang::eval_tidy(expr_quo, data = tbl_from)
     to_vals   <- rlang::eval_tidy(expr_quo, data = tbl_to)
-    from_vals != to_vals  
+    from_vals != to_vals
   }
   
-  # 4) Capture and re-root user expressions so they see THIS environment
-  quos <- rlang::enquos(...)
+  # Capture and re-root user expressions so that they see this local environment
+  quos <- rlang::enquos(.)
   quos <- lapply(quos, function(q) {
     rlang::new_quosure(
       expr = rlang::quo_get_expr(q),
-      env  = local_env   
+      env  = local_env
     )
   })
   
-  # 5) Return a list of all the pieces you might need
   list(
     graph    = g,
     edges    = edges,
@@ -106,121 +151,214 @@
 }
 
 
-# SELECT_LINK
 #------------------------------------------------------------------------------#
+# LINK HELPER DOCUMENTATION
 #------------------------------------------------------------------------------#
-#' @title Get Selected Links from an `mgnet` Object
+
+#' @title Link helper functions
 #'
 #' @description
-#' Retrieves the numeric indices of links previously selected by [select_link()].
+#' These helper functions are available inside link-oriented methods such as
+#' [mutate_link()], [select_link()], and [group_link()]. They expose node-level
+#' metadata aligned to the two endpoints of each edge.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return A numeric vector (or named list of numeric vectors, for \code{mgnets}) 
-#'   containing the indices of selected links.
+#' They are intended for use with both `mgnet` and `mgnets` objects.
+#'
+#' @details
+#' The following helpers are available inside captured expressions:
+#'
+#' \describe{
+#'   \item{\code{from(var)}}{
+#'     Return the values of metadata column `var` for the `"from"` endpoint of
+#'     each edge.
+#'   }
+#'
+#'   \item{\code{to(var)}}{
+#'     Return the values of metadata column `var` for the `"to"` endpoint of
+#'     each edge.
+#'   }
+#'
+#'   \item{\code{either(expr)}}{
+#'     Evaluate `expr` on both endpoints and return `TRUE` whenever at least one
+#'     side is `TRUE`.
+#'   }
+#'
+#'   \item{\code{both(expr)}}{
+#'     Evaluate `expr` on both endpoints and return `TRUE` only when both sides
+#'     are `TRUE`.
+#'   }
+#'
+#'   \item{\code{neither(expr)}}{
+#'     Evaluate `expr` on both endpoints and return `TRUE` only when neither
+#'     side is `TRUE`.
+#'   }
+#'
+#'   \item{\code{one(expr)}}{
+#'     Evaluate `expr` on both endpoints and return `TRUE` only when exactly one
+#'     side is `TRUE`.
+#'   }
+#' }
+#'
+#' These helpers are only available inside expressions captured by
+#' [mutate_link()], [select_link()], and [group_link()]. They are not intended
+#' to be called directly at top level.
+#'
+#' Missing values are not coerced to `FALSE`: helper expressions follow standard
+#' R logical semantics. As a consequence, if an expression returns `NA`, it will
+#' usually be dropped by downstream `dplyr::filter()` calls.
+#'
+#' @aliases from to either both neither one
+#' @export
+helper_link <- function() {
+  invisible(NULL)
+}
+
+
+#------------------------------------------------------------------------------#
+# SELECTED LINKS
+#------------------------------------------------------------------------------#
+
+#' @title Retrieve selected link IDs
+#'
+#' @description
+#' Return the values currently stored in the `selected_links` attribute.
+#'
+#' Selected links are stored as edge `link_id` values, not as positional edge
+#' indices.
+#'
+#' @param object An `mgnet` or `mgnets` object.
+#'
+#' @return
+#' For an `mgnet`, an atomic vector of selected `link_id` values, or `NULL` if
+#' no selection is currently set.
+#'
+#' For an `mgnets`, a named list with one element per contained `mgnet`, each
+#' element being either a vector of selected `link_id` values, `character(0)`,
+#' or `NULL`.
+#'
 #' @aliases get_selected_links,mgnet-method get_selected_links,mgnets-method
-#' @importFrom cli cli_abort cli_warn
-#' @importFrom dplyr row_number
 #' @export
 setGeneric("get_selected_links", function(object) standardGeneric("get_selected_links"))
 
+#' @rdname get_selected_links
 setMethod("get_selected_links", "mgnet", function(object) {
-  return(attr(object, "selected_links"))
+  attr(object, "selected_links")
 })
 
+#' @rdname get_selected_links
 setMethod("get_selected_links", "mgnets", function(object) {
   sapply(object, get_selected_links, USE.NAMES = TRUE, simplify = FALSE)
 })
 
-#' @title Check exist a link selection in an `mgnet` Object
+
+#' @title Check whether links are selected
 #'
 #' @description
-#' Retrieves TRUE/FALSE if links are previously selected by [select_link()].
+#' Determine whether an `mgnet` or `mgnets` object currently carries an active
+#' link selection.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return logical.
+#' @param object An `mgnet` or `mgnets` object.
+#'
+#' @return
+#' For an `mgnet`, `TRUE` if the `selected_links` attribute is set, `FALSE`
+#' otherwise.
+#'
+#' For an `mgnets`, `TRUE` only if **all** contained `mgnet` objects currently
+#' carry a link selection. This implements an all-or-none collection-level
+#' semantics.
+#'
 #' @aliases are_selected_links,mgnet-method are_selected_links,mgnets-method
-#' @importFrom cli cli_abort cli_warn
-#' @importFrom dplyr row_number
 #' @export
 setGeneric("are_selected_links", function(object) standardGeneric("are_selected_links"))
 
+#' @rdname are_selected_links
 setMethod("are_selected_links", "mgnet", function(object) {
-  return(!is.null(attr(object, "selected_links")))
+  !is.null(attr(object, "selected_links"))
 })
 
+#' @rdname are_selected_links
 setMethod("are_selected_links", "mgnets", function(object) {
   all(sapply(object, are_selected_links, USE.NAMES = TRUE, simplify = TRUE))
 })
 
-#' @title Deselect Links in an mgnet Object
+
+#' @title Clear link selection
 #'
 #' @description
-#' Clears the \code{selected_links} attribute from an \code{mgnet} or \code{mgnets} object,
-#' effectively removing any current link selection.
+#' Remove the `selected_links` attribute from an `mgnet` or `mgnets` object.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return The same object, with no \code{selected_links} attribute.
+#' @param object An `mgnet` or `mgnets` object.
+#'
+#' @return
+#' The same object, with no active link selection.
+#'
 #' @aliases deselect_link,mgnet-method deselect_link,mgnets-method
 #' @export
 setGeneric("deselect_link", function(object) standardGeneric("deselect_link"))
 
+#' @rdname deselect_link
 setMethod("deselect_link", "mgnet", function(object) {
   attr(object, "selected_links") <- NULL
-  return(object)
+  object
 })
 
+#' @rdname deselect_link
 setMethod("deselect_link", "mgnets", function(object) {
-  for(i in seq_along(object)) object[[i]] <- deselect_link(object[[i]])
-  return(object)
+  for (i in seq_along(object)) object[[i]] <- deselect_link(object[[i]])
+  object
 })
 
 
-#' @title Select Links in an `mgnet` Object Based on Conditions
+#' @title Select links by condition
 #'
 #' @description
-#' This method \strong{highlights} links in the `mgnet` object according to specified
-#' conditions and stores the indices of these selected links in the `selected_links`
-#' attribute of the object.
+#' Select edges in an `mgnet` or `mgnets` object according to one or more
+#' filtering expressions and store the resulting edge `link_id` values in the
+#' `selected_links` attribute.
 #'
-#' In particular, you can use `select_link()` \emph{inside} a pipeline that calls
-#' [mutate_netw()] to focus on only the selected edges in subsequent network operations.
+#' This selection can then be used by downstream methods such as [mutate_link()]
+#' or by helpers that explicitly query selected edges.
 #'
-#' @param object An `mgnet` or `mgnets` object containing a network (edges).
-#' @param ... Conditions to be applied for selecting links, passed as expressions.
+#' @param object An `mgnet` or `mgnets` object containing a network.
+#' @param ... Filtering expressions evaluated on edge-level data. These
+#'   expressions may use the local helpers documented in [helper_link()], such
+#'   as `from()`, `to()`, `either()`, `both()`, `neither()`, and `one()`.
 #'
 #' @details
-#' Inside these expressions, you can call the local helper functions documented in
-#' [helper_link()], such as \code{from(var)}, \code{to(var)}, or \code{either(expr)}.
-#' These helpers allow you to reference and filter based on node-level metadata from
-#' the “from” or “to” side of each link.
+#' For `mgnets`, selection is evaluated on the combined edge table across the
+#' collection, but the resulting `link_id` vectors are stored back into each
+#' contained `mgnet`.
 #'
-#' @return 
-#' The same `mgnet` (or `mgnets`) object, updated with a `selected_links`
-#' attribute containing the numeric indices of the filtered links.
+#' If an individual `mgnet` in the collection has a network but no edges match
+#' the selection criteria, its `selected_links` attribute is set to
+#' `character(0)`. By contrast, `NULL` means that no selection has been set at
+#' all.
 #'
-#' @seealso 
-#' [mutate_link()] for modifying link attributes,  
-#' [get_selected_links()] and [deselect_link()] for managing selection,  
-#' [helper_link()] for details on the local helper functions.
+#' @return
+#' The same object, updated with a `selected_links` attribute containing selected
+#' edge `link_id` values.
 #'
-#' @importFrom rlang enquos
-#' @importFrom dplyr mutate filter pull
+#' @seealso
+#' [mutate_link()] for link-level transformations,
+#' [get_selected_links()] and [deselect_link()] for selection management,
+#' [helper_link()] for the local helper functions available inside expressions.
+#'
 #' @aliases select_link,mgnet-method select_link,mgnets-method
+#' @importFrom rlang enquos
+#' @importFrom dplyr filter pull group_by summarise select all_of
 #' @export
 setGeneric("select_link", function(object, ...) standardGeneric("select_link"))
 
+#' @rdname select_link
 setMethod("select_link", "mgnet", function(object, ...) {
   
-  # Ensure the network is available
-  if (miss_netw(object)) cli::cli_abort("No network available for {.cls mgnet} object.")
+  if (miss_netw(object)) {
+    cli::cli_abort("No network available for {.cls mgnet} object.")
+  }
   
-  # 1) Internal .link_prepare(), returning a list of everything necessary for links.
   setup <- .link_prepare(object, ...)
-  
-  # 2) graph, the edges, the helpers, etc.
-  g       <- setup$graph
-  edges   <- setup$edges
-  quos    <- setup$quos
+  edges <- setup$edges
+  quos  <- setup$quos
   
   object <- deselect_link(object)
   
@@ -228,56 +366,72 @@ setMethod("select_link", "mgnet", function(object, ...) {
     dplyr::filter(!!!quos) %>%
     dplyr::pull("link_id")
   
-  # Store the filtered links as an attribute
   attr(object, "selected_links") <- selected_links
-  return(object)
+  object
 })
 
+#' @rdname select_link
 setMethod("select_link", "mgnets", function(object, ...) {
   
-  # Ensure the network is available
-  if (miss_netw(object, "any")) cli::cli_abort("No network available in at least one element of the {.cls mgnets} object.")
+  if (miss_netw(object, "any")) {
+    cli::cli_abort(
+      "No network available in at least one element of the {.cls mgnets} object."
+    )
+  }
   
-  # 1) Internal .link_prepare(), returning a list of everything necessary for links.
   setup <- .link_prepare(object, ...)
-  
-  # 2) graph, the edges, the helpers, etc.
-  g       <- setup$graph
-  edges   <- setup$edges
-  quos    <- setup$quos
+  edges <- setup$edges
+  quos  <- setup$quos
   
   object <- deselect_link(object)
   
   selected_links <- edges %>%
-    dplyr::group_by(.data$mgnet) %>%                                 
+    dplyr::group_by(.data$mgnet) %>%
     dplyr::filter(!!!quos) %>%
     dplyr::select(dplyr::all_of(c("mgnet", "link_id"))) %>%
     dplyr::summarise(link_id = list(link_id), .groups = "drop") %>%
-    tibble::deframe() 
+    tibble::deframe()
   
-  # Store the filtered links as an attribute
-  for(i in names(object)){
-    attr(object[[i]], "selected_links") <- selected_links[[i]]
+  for (nm in names(object)) {
+    g_i <- object[[nm]]@netw
+    
+    attr(object[[nm]], "selected_links") <-
+      if (igraph::ecount(g_i) == 0L) {
+        # No edges in the network: store an empty selection (character(0)), not NULL
+        character(0)
+      } else if (nm %in% names(selected_links)) {
+        # Matching edges found: store their link_id values
+        selected_links[[nm]]
+      } else {
+        # Edges exist but none satisfy the filter: empty selection (character(0))
+        character(0)
+      }
   }
-  return(object)
+  
+  object
 })
 
 
-# GROUP LINK
 #------------------------------------------------------------------------------#
+# GROUPED LINKS
 #------------------------------------------------------------------------------#
-#' @title Retrieve Link Grouping in an mgnet Object
+
+#' @title Retrieve link grouping
 #'
 #' @description
-#' Retrieves the integer group IDs (or list of group IDs for each sub-object) 
-#' previously assigned by [group_link()].
+#' Return the values currently stored in the `link_groups` attribute.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return For an \code{mgnet}, a numeric vector indicating the group ID of each link.
-#'   For an \code{mgnets}, a list of numeric vectors, one per sub-object.
+#' @param object An `mgnet` or `mgnets` object.
 #'
-#' @seealso [group_link()] for assigning these group IDs, and [ungroup_link()] 
-#'   for removing them.
+#' @return
+#' For an `mgnet`, an integer vector giving the group ID of each edge, or `NULL`
+#' if no grouping is currently set.
+#'
+#' For an `mgnets`, a named list of integer vectors, one per contained `mgnet`.
+#'
+#' @seealso
+#' [group_link()] for assigning link groups and [ungroup_link()] for removing
+#' them.
 #'
 #' @aliases get_grouped_link,mgnet-method get_grouped_link,mgnets-method
 #' @export
@@ -285,7 +439,7 @@ setGeneric("get_grouped_link", function(object) standardGeneric("get_grouped_lin
 
 #' @rdname get_grouped_link
 setMethod("get_grouped_link", "mgnet", function(object) {
-  attr(object, "link_groups") 
+  attr(object, "link_groups")
 })
 
 #' @rdname get_grouped_link
@@ -294,37 +448,47 @@ setMethod("get_grouped_link", "mgnets", function(object) {
 })
 
 
-#' @title Check if Links Are Grouped in an mgnet Object
+#' @title Check whether links are grouped
 #'
 #' @description
-#' Determines whether an `mgnet` or `mgnets` object currently has grouped links,
-#' which would influence behavior inside [mutate_link()].
+#' Determine whether an `mgnet` or `mgnets` object currently carries link
+#' grouping information.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return A logical value: \code{TRUE} if links are grouped, \code{FALSE} otherwise.
-#'         For an `mgnets`, returns \code{TRUE} only if all sub-objects are grouped.
+#' @param object An `mgnet` or `mgnets` object.
+#'
+#' @return
+#' For an `mgnet`, `TRUE` if the `link_groups` attribute is set, `FALSE`
+#' otherwise.
+#'
+#' For an `mgnets`, `TRUE` only if **all** contained `mgnet` objects currently
+#' carry link grouping information. This implements an all-or-none
+#' collection-level semantics.
+#'
 #' @aliases is_link_grouped,mgnet-method is_link_grouped,mgnets-method
 #' @export
 setGeneric("is_link_grouped", function(object) standardGeneric("is_link_grouped"))
 
+#' @rdname is_link_grouped
 setMethod("is_link_grouped", "mgnet", function(object) {
-  return(!is.null(get_grouped_link(object)))
+  !is.null(get_grouped_link(object))
 })
 
+#' @rdname is_link_grouped
 setMethod("is_link_grouped", "mgnets", function(object) {
-  return(all(sapply(object, is_link_grouped)))
+  all(sapply(object, is_link_grouped, USE.NAMES = TRUE, simplify = TRUE))
 })
 
 
-#' @title Ungroup Links in an mgnet Object
+#' @title Clear link grouping
 #'
 #' @description
-#' Removes any existing link grouping in an `mgnet` or `mgnets` object, clearing 
-#' the \code{link_groups} attribute so that link operations within [mutate_link()] 
-#' are no longer grouped.
+#' Remove the `link_groups` attribute from an `mgnet` or `mgnets` object.
 #'
-#' @param object An \code{mgnet} or \code{mgnets} object.
-#' @return The same object, with no \code{link_groups} attribute.
+#' @param object An `mgnet` or `mgnets` object.
+#'
+#' @return
+#' The same object, with no active link grouping.
+#'
 #' @aliases ungroup_link,mgnet-method ungroup_link,mgnets-method
 #' @export
 setGeneric("ungroup_link", function(object) standardGeneric("ungroup_link"))
@@ -337,163 +501,114 @@ setMethod("ungroup_link", "mgnet", function(object) {
 
 #' @rdname ungroup_link
 setMethod("ungroup_link", "mgnets", function(object) {
-  for(i in seq_along(object)) object[[i]] <- ungroup_link(object[[i]])
+  for (i in seq_along(object)) object[[i]] <- ungroup_link(object[[i]])
   object
 })
 
 
-#' @title Group Links in an mgnet Object
+#' @title Group links by condition
 #'
 #' @description
-#' Groups the links (edges) in an `mgnet` or `mgnets` object based on user-specified
-#' expressions, storing an integer group ID for each link in the `link_groups` attribute.
-#' These group IDs affect link-level operations within [mutate_link()], allowing you
-#' to perform grouped calculations (e.g., grouped summaries or conditional logic) on
-#' edge attributes.
+#' Group edges in an `mgnet` or `mgnets` object according to one or more
+#' grouping expressions and store the resulting integer group IDs in the
+#' `link_groups` attribute.
 #'
-#' In particular, you can use `group_link()` \emph{inside} a pipeline with [mutate_link()]
-#' to ensure subsequent operations are evaluated by group. 
+#' These group IDs can then be used by downstream methods such as [mutate_link()]
+#' to perform grouped edge-level calculations.
 #'
-#' @param object An `mgnet` or `mgnets` object containing a network (edges).
-#' @param ... dplyr-style grouping expressions. For instance, \code{from(family)} or
-#'   \code{to(genus)}. See [helper_link()] for details on these local helper functions.
+#' @param object An `mgnet` or `mgnets` object containing a network.
+#' @param ... Grouping expressions evaluated on edge-level data. These
+#'   expressions may use the local helpers documented in [helper_link()], such
+#'   as `from()`, `to()`, `either()`, `both()`, `neither()`, and `one()`.
 #'
 #' @details
-#' The grouping expressions can reference node-level metadata in the “from” or “to” side
-#' of each link. Once grouped, any subsequent operations in [mutate_link()] can leverage
-#' these group IDs to compute grouped statistics or conditionals at the edge level.
+#' For a single `mgnet`, group IDs are computed on that object's edge table.
+#'
+#' For `mgnets`, grouping is computed at the **collection level** on the
+#' combined edge table. This means that edges from different contained `mgnet`
+#' objects can receive the same group ID if they share the same grouping key.
+#'
+#' After grouping is computed on the combined table, each vector of group IDs is
+#' stored back into the corresponding contained `mgnet`.
 #'
 #' @return
-#' The same `mgnet` (or `mgnets`) object, updated with a `link_groups` attribute
-#' that indicates each link's group ID (or a list of IDs in the case of `mgnets`).
+#' The same object, updated with a `link_groups` attribute.
 #'
 #' @seealso
-#' [mutate_link()] for grouped edge mutations,
+#' [mutate_link()] for grouped link-level transformations,
 #' [ungroup_link()] for clearing group information,
-#' [helper_link()] for the local helper functions (e.g., `from()`, `to()`, etc.).
+#' [helper_link()] for the local helper functions available inside expressions.
 #'
-#' @importFrom dplyr group_by group_indices
 #' @aliases group_link,mgnet-method group_link,mgnets-method
+#' @importFrom dplyr group_by group_indices
 #' @export
 setGeneric("group_link", function(object, ...) standardGeneric("group_link"))
 
-
+#' @rdname group_link
 setMethod("group_link", "mgnet", function(object, ...) {
   
-  # Ensure the network is available
-  if (miss_netw(object)) cli::cli_abort("No network available for {.cls mgnet} object.")
+  if (miss_netw(object)) {
+    cli::cli_abort("No network available for {.cls mgnet} object.")
+  }
   
-  # 1) Prepare edges & expressions via .link_prepare()
   setup <- .link_prepare(object, ...)
   edges <- setup$edges
   quos  <- setup$quos
   
-  # 2) Optionally clear any previous grouping
   object <- ungroup_link(object)
   
-  # 3) Group the edges using the user expressions
   groups_idx <- edges %>%
     dplyr::group_by(!!!quos) %>%
     dplyr::group_indices()
   
-  # 4) Store the grouping info in an attribute
   attr(object, "link_groups") <- groups_idx
-  
-  # 6) Return the updated object
   object
 })
 
-
+#' @rdname group_link
 setMethod("group_link", "mgnets", function(object, ...) {
   
-  # Ensure the network is available
-  if (miss_netw(object, "any")) cli::cli_abort("No network available in at least one element of the {.cls mgnets} object.")
+  if (miss_netw(object, "any")) {
+    cli::cli_abort(
+      "No network available in at least one element of the {.cls mgnets} object."
+    )
+  }
   
-  # 1) Prepare with .link_prepare(), which should return edges containing a "mgnet" column
   setup <- .link_prepare(object, ...)
   edges <- setup$edges
   quos  <- setup$quos
   
-  # 2) Optionally clear any previous grouping
   object <- ungroup_link(object)
   
-  # 3) Group the edges using the user expressions
-  groups_idx <- edges %>%
+  groups_tbl <- edges %>%
     dplyr::group_by(!!!quos)
   
-  groups_idx <- tibble::tibble(
-    mgnet = groups_idx$mgnet,
-    '_internal_' = dplyr::group_indices(groups_idx)
+  groups_tbl <- tibble::tibble(
+    mgnet      = groups_tbl$mgnet,
+    `_group_id` = dplyr::group_indices(groups_tbl)
   )
   
-  groups_idx <- split(groups_idx, groups_idx$mgnet)
-  groups_idx <- lapply(groups_idx, \(x){
+  groups_idx <- split(groups_tbl, groups_tbl$mgnet)
+  groups_idx <- lapply(groups_idx, function(x) {
     x$mgnet <- NULL
-    return(x[["_internal_"]])
+    as.integer(x[["_group_id"]])
   })
   
-  # Store the filtered links as an attribute
-  for(i in names(object)){
-    attr(object[[i]], "link_groups") <- groups_idx[[i]]
+  for (nm in names(object)) {
+    g_i <- object[[nm]]@netw
+    
+    attr(object[[nm]], "link_groups") <-
+      if (igraph::ecount(g_i) == 0L) {
+        # No edges in the network: store an empty grouping (integer(0))
+        integer(0)
+      } else if (nm %in% names(groups_idx)) {
+        # Group IDs computed for this mgnet
+        groups_idx[[nm]]
+      } else {
+        # Edges exist but no group indices were generated (safety fallback)
+        integer(0)
+      }
   }
   
   object
 })
-
-
-#' @title Link Helper Functions
-#'
-#' @description
-#' These **helper functions** are designed to manage node-level metadata for the edges
-#' (links) in an \code{mgnet} or \code{mgnetList} object. They are primarily intended 
-#' for use \emph{inside} link-based methods such as \code{\link{mutate_link}}, 
-#' \code{\link{select_link}}, and \code{\link{group_link}}. In those contexts, they
-#' have access to the "from" and "to" node metadata for each link.
-#'
-#' Below is an overview of each helper:
-#'
-#' \describe{
-#'   \item{\code{from(var)}}{
-#'     **Retrieves** the metadata column \code{var} from the **first** (or "from") node 
-#'     of the link.
-#'   }
-#'
-#'   \item{\code{to(var)}}{
-#'     **Retrieves** the metadata column \code{var} from the **second** (or "to") node 
-#'     of the link.
-#'   }
-#'
-#'   \item{\code{either(expr)}}{
-#'     **Evaluates** \code{expr} in both the "from" and "to" metadata tables for each link, 
-#'     returning \code{TRUE} if \emph{either} side satisfies \code{expr}. Conceptually,
-#'     it's a logical OR of the two sides.
-#'   }
-#'
-#'   \item{\code{both(expr)}}{
-#'     Similar to \code{either(expr)} but returns \code{TRUE} only if \emph{both} sides 
-#'     satisfy the condition (logical AND).
-#'   }
-#'
-#'   \item{\code{neither(expr)}}{
-#'     Returns \code{TRUE} if \emph{neither} side satisfies \code{expr} (logical NOR). 
-#'     In other words, it is \code{TRUE} only if \emph{both} sides evaluate to \code{FALSE}.
-#'   }
-#'
-#'   \item{\code{one(expr)}}{
-#'     Returns \code{TRUE} if \emph{exactly one} side satisfies \code{expr}—a logical XOR 
-#'     of the "from" side and "to" side. 
-#'   }
-#' }
-#'
-#' They \emph{cannot} be called at the top level by name. Instead, they
-#' become available \emph{only} within expressions captured by \code{\link{mutate_link}},
-#' \code{\link{select_link}}, or \code{\link{group_link}}.
-#'
-#'
-#' @aliases from to either both neither one
-#' @export
-helper_link <- function() {
-  # This function does nothing, 
-  # but its Roxygen doc provides a public help page for the link helper functions.
-  invisible(NULL)
-}

@@ -312,7 +312,7 @@ setMethod("comm_id", "mgnets", function(object, .fmt = "list") {
 #'   from the full network.
 #'
 #' @return
-#' - For an `mgnet`: an atmgnet vector (usually `character`) of link IDs taken
+#' - For an `mgnet`: an mgnet vector (usually `character`) of link IDs taken
 #'   from the edge attribute `link_id` of `netw(object, selected = selected)`.
 #' - For an `mgnets`: a **named list** with one element per contained `mgnet`,
 #'   each element being the vector described above.
@@ -394,7 +394,7 @@ setMethod("link_id", "mgnets", function(object, selected = TRUE) {
 #'   `has_rela`   / `miss_rela`   \tab wrappers for `"rela"` \cr
 #'   `has_norm`   / `miss_norm`   \tab wrappers for `"norm"` \cr
 #'   `has_meta`   / `miss_meta`   \tab wrappers for `"meta"` \cr
-#'   `has_netw`   / `miss_netw`   \tab wrappers for `"network"` \cr
+#'   `has_netw`   / `miss_netw`   \tab wrappers for `"netw"` \cr
 #'   `has_comm`   / `miss_comm`   \tab wrappers for `"comm"` \cr
 #'   `has_metataxa` / `miss_metataxa` \tab presence/absence of at least one of `"taxa"` or `"comm"` \cr
 #' }
@@ -607,7 +607,7 @@ setMethod("miss_meta", "mgnets", function(object, .fmt = "list") {
 
 #' @rdname has_miss-methods
 setGeneric("has_netw", function(object, .fmt = "list") standardGeneric("has_netw"))
-setMethod("has_netw", "mgnet",  function(object, .fmt = "list") has_slot(object, "network"))
+setMethod("has_netw", "mgnet",  function(object, .fmt = "list") has_slot(object, "netw"))
 setMethod("has_netw", "mgnets", function(object, .fmt = "list") {
   .fmt <- .match_has_miss_fmt(.fmt)
   if (length(object@mgnets) == 0) return(FALSE)

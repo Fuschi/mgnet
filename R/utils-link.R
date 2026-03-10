@@ -1,39 +1,56 @@
 #------------------------------------------------------------------------------#
-#' Create link_id values for a graph
+#' Create `link_id` values for a graph
 #'
-#' Generates a character vector of link IDs in the form:
-#' "<from>--<to>--<index>".
+#' @description
+#' Generate a character vector of edge identifiers in the form
+#' `"<from>--<to>--<index>"`.
 #'
-#' @param g An igraph object.
+#' These identifiers are intended to be unique within the current graph and are
+#' used internally to support persistent edge selection.
 #'
-#' @return A character vector of length equal to the number of edges.
+#' @param g An `igraph` object.
+#'
+#' @return
+#' A character vector of length equal to the number of edges in `g`.
+#'
+#' @details
+#' The generated IDs depend on the current edge order returned by
+#' `igraph::as_data_frame(g, what = "edges")`. They are therefore stable within
+#' the current graph instance, but may change if the graph is rebuilt or edges
+#' are reordered.
+#'
 #' @keywords internal
 #------------------------------------------------------------------------------#
 .make_link_id <- function(g) {
   
-  # No edges → return empty character vector
+  # No edges -> return empty character vector
   m <- igraph::ecount(g)
   if (m == 0L) return(character(0L))
   
-  # Extract edges as a data.frame
+  # Extract edges as a data frame
   df <- igraph::as_data_frame(g, what = "edges")
   
-  # Generate the IDs
+  # Generate IDs
   ids <- paste(df$from, df$to, seq_len(nrow(df)), sep = "--")
   
-  return(ids)
+  ids
 }
 
 
 #------------------------------------------------------------------------------#
-#' Ensure the graph has a link_id edge attribute
+#' Ensure that a graph has a `link_id` edge attribute
 #'
-#' This function checks whether the "link_id" attribute is defined. If missing, 
-#' it generates link IDs using `.make_link_id()` and assigns them.
+#' @description
+#' Check whether an `igraph` object already has an edge attribute named
+#' `link_id`. If not, generate one with [.make_link_id()] and attach it to the
+#' graph.
 #'
 #' @param g An `igraph` object.
 #'
-#' @return The `igraph` object, with guaranteed link_id in the network if edges exist.
+#' @return
+#' The input graph, with a guaranteed `link_id` edge attribute whenever edges
+#' are present.
+#'
 #' @keywords internal
 #------------------------------------------------------------------------------#
 .ensure_link_id <- function(g) {
@@ -54,7 +71,5 @@
     value = ids
   )
   
-  return(g)
+  g
 }
-
-
