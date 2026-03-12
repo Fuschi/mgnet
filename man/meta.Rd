@@ -6,26 +6,11 @@
 \alias{meta,mgnets-method}
 \title{Get sample metadata from \code{mgnet} and \code{mgnets} objects}
 \usage{
-meta(
-  object,
-  .fmt = c("df", "tbl"),
-  .empty = c("id", "NULL"),
-  .collapse = FALSE
-)
+meta(object, .fmt = "df", .empty = "id", .collapse = FALSE)
 
-\S4method{meta}{mgnet}(
-  object,
-  .fmt = c("df", "tbl"),
-  .empty = c("id", "NULL"),
-  .collapse = FALSE
-)
+\S4method{meta}{mgnet}(object, .fmt = "df", .empty = "id", .collapse = FALSE)
 
-\S4method{meta}{mgnets}(
-  object,
-  .fmt = c("df", "tbl"),
-  .empty = c("id", "NULL"),
-  .collapse = FALSE
-)
+\S4method{meta}{mgnets}(object, .fmt = "df", .empty = "id", .collapse = FALSE)
 }
 \arguments{
 \item{object}{An \code{mgnet} or \code{mgnets} object.}

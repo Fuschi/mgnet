@@ -42,12 +42,33 @@
 #' @usage data(taxa_HMP2)
 "taxa_HMP2"
 
-#' Example omic object derived from the Human Microbiome Project
+#' Example `mgnet` object derived from the Human Microbiome Project
 #'
-#' This object contains OTU counts, sample metadata, and taxonomic information
-#' for a subset of the HMP2 dataset, stored as an `omic` class.
+#' This dataset contains OTU counts, sample metadata, and taxonomic information
+#' from the HMP2 gut microbiome dataset, stored as an `mgnet` object.
 #'
-#' @format An object of class `omic` with `1112` samples and `1953` taxa (OTU in this case).
+#' @format An object of class `mgnet` with `1122` samples and `1953` taxa.
 #' @source Human Microbiome Project Phase 2
 #' @usage data(HMP2)
 "HMP2"
+
+#' Example `mgnets` object derived from the Human Microbiome Project
+#'
+#' This dataset contains a collection of subject-specific `mgnet` objects
+#' derived from the HMP2 gut microbiome data.
+#'
+#' Starting from `HMP2`, samples were grouped by `SubjectID`, subjects with at
+#' least 30 samples were retained, the object was split by subject, and taxa
+#' were filtered within each subject-specific dataset by prevalence
+#' (`sum(abun > 0) / n() >= 0.1`).
+#'
+#' The resulting object contains one `mgnet` per subject and is stored as an
+#' `mgnets` object.
+#'
+#' @format An object of class `mgnets` with 7 elements. Each contained `mgnet`
+#' has between 30 and 185 samples and between 314 and 547 taxa. Element names
+#' correspond to subject IDs: `69-001`, `69-023`, `69-026`, `70-1014`,
+#' `69-053`, `69-063`, `70-1005`.
+#' @source Human Microbiome Project Phase 2
+#' @usage data(HMP2_mgnets)
+"HMP2_mgnets"

@@ -1,6 +1,141 @@
 #'@include class-mgnet.R class-mgnets.R
 NULL
 
+# Internal helpers shared across setters
+#------------------------------------------------------------------------------#
+.normalize_input_ids <- function(value, id_col, allow_matrix = TRUE) {
+  is_tabular <- inherits(value, "data.frame") || inherits(value, "tbl_df")
+  is_mat <- inherits(value, "matrix")
+  
+  if (!(is_tabular || (allow_matrix && is_mat))) {
+    cli::cli_abort("{.arg value} must be a matrix, tibble, or data frame.")
+  }
+  
+  has_id_col <- id_col %in% colnames(value)
+  has_rownames <- if (is_tabular) tibble::has_rownames(value) else !is.null(rownames(value))
+  
+  if (has_id_col && has_rownames) {
+    cli::cli_abort(
+      "{.arg value} cannot have both a {.val {id_col}} column and row names."
+    )
+  }
+  
+  if (!has_id_col && !has_rownames) {
+    cli::cli_abort(
+      "{.arg value} must have either a {.val {id_col}} column or row names."
+    )
+  }
+  
+  if (has_id_col) {
+    ids <- value[[id_col]]
+    
+    if (anyDuplicated(ids)) {
+      cli::cli_abort(
+        "Column {.var {id_col}} contains duplicated values in {.arg value}."
+      )
+    }
+    
+    if (is_tabular) {
+      value <- tibble::column_to_rownames(as.data.frame(value), id_col)
+    } else {
+      rownames(value) <- ids
+      value <- value[, colnames(value) != id_col, drop = FALSE]
+    }
+  }
+  
+  value
+}
+
+.align_to_ids <- function(value, expected_ids, id_col) {
+  current_ids <- rownames(value)
+  
+  if (!all(current_ids %in% expected_ids)) {
+    cli::cli_abort(
+      "Provided {.var {id_col}} values do not match those in the object."
+    )
+  }
+  
+  if (!identical(current_ids, expected_ids)) {
+    value <- value[expected_ids, , drop = FALSE]
+  }
+  
+  value
+}
+
+.assign_slot_checked <- function(object, slot_name, value, coercer) {
+  methods::slot(object, slot_name) <- coercer(value)
+  methods::validObject(object)
+  object
+}
+
+.set_sample_matrix_slot <- function(object, value, slot_name) {
+  value <- .normalize_input_ids(value, id_col = "sample_id", allow_matrix = TRUE)
+  
+  expected_ids <- sample_id(object)
+  if (length(expected_ids) > 0L) {
+    value <- .align_to_ids(value, expected_ids, "sample_id")
+  }
+  
+  .assign_slot_checked(object, slot_name, value, as.matrix)
+}
+
+.set_annotation_slot <- function(object, value, slot_name, id_col, expected_ids = NULL) {
+  value <- .normalize_input_ids(value, id_col = id_col, allow_matrix = FALSE)
+  
+  if (!is.null(expected_ids) && length(expected_ids) > 0L) {
+    value <- .align_to_ids(value, expected_ids, id_col)
+  }
+  
+  .assign_slot_checked(object, slot_name, value, as.data.frame)
+}
+
+.apply_mgnets_setter_list <- function(object, value, setter_name) {
+  is_list_mgnets_assign(object, value)
+  
+  setter <- get(setter_name, mode = "function")
+  for (nm in names(object)) {
+    object@mgnets[[nm]] <- setter(object@mgnets[[nm]], value[[nm]])
+  }
+  
+  methods::validObject(object)
+  object
+}
+
+.split_mgnets_table_value <- function(object, value, level = c("sample", "taxa")) {
+  level <- match.arg(level)
+  
+  if (is.list(value) && !is.data.frame(value)) {
+    is_list_mgnets_assign(object, value)
+    return(value)
+  }
+  
+  if (!is.data.frame(value)) {
+    cli::cli_abort(
+      "{.arg value} must be either a named list of data frames or a single data frame."
+    )
+  }
+  
+  is_assign_mgnets_tbl(object, value, level)
+  pieces <- split(value, value$mgnet)
+  
+  lapply(pieces, function(x) {
+    x$mgnet <- NULL
+    x
+  })
+}
+
+.set_mgnets_annotation_slot <- function(object, value, setter_name, level = c("sample", "taxa")) {
+  pieces <- .split_mgnets_table_value(object, value, level = level)
+  setter <- get(setter_name, mode = "function")
+  
+  for (nm in names(object)) {
+    object@mgnets[[nm]] <- setter(object@mgnets[[nm]], pieces[[nm]])
+  }
+  
+  methods::validObject(object)
+  object
+}
+
 # ABUNDANCE
 #------------------------------------------------------------------------------#
 #' Set Abundance Data
@@ -20,46 +155,11 @@ NULL
 setGeneric("abun<-", function(object, value) standardGeneric("abun<-"))
 
 setMethod("abun<-", c("mgnet","ANY"), function(object, value){
-  
-  if (!(inherits(value, "matrix") || inherits(value, "data.frame") || inherits(value, "tbl_df"))) {
-    cli::cli_abort("{.arg value} must be a tibble or data frame.")
-  }
-  
-  if ("sample_id" %in% colnames(value) && !is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} cannot have both a {.val sample_id} column and row names.")
-  }
-  
-  if (!"sample_id" %in% colnames(value) && is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} must have either a {.val sample_id} column or row names.")
-  }
-  
-  if ("sample_id" %in% colnames(value)) {
-    if (any(duplicated(value$sample_id))) {
-      cli::cli_abort("Column {.var sample_id} contains duplicated values in {.arg value}.")
-    }
-    rownames(value) <- value[,"sample_id"]
-    value <- value[,colnames(value) != "sample_id", drop = F]
-  }
-  
-  if (has_sample(object)) {
-    if (!all(rownames(value) %in% sample_id(object))) {
-      cli::cli_abort("Provided {.var sample_id} values do not match those in the object.")
-    }
-    if (!identical(rownames(value), sample_id(object))) {
-      value <- value[sample_id(object), , drop = FALSE]
-    }
-  }
-  
-  object@abun <- as.matrix(value)
-  validObject(object)
-  object
+  .set_sample_matrix_slot(object, value, "abun")
 })
 
 setMethod("abun<-", c("mgnets","ANY"), function(object, value){
-  is_list_mgnets_assign(object, value)
-  for(i in names(object)) { abun(object@mgnets[[i]]) <- value[[i]] }
-  validObject(object)
-  object
+  .apply_mgnets_setter_list(object, value, "abun<-")
 })
 
 
@@ -82,46 +182,11 @@ setMethod("abun<-", c("mgnets","ANY"), function(object, value){
 setGeneric("rela<-", function(object, value) standardGeneric("rela<-"))
 
 setMethod("rela<-", c("mgnet","ANY"), function(object, value){
-  
-  if (!(inherits(value, "matrix") || inherits(value, "data.frame") || inherits(value, "tbl_df"))) {
-    cli::cli_abort("{.arg value} must be a tibble or data frame.")
-  }
-  
-  if ("sample_id" %in% colnames(value) && !is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} cannot have both a {.val sample_id} column and row names.")
-  }
-  
-  if (!"sample_id" %in% colnames(value) && is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} must have either a {.val sample_id} column or row names.")
-  }
-  
-  if ("sample_id" %in% colnames(value)) {
-    if (any(duplicated(value$sample_id))) {
-      cli::cli_abort("Column {.var sample_id} contains duplicated values in {.arg value}.")
-    }
-    rownames(value) <- value[,"sample_id"]
-    value <- value[,colnames(value) != "sample_id", drop = F]
-  }
-  
-  if (has_sample(object)) {
-    if (!all(rownames(value) %in% sample_id(object))) {
-      cli::cli_abort("Provided {.var sample_id} values do not match those in the object.")
-    }
-    if (!identical(rownames(value), sample_id(object))) {
-      value <- value[sample_id(object), , drop = FALSE]
-    }
-  }
-  
-  object@rela <- as.matrix(value)
-  validObject(object)
-  object
+  .set_sample_matrix_slot(object, value, "rela")
 })
 
 setMethod("rela<-", c("mgnets","ANY"), function(object, value){
-  is_list_mgnets_assign(object, value)
-  for(i in names(object)) { rela(object@mgnets[[i]]) <- value[[i]] }
-  validObject(object)
-  object
+  .apply_mgnets_setter_list(object, value, "rela<-")
 })
 
 
@@ -143,47 +208,12 @@ setMethod("rela<-", c("mgnets","ANY"), function(object, value){
 #' @aliases norm<-,mgnet-method norm<-,mgnets-method
 setGeneric("norm<-", function(object, value) standardGeneric("norm<-"))
 
-setMethod("norm<-", "mgnet", function(object, value) {
-  
-  if (!(inherits(value, "matrix") || inherits(value, "data.frame") || inherits(value, "tbl_df"))) {
-    cli::cli_abort("{.arg value} must be a tibble or data frame.")
-  }
-  
-  if ("sample_id" %in% colnames(value) && !is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} cannot have both a {.val sample_id} column and row names.")
-  }
-  
-  if (!"sample_id" %in% colnames(value) && is.null(rownames(value))) {
-    cli::cli_abort("{.arg value} must have either a {.val sample_id} column or row names.")
-  }
-  
-  if ("sample_id" %in% colnames(value)) {
-    if (any(duplicated(value$sample_id))) {
-      cli::cli_abort("Column {.var sample_id} contains duplicated values in {.arg value}.")
-    }
-    rownames(value) <- value[,"sample_id"]
-    value <- value[,colnames(value) != "sample_id", drop = F]
-  }
-  
-  if (has_sample(object)) {
-    if (!all(rownames(value) %in% sample_id(object))) {
-      cli::cli_abort("Provided {.var sample_id} values do not match those in the object.")
-    }
-    if (!identical(rownames(value), sample_id(object))) {
-      value <- value[sample_id(object), , drop = FALSE]
-    }
-  }
-  
-  object@norm <- as.matrix(value)
-  validObject(object)
-  object
+setMethod("norm<-", c("mgnet", "ANY"), function(object, value) {
+  .set_sample_matrix_slot(object, value, "norm")
 })
 
-setMethod("norm<-", "mgnets", function(object, value) {
-  is_list_mgnets_assign(object, value)
-  for(i in names(object)) { norm(object@mgnets[[i]]) <- value[[i]] }
-  validObject(object)
-  object
+setMethod("norm<-", c("mgnets", "ANY"), function(object, value) {
+  .apply_mgnets_setter_list(object, value, "norm<-")
 })
 
 
@@ -211,70 +241,20 @@ setMethod("norm<-", "mgnets", function(object, value) {
 setGeneric("meta<-", function(object, value) standardGeneric("meta<-"))
 
 setMethod("meta<-", c("mgnet", "ANY"), function(object, value) {
+  expected_ids <- sample_id(object)
+  if (length(expected_ids) == 0L) expected_ids <- NULL
   
-  objectName <- deparse(substitute(object))
-  valueName  <- deparse(substitute(value))
-  
-  if (!(inherits(value, "data.frame") || inherits(value, "tbl_df"))) {
-    cli::cli_abort("{.arg {valueName}} must be a tibble or data frame.")
-  }
-  
-  if ("sample_id" %in% colnames(value) && tibble::has_rownames(value)) {
-    cli::cli_abort("{.arg {valueName}} cannot have both a {.val sample_id} column and row names.")
-  }
-  
-  if (!"sample_id" %in% colnames(value) && !tibble::has_rownames(value)) {
-    cli::cli_abort("{.arg {valueName}} must have either a {.val sample_id} column or row names.")
-  }
-  
-  if ("sample_id" %in% colnames(value)) {
-    if (any(duplicated(value$sample_id))) {
-      cli::cli_abort("Column {.var sample_id} contains duplicated values in {.arg value}.")
-    }
-    value <- tibble::column_to_rownames(value, "sample_id")
-  }
-  
-  if (has_sample(object)) {
-    if (!all(rownames(value) %in% sample_id(object))) {
-      cli::cli_abort("Provided {.var sample_id} values do not match those in the object.")
-    }
-    if (!identical(rownames(value), sample_id(object))) {
-      value <- value[sample_id(object), , drop = FALSE]
-    }
-  }
-  
-  object@meta <- as.data.frame(value)
-  validObject(object)
-  object
+  .set_annotation_slot(
+    object = object,
+    value = value,
+    slot_name = "meta",
+    id_col = "sample_id",
+    expected_ids = expected_ids
+  )
 })
 
 setMethod("meta<-", c("mgnets","ANY"), function(object, value){
-  
-  if(class(value)[[1]] == "list"){
-    
-    is_list_mgnets_assign(object, value)
-    for(i in names(object)) meta(object[[i]]) <- value[[i]] 
-    
-  } else if(is.data.frame(value)){
-    
-    is_assign_mgnets_tbl(object, value, "sample")
-    splitted_value <- split(value, value$mgnet)
-    splitted_value <- lapply(splitted_value, \(x){
-      x$mgnet <- NULL
-      return(x)
-    })
-    for(i in names(object)) meta(object[[i]]) <- splitted_value[[i]]
-    
-  } else {
-    
-    valueName <- deparse(substitute(value))
-    cli::cli_abort(
-      "{.arg value} must be either a named list of data frames or a single data frame with columns {.val mgnet} and {.val sample_id}.")
-    
-  }
-  
-  validObject(object)
-  object
+  .set_mgnets_annotation_slot(object, value, "meta<-", level = "sample")
 })
 
 
@@ -301,36 +281,13 @@ setMethod("meta<-", c("mgnets","ANY"), function(object, value){
 setGeneric("taxa<-", function(object, value) standardGeneric("taxa<-"))
 
 setMethod("taxa<-", c("mgnet", "ANY"), function(object, value) {
+  expected_ids <- taxa_id(object)
+  if (length(expected_ids) == 0L) expected_ids <- NULL
   
-  objectName <- deparse(substitute(object))
-  valueName  <- deparse(substitute(value))
+  value <- .normalize_input_ids(value, id_col = "taxa_id", allow_matrix = FALSE)
   
-  if (!(inherits(value, "data.frame") || inherits(value, "tbl_df"))) {
-    cli::cli_abort("{.arg {valueName}} must be a tibble or data frame.")
-  }
-  
-  if ("taxa_id" %in% colnames(value) && tibble::has_rownames(value)) {
-    cli::cli_abort("{.arg {valueName}} cannot have both a {.val taxa_id} column and row names.")
-  }
-  
-  if (!"taxa_id" %in% colnames(value) && !tibble::has_rownames(value)) {
-    cli::cli_abort("{.arg {valueName}} must have either a {.val taxa_id} column or row names.")
-  }
-  
-  if ("taxa_id" %in% colnames(value)) {
-    if (any(duplicated(value$taxa_id))) {
-      cli::cli_abort("Column {.var taxa_id} contains duplicated values in {.arg value}.")
-    }
-    value <- tibble::column_to_rownames(value, "taxa_id")
-  }
-  
-  if (has_sample(object)) {  # (se qui intendevi has_taxa(object), lascio nota sotto)
-    if (!all(rownames(value) %in% taxa_id(object))) {
-      cli::cli_abort("Provided {.var taxa_id} values do not match those in the object.")
-    }
-    if (!identical(rownames(value), taxa_id(object))) {
-      value <- value[taxa_id(object), , drop = FALSE]
-    }
+  if (!is.null(expected_ids)) {
+    value <- .align_to_ids(value, expected_ids, "taxa_id")
   }
   
   if ("comm_id" %in% colnames(value)) {
@@ -340,37 +297,11 @@ setMethod("taxa<-", c("mgnet", "ANY"), function(object, value) {
     value$comm_id <- NULL
   }
   
-  object@taxa <- as.data.frame(value)
-  validObject(object)
-  object
+  .assign_slot_checked(object, "taxa", value, as.data.frame)
 })
 
 setMethod("taxa<-", c("mgnets","ANY"), function(object, value){
-  
-  if(class(value)[[1]] == "list"){
-    
-    is_list_mgnets_assign(object, value)
-    for(i in names(object)) taxa(object[[i]]) <- value[[i]] 
-    
-  } else if(is.data.frame(value)){
-    
-    is_assign_mgnets_tbl(object, value, "taxa")
-    splitted_value <- split(value, value$mgnet)
-    splitted_value <- lapply(splitted_value, \(x){
-      x$mgnet <- NULL
-      return(x)
-    })
-    for(i in names(object)) taxa(object[[i]]) <- splitted_value[[i]]
-    
-  } else {
-    
-    valueName <- deparse(substitute(value))
-    cli::cli_abort("{.arg value} must be either a named list of data frames or a single data frame with columns {.val mgnet} and {.val taxa_id}.")
-
-  }
-  
-  validObject(object)
-  object
+  .set_mgnets_annotation_slot(object, value, "taxa<-", level = "taxa")
 })
 
 

@@ -330,18 +330,19 @@ NULL
                                       cross_drop = character(0),
                                       verb = "mutate",
                                       expr_label = NULL) {
+  unique_keys <- if (ctx$is_list) ctx$join_target_key else ctx$target_key
   
   out <- tbl |>
     dplyr::select(-tidyselect::any_of(c(ctx$cross_key, abun_drop, cross_drop))) |>
     dplyr::distinct()
   
   dup <- out |>
-    dplyr::count(!!!rlang::syms(ctx$target_key), name = "n") |>
+    dplyr::count(!!!rlang::syms(unique_keys), name = "n") |>
     dplyr::filter(.data$n > 1L)
   
   if (nrow(dup) > 0L) {
     show <- dup |>
-      dplyr::select(!!!rlang::syms(ctx$target_key)) |>
+      dplyr::select(!!!rlang::syms(unique_keys)) |>
       dplyr::slice_head(n = 8L)
     
     ex_keys <- paste(apply(show, 1, paste, collapse = ": "), collapse = ", ")

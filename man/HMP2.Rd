@@ -3,9 +3,9 @@
 \docType{data}
 \name{HMP2}
 \alias{HMP2}
-\title{Example omic object derived from the Human Microbiome Project}
+\title{Example \code{mgnet} object derived from the Human Microbiome Project}
 \format{
-An object of class \code{omic} with \code{1112} samples and \code{1953} taxa (OTU in this case).
+An object of class \code{mgnet} with \code{1122} samples and \code{1953} taxa.
 }
 \source{
 Human Microbiome Project Phase 2
@@ -14,7 +14,7 @@ Human Microbiome Project Phase 2
 data(HMP2)
 }
 \description{
-This object contains OTU counts, sample metadata, and taxonomic information
-for a subset of the HMP2 dataset, stored as an \code{omic} class.
+This dataset contains OTU counts, sample metadata, and taxonomic information
+from the HMP2 gut microbiome dataset, stored as an \code{mgnet} object.
 }
 \keyword{datasets}

@@ -1,6 +1,119 @@
 #' @include class-mgnet.R class-mgnets.R class-base-methods.R class-links.R
 NULL
 
+# Internal helpers shared across getters
+#------------------------------------------------------------------------------#
+.as_abundance_output <- function(x, .fmt) {
+  switch(.fmt,
+         mat = x,
+         df  = as.data.frame(x),
+         tbl = tibble::as_tibble(x, rownames = "sample_id"))
+}
+
+.aggregate_abundance_by_var <- function(object, x, value_name, .var, .fun) {
+  data_frame <- x %>%
+    tibble::as_tibble(rownames = "sample_id") %>%
+    tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = value_name)
+  
+  taxa_info <- taxa(object, .fmt = "tbl") %>%
+    dplyr::select(taxa_id, !!rlang::sym(.var))
+  
+  data_frame %>%
+    dplyr::left_join(taxa_info, by = "taxa_id") %>%
+    dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
+    dplyr::summarise(!!rlang::sym(value_name) := .fun(.data[[value_name]]), .groups = "drop") %>%
+    tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = !!rlang::sym(value_name)) %>%
+    dplyr::arrange(match(sample_id, sample_id(object))) %>%
+    tibble::column_to_rownames("sample_id") %>%
+    as.matrix()
+}
+
+.get_abundance_slot <- function(object, slot_name, .fmt = "mat", .var = NULL, .fun = sum) {
+  if (!is.null(.var) && !is.character(.var)) {
+    stop(".var must be a character string specifying the column name.")
+  }
+  
+  if (!is.function(.fun)) {
+    stop(".fun must be a function.")
+  }
+  
+  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
+  x <- methods::slot(object, slot_name)
+  
+  if (length(x) == 0) {
+    return(
+      switch(.fmt,
+             mat = matrix(nrow = 0, ncol = 0),
+             df  = data.frame(),
+             tbl = tibble::tibble())
+    )
+  }
+  
+  if (is.null(.var)) {
+    return(.as_abundance_output(x, .fmt))
+  }
+  
+  available <- taxa_vars(object)
+  if (!(.var %in% available)) {
+    stop(
+      ".var must be present in the taxa-level information. Available choices are: ",
+      paste(available, collapse = ", ")
+    )
+  }
+  
+  result_matrix <- .aggregate_abundance_by_var(object, x, slot_name, .var, .fun)
+  .as_abundance_output(result_matrix, .fmt)
+}
+
+.map_mgnets <- function(object, fun) {
+  purrr::map(object@mgnets, fun)
+}
+
+.collapse_mgnets_tbl <- function(object, fun) {
+  object@mgnets |>
+    purrr::map(fun) |>
+    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) |>
+    purrr::list_rbind()
+}
+
+.empty_collection_output <- function(.fmt) {
+  if (.fmt == "df") return(data.frame())
+  tibble::tibble()
+}
+
+.format_meta_output <- function(object, .fmt) {
+  switch(.fmt,
+         df  = object@meta,
+         tbl = tibble::as_tibble(object@meta, rownames = "sample_id"))
+}
+
+.format_taxa_output <- function(object, .fmt) {
+  if (miss_taxa(object) && miss_comm(object)) {
+    out <- tibble::tibble(taxa_id = taxa_id(object))
+    return(if (.fmt == "df") as.data.frame(out) else out)
+  }
+  
+  if (!miss_taxa(object) && miss_comm(object)) {
+    return(
+      switch(.fmt,
+             df  = object@taxa,
+             tbl = tibble::as_tibble(object@taxa, rownames = "taxa_id"))
+    )
+  }
+  
+  if (miss_taxa(object) && !miss_comm(object)) {
+    out <- comm_id(object, .fmt = "tbl")
+    return(if (.fmt == "df") as.data.frame(out) else out)
+  }
+  
+  out <- tibble::as_tibble(object@taxa, rownames = "taxa_id") |>
+    dplyr::left_join(comm_id(object, .fmt = "tbl"), by = "taxa_id")
+  
+  switch(.fmt,
+         df  = tibble::column_to_rownames(out, "taxa_id"),
+         tbl = out)
+}
+
 #------------------------------------------------------------------------------#
 # ABUNDANCE / RELATIVE ABUNDANCE / NORMALIZED ABUNDANCE
 #------------------------------------------------------------------------------#
@@ -78,70 +191,7 @@ setGeneric("abun", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
 #' @rdname abundance-getters
 #' @export
 setMethod("abun", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
-  
-  # Checks
-  if (!is.null(.var) && !is.character(.var)) {
-    stop(".var must be a character string specifying the column name.")
-  }
-  
-  if (!is.function(.fun)) {
-    stop(".fun must be a function.")
-  }
-  
-  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  
-  # Handle empty abundance slot
-  if (length(object@abun) == 0) {
-    return(
-      switch(.fmt,
-             mat = matrix(nrow = 0, ncol = 0),
-             df  = data.frame(),
-             tbl = tibble::tibble())
-    )
-  }
-  
-  # No aggregation requested
-  if (is.null(.var)) {
-    return(
-      switch(.fmt,
-             mat = object@abun,
-             df  = as.data.frame(object@abun),
-             tbl = tibble::as_tibble(object@abun, rownames = "sample_id"))
-    )
-  }
-  
-  # Ensure .var is available in taxa-level information
-  if (!(.var %in% taxa_vars(object))) {
-    stop(
-      ".var must be present in the taxa-level information. Available choices are: ",
-      paste(taxa_vars(object), collapse = ", ")
-    )
-  }
-  
-  # Prepare long table: rows = sample_id, columns = taxa_id
-  data_frame <- object@abun %>%
-    tibble::as_tibble(rownames = "sample_id") %>%
-    tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "abun")
-  
-  taxa_info <- taxa(object, .fmt = "tbl") %>%
-    dplyr::select(taxa_id, !!rlang::sym(.var))
-  
-  # Aggregate within each sample and taxa grouping
-  aggregated_data <- data_frame %>%
-    dplyr::left_join(taxa_info, by = "taxa_id") %>%
-    dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
-    dplyr::summarise(abun = .fun(abun), .groups = "drop") %>%
-    tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "abun") %>%
-    dplyr::arrange(match(sample_id, sample_id(object)))
-  
-  result_matrix <- aggregated_data %>%
-    tibble::column_to_rownames("sample_id") %>%
-    as.matrix()
-  
-  switch(.fmt,
-         mat = result_matrix,
-         df  = as.data.frame(result_matrix),
-         tbl = tibble::as_tibble(result_matrix, rownames = "sample_id"))
+  .get_abundance_slot(object, "abun", .fmt = .fmt, .var = .var, .fun = .fun)
 })
 
 #' @rdname abundance-getters
@@ -149,12 +199,7 @@ setMethod("abun", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = su
 setMethod("abun", "mgnets", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  sapply(
-    object@mgnets,
-    function(x) abun(object = x, .var = .var, .fmt = .fmt, .fun = .fun),
-    simplify = FALSE,
-    USE.NAMES = TRUE
-  )
+  .map_mgnets(object, \(x) abun(object = x, .var = .var, .fmt = .fmt, .fun = .fun))
 })
 
 
@@ -173,70 +218,7 @@ setGeneric("rela", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
 #' @rdname abundance-getters
 #' @export
 setMethod("rela", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
-  
-  # Checks
-  if (!is.null(.var) && !is.character(.var)) {
-    stop(".var must be a character string specifying the column name.")
-  }
-  
-  if (!is.function(.fun)) {
-    stop(".fun must be a function.")
-  }
-  
-  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  
-  # Handle empty relative abundance slot
-  if (length(object@rela) == 0) {
-    return(
-      switch(.fmt,
-             mat = matrix(nrow = 0, ncol = 0),
-             df  = data.frame(),
-             tbl = tibble::tibble())
-    )
-  }
-  
-  # No aggregation requested
-  if (is.null(.var)) {
-    return(
-      switch(.fmt,
-             mat = object@rela,
-             df  = as.data.frame(object@rela),
-             tbl = tibble::as_tibble(object@rela, rownames = "sample_id"))
-    )
-  }
-  
-  # Ensure .var is available in taxa-level information
-  if (!(.var %in% taxa_vars(object))) {
-    stop(
-      ".var must be present in the taxa-level information. Available choices are: ",
-      paste(taxa_vars(object), collapse = ", ")
-    )
-  }
-  
-  # Prepare long table: rows = sample_id, columns = taxa_id
-  data_frame <- object@rela %>%
-    tibble::as_tibble(rownames = "sample_id") %>%
-    tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "rela")
-  
-  taxa_info <- taxa(object, .fmt = "tbl") %>%
-    dplyr::select(taxa_id, !!rlang::sym(.var))
-  
-  # Aggregate within each sample and taxa grouping
-  aggregated_data <- data_frame %>%
-    dplyr::left_join(taxa_info, by = "taxa_id") %>%
-    dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
-    dplyr::summarise(rela = .fun(rela), .groups = "drop") %>%
-    tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "rela") %>%
-    dplyr::arrange(match(sample_id, sample_id(object)))
-  
-  result_matrix <- aggregated_data %>%
-    tibble::column_to_rownames("sample_id") %>%
-    as.matrix()
-  
-  switch(.fmt,
-         mat = result_matrix,
-         df  = as.data.frame(result_matrix),
-         tbl = tibble::as_tibble(result_matrix, rownames = "sample_id"))
+  .get_abundance_slot(object, "rela", .fmt = .fmt, .var = .var, .fun = .fun)
 })
 
 #' @rdname abundance-getters
@@ -244,12 +226,7 @@ setMethod("rela", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = su
 setMethod("rela", "mgnets", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  sapply(
-    object@mgnets,
-    function(x) rela(object = x, .var = .var, .fmt = .fmt, .fun = .fun),
-    simplify = FALSE,
-    USE.NAMES = TRUE
-  )
+  .map_mgnets(object, \(x) rela(object = x, .var = .var, .fmt = .fmt, .fun = .fun))
 })
 
 
@@ -268,70 +245,7 @@ setGeneric("norm", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
 #' @rdname abundance-getters
 #' @export
 setMethod("norm", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
-  
-  # Checks
-  if (!is.null(.var) && !is.character(.var)) {
-    stop(".var must be a character string specifying the column name.")
-  }
-  
-  if (!is.function(.fun)) {
-    stop(".fun must be a function.")
-  }
-  
-  .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
-  
-  # Handle empty normalized abundance slot
-  if (length(object@norm) == 0) {
-    return(
-      switch(.fmt,
-             mat = matrix(nrow = 0, ncol = 0),
-             df  = data.frame(),
-             tbl = tibble::tibble())
-    )
-  }
-  
-  # No aggregation requested
-  if (is.null(.var)) {
-    return(
-      switch(.fmt,
-             mat = object@norm,
-             df  = as.data.frame(object@norm),
-             tbl = tibble::as_tibble(object@norm, rownames = "sample_id"))
-    )
-  }
-  
-  # Ensure .var is available in taxa-level information
-  if (!(.var %in% taxa_vars(object))) {
-    stop(
-      ".var must be present in the taxa-level information. Available choices are: ",
-      paste(taxa_vars(object), collapse = ", ")
-    )
-  }
-  
-  # Prepare long table: rows = sample_id, columns = taxa_id
-  data_frame <- object@norm %>%
-    tibble::as_tibble(rownames = "sample_id") %>%
-    tidyr::pivot_longer(cols = -sample_id, names_to = "taxa_id", values_to = "norm")
-  
-  taxa_info <- taxa(object, .fmt = "tbl") %>%
-    dplyr::select(taxa_id, !!rlang::sym(.var))
-  
-  # Aggregate within each sample and taxa grouping
-  aggregated_data <- data_frame %>%
-    dplyr::left_join(taxa_info, by = "taxa_id") %>%
-    dplyr::group_by(sample_id, !!rlang::sym(.var)) %>%
-    dplyr::summarise(norm = .fun(norm), .groups = "drop") %>%
-    tidyr::pivot_wider(names_from = !!rlang::sym(.var), values_from = "norm") %>%
-    dplyr::arrange(match(sample_id, sample_id(object)))
-  
-  result_matrix <- aggregated_data %>%
-    tibble::column_to_rownames("sample_id") %>%
-    as.matrix()
-  
-  switch(.fmt,
-         mat = result_matrix,
-         df  = as.data.frame(result_matrix),
-         tbl = tibble::as_tibble(result_matrix, rownames = "sample_id"))
+  .get_abundance_slot(object, "norm", .fmt = .fmt, .var = .var, .fun = .fun)
 })
 
 #' @rdname abundance-getters
@@ -339,12 +253,7 @@ setMethod("norm", "mgnet", function(object, .fmt = "mat", .var = NULL, .fun = su
 setMethod("norm", "mgnets", function(object, .fmt = "mat", .var = NULL, .fun = sum) {
   .fmt <- match.arg(.fmt, c("mat", "df", "tbl"))
   
-  sapply(
-    object@mgnets,
-    function(x) norm(object = x, .var = .var, .fmt = .fmt, .fun = .fun),
-    simplify = FALSE,
-    USE.NAMES = TRUE
-  )
+  .map_mgnets(object, \(x) norm(object = x, .var = .var, .fmt = .fmt, .fun = .fun))
 })
 
 #------------------------------------------------------------------------------#
@@ -371,19 +280,19 @@ setMethod("norm", "mgnets", function(object, .fmt = "mat", .var = NULL, .fun = s
 #'
 #' @export
 setGeneric("meta", function(object,
-                            .fmt = c("df", "tbl"),
-                            .empty = c("id", "NULL"),
+                            .fmt = "df",
+                            .empty = "id",
                             .collapse = FALSE) {
   standardGeneric("meta")
 })
 
 #' @rdname meta
 setMethod("meta", "mgnet", function(object,
-                                    .fmt = c("df", "tbl"),
-                                    .empty = c("id", "NULL"),
+                                    .fmt = "df",
+                                    .empty = "id",
                                     .collapse = FALSE) {
-  .fmt <- match.arg(.fmt)
-  .empty <- match.arg(.empty)
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("id", NULL))
   
   if (miss_meta(object)) {
     if (.empty == "NULL") return(NULL)
@@ -393,37 +302,27 @@ setMethod("meta", "mgnet", function(object,
     return(out)
   }
   
-  out <- object@meta |>
-    tibble::rownames_to_column("sample_id")
-  
-  if (.fmt == "df") return(as.data.frame(out))
-  out
+  .format_meta_output(object, .fmt)
 })
 
 #' @rdname meta
 setMethod("meta", "mgnets", function(object,
-                                     .fmt = c("df", "tbl"),
-                                     .empty = c("id", "NULL"),
+                                     .fmt = "df",
+                                     .empty = "id",
                                      .collapse = FALSE) {
-  .fmt <- match.arg(.fmt)
-  .empty <- match.arg(.empty)
+  
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("id", NULL))
   
   if (length(object) == 0L) {
-    if (.fmt == "df") return(data.frame())
-    return(tibble::tibble())
+    return(.empty_collection_output(.fmt))
   }
   
   if (.collapse) {
-    out <- object@mgnets |>
-      purrr::map(\(x) meta(x, .fmt = "tbl", .empty = .empty)) |>
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) |>
-      purrr::list_rbind()
-    
-    if (.fmt == "df") return(as.data.frame(out))
-    return(out)
+    return(.collapse_mgnets_tbl(object, \(x) meta(x, .fmt = "tbl", .empty = .empty)))
   }
   
-  purrr::map(object@mgnets, \(x) meta(x, .fmt = .fmt, .empty = .empty))
+  .map_mgnets(object, \(x) meta(x, .fmt = .fmt, .empty = .empty))
 })
 
 
@@ -457,79 +356,41 @@ setMethod("meta", "mgnets", function(object,
 #'
 #' @export
 setGeneric("taxa", function(object,
-                            .fmt = c("df", "tbl"),
-                            .empty = c("id", "NULL"),
+                            .fmt = "df",
+                            .empty = "id",
                             .collapse = FALSE) {
   standardGeneric("taxa")
 })
 
 #' @rdname taxa
 setMethod("taxa", "mgnet", function(object,
-                                    .fmt = c("df", "tbl"),
-                                    .empty = c("id", "NULL"),
+                                    .fmt = "df",
+                                    .empty = "id",
                                     .collapse = FALSE) {
-  .fmt <- match.arg(.fmt)
-  .empty <- match.arg(.empty)
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("id", NULL))
   
-  # No taxa metadata and no community assignments
-  if (miss_taxa(object) && miss_comm(object)) {
-    if (.empty == "NULL") return(NULL)
-    
-    out <- tibble::tibble(taxa_id = taxa_id(object))
-    if (.fmt == "df") return(as.data.frame(out))
-    return(out)
-  }
-  
-  # Taxa metadata only
-  if (!miss_taxa(object) && miss_comm(object)) {
-    out <- object@taxa |>
-      tibble::rownames_to_column("taxa_id")
-    
-    if (.fmt == "df") return(as.data.frame(out))
-    return(out)
-  }
-  
-  # Community assignments only
-  if (miss_taxa(object) && !miss_comm(object)) {
-    out <- comm_id(object, .fmt = "tbl")
-    
-    if (.fmt == "df") return(as.data.frame(out))
-    return(out)
-  }
-  
-  # Both taxa metadata and community assignments
-  out <- object@taxa |>
-    tibble::rownames_to_column("taxa_id") |>
-    dplyr::left_join(comm_id(object, .fmt = "tbl"), by = "taxa_id")
-  
-  if (.fmt == "df") return(as.data.frame(out))
-  out
+  if (miss_taxa(object) && miss_comm(object) && .empty == "NULL") return(NULL)
+  .format_taxa_output(object, .fmt)
 })
 
 #' @rdname taxa
 setMethod("taxa", "mgnets", function(object,
-                                     .fmt = c("df", "tbl"),
-                                     .empty = c("id", "NULL"),
+                                     .fmt = "df",
+                                     .empty = "id",
                                      .collapse = FALSE) {
-  .fmt <- match.arg(.fmt)
-  .empty <- match.arg(.empty)
+  .fmt <- match.arg(.fmt, c("df", "tbl"))
+  .empty <- match.arg(.empty, c("id", NULL))
   
   if (length(object) == 0L) {
-    if (.fmt == "df") return(data.frame())
-    return(tibble::tibble())
+    return(.empty_collection_output(.fmt))
   }
   
   if (.collapse) {
-    out <- object@mgnets |>
-      purrr::map(\(x) taxa(x, .fmt = "tbl", .empty = .empty)) |>
-      purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) |>
-      purrr::list_rbind()
-    
-    if (.fmt == "df") return(as.data.frame(out))
-    return(out)
+    return(.collapse_mgnets_tbl(object, \(x) taxa(x, .fmt = "tbl", .empty = .empty)))
   }
   
-  purrr::map(object@mgnets, \(x) taxa(x, .fmt = .fmt, .empty = .empty))
+  .map_mgnets(object, \(x) taxa(x, .fmt = .fmt, .empty = .empty))
 })
 
 
@@ -586,7 +447,7 @@ setMethod("netw", "mgnet", function(object, selected = TRUE) {
 
 #' @rdname netw
 setMethod("netw", "mgnets", function(object, selected = TRUE) {
-  purrr::map(object@mgnets, \(x) netw(x, selected = selected))
+  .map_mgnets(object, \(x) netw(x, selected = selected))
 })
 
 #------------------------------------------------------------------------------#
@@ -615,7 +476,7 @@ setMethod("comm", "mgnet", function(object) {
 })
 
 setMethod("comm", "mgnets", function(object) {
-  lapply(object@mgnets, function(x) x@comm)
+  .map_mgnets(object, \(x) x@comm)
 })
 
 #------------------------------------------------------------------------------#
@@ -667,11 +528,9 @@ setMethod("link", "mgnets", function(object, selected = TRUE, .fmt = c("list", "
     cli::cli_abort("No network available in at least one element of the {.cls mgnets} object.")
   }
   
-  out <- purrr::map(object@mgnets, \(x) link(x, selected = selected))
+  out <- .map_mgnets(object, \(x) link(x, selected = selected))
   
   if (.fmt == "list") return(out)
   
-  out |>
-    purrr::imap(\(x, y) tibble::add_column(x, mgnet = y, .before = 1)) |>
-    purrr::list_rbind()
+  .collapse_mgnets_tbl(object, \(x) link(x, selected = selected))
 })
