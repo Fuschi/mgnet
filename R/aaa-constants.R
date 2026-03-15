@@ -1,4 +1,5 @@
 # R/aaa-constants.R
+#' @importFrom magrittr %>%
 #' @keywords internal
 #' @noRd
 .MGNET_RESERVED_COLNAMES <- c(
