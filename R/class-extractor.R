@@ -100,6 +100,7 @@ setMethod(f = "[", signature = "mgnet", definition = function(x, i, j, ..., drop
   
   # Full sample set retained?
   full_i <- identical(sort(i), seq_len(nsample(x)))
+  empty_sample <- miss_sample(x)
   
   # END CHECKS
   #----------------------------------------------------------------------------#
@@ -109,7 +110,7 @@ setMethod(f = "[", signature = "mgnet", definition = function(x, i, j, ..., drop
     
     new_mgnet <- new("mgnet")
     
-  } else if (length(i) == 0 && length(j) > 0) {
+  } else if (length(i) == 0 && length(j) > 0 && !empty_sample) {
     
     # Case where only taxa are selected
     new_mgnet <- x
@@ -118,14 +119,14 @@ setMethod(f = "[", signature = "mgnet", definition = function(x, i, j, ..., drop
     new_mgnet@norm <- matrix(numeric(0), nrow = 0, ncol = 0)
     new_mgnet@meta <- data.frame()
     
+    new_mgnet@netw <- igraph::make_empty_graph(0)
+    new_mgnet@comm <- empty_comm()
+    
     if (length(x@taxa) != 0) {
       new_mgnet@taxa <- x@taxa[j, , drop = FALSE]
     } else {
       new_mgnet@taxa <- x@taxa
     }
-    
-    new_mgnet@netw <- igraph::make_empty_graph(0)
-    new_mgnet@comm <- empty_comm()
     
   } else if (length(i) > 0 && length(j) == 0) {
     
