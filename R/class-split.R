@@ -1,6 +1,58 @@
 #' @include class-mgnet.R class-mgnets.R
 NULL
 
+# Internal utility ---------------------------------------------------------
+
+.build_split_name <- function(group_df) {
+  paste(
+    vapply(
+      group_df[1, , drop = FALSE],
+      function(x) as.character(x[[1]]),
+      character(1)
+    ),
+    collapse = "-"
+  )
+}
+
+.split_mgnet_by_tbl <- function(object, split_tbl, full_tbl, margin = c("sample", "taxa")) {
+  
+  margin <- match.arg(margin)
+  
+  groups <- split_tbl %>%
+    dplyr::distinct()
+  
+  mgnet_list <- vector("list", nrow(groups))
+  group_names <- character(nrow(groups))
+  
+  for (i in seq_len(nrow(groups))) {
+    group_df <- groups[i, , drop = FALSE]
+    
+    filtered_tbl <- full_tbl %>%
+      dplyr::semi_join(group_df, by = colnames(group_df))
+    
+    subsetted_mgnet <- switch(
+      margin,
+      sample = object[filtered_tbl$sample_id, , drop = FALSE],
+      taxa   = object[, filtered_tbl$taxa_id, drop = FALSE]
+    )
+    
+    group_names[i] <- .build_split_name(group_df)
+    mgnet_list[[i]] <- subsetted_mgnet
+  }
+  
+  if (anyDuplicated(group_names) > 0L) {
+    cli::cli_abort(
+      c(
+        "x" = "Generated group names are not unique.",
+        "i" = "Try selecting splitting variables whose value combinations produce unique names."
+      )
+    )
+  }
+  
+  names(mgnet_list) <- group_names
+  mgnets(mgnet_list)
+}
+
 #' Split an `mgnet` object into multiple `mgnet` objects
 #'
 #' @description
@@ -59,40 +111,15 @@ setMethod("split_meta", "mgnet", function(object, ...) {
   
   meta_tbl <- meta(object, .fmt = "tbl")
   
-  groups <- meta_tbl %>%
-    dplyr::select(!!!split_cols) %>%
-    dplyr::distinct()
+  split_tbl <- meta_tbl %>%
+    dplyr::select(!!!split_cols)
   
-  mgnet_list <- vector("list", nrow(groups))
-  group_names <- character(nrow(groups))
-  
-  for (i in seq_len(nrow(groups))) {
-    group_df <- groups[i, , drop = FALSE]
-    
-    filtered_sample <- meta_tbl %>%
-      dplyr::semi_join(group_df, by = colnames(group_df))
-    
-    subsetted_mgnet <- object[filtered_sample$sample_id, , drop = FALSE]
-    
-    group_names[i] <- paste(
-      unlist(group_df[1, , drop = TRUE], use.names = FALSE),
-      collapse = "-"
-    )
-    
-    mgnet_list[[i]] <- subsetted_mgnet
-  }
-  
-  if (anyDuplicated(group_names) > 0L) {
-    cli::cli_abort(
-      c(
-        "x" = "Generated group names are not unique.",
-        "i" = "Try selecting splitting variables whose value combinations produce unique names."
-      )
-    )
-  }
-  
-  names(mgnet_list) <- group_names
-  mgnets(mgnet_list)
+  .split_mgnet_by_tbl(
+    object   = object,
+    split_tbl = split_tbl,
+    full_tbl  = meta_tbl,
+    margin    = "sample"
+  )
 })
 
 #' @rdname split_mgnet
@@ -115,38 +142,13 @@ setMethod("split_taxa", "mgnet", function(object, ...) {
   
   taxa_tbl <- taxa(object, .fmt = "tbl")
   
-  groups <- taxa_tbl %>%
-    dplyr::select(!!!split_cols) %>%
-    dplyr::distinct()
+  split_tbl <- taxa_tbl %>%
+    dplyr::select(!!!split_cols)
   
-  mgnet_list <- vector("list", nrow(groups))
-  group_names <- character(nrow(groups))
-  
-  for (i in seq_len(nrow(groups))) {
-    group_df <- groups[i, , drop = FALSE]
-    
-    filtered_taxa <- taxa_tbl %>%
-      dplyr::semi_join(group_df, by = colnames(group_df))
-    
-    subsetted_mgnet <- object[, filtered_taxa$taxa_id, drop = FALSE]
-    
-    group_names[i] <- paste(
-      unlist(group_df[1, , drop = TRUE], use.names = FALSE),
-      collapse = "-"
-    )
-    
-    mgnet_list[[i]] <- subsetted_mgnet
-  }
-  
-  if (anyDuplicated(group_names) > 0L) {
-    cli::cli_abort(
-      c(
-        "x" = "Generated group names are not unique.",
-        "i" = "Try selecting splitting variables whose value combinations produce unique names."
-      )
-    )
-  }
-  
-  names(mgnet_list) <- group_names
-  mgnets(mgnet_list)
+  .split_mgnet_by_tbl(
+    object    = object,
+    split_tbl = split_tbl,
+    full_tbl  = taxa_tbl,
+    margin    = "taxa"
+  )
 })
