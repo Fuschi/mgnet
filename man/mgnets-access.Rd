@@ -6,6 +6,8 @@
 \alias{$<-,mgnets,mgnet-method}
 \alias{[[,mgnets-method}
 \alias{[[<-,mgnets,ANY,ANY,mgnet-method}
+\alias{[,mgnets-method}
+\alias{[<-,mgnets,ANY,ANY,list-method}
 \title{Access or assign \code{mgnet} elements in an \code{mgnets} object}
 \usage{
 \S4method{$}{mgnets}(x, name)
@@ -15,6 +17,10 @@
 \S4method{[[}{mgnets}(x, i, j, ...)
 
 \S4method{[[}{mgnets,ANY,ANY,mgnet}(x, i, j) <- value
+
+\S4method{[}{mgnets}(x, i, j, ..., drop = TRUE)
+
+\S4method{[}{mgnets,ANY,ANY,list}(x, i, j) <- value
 }
 \arguments{
 \item{x}{An object of class \code{mgnets}.}
@@ -36,7 +42,7 @@
 }
 }
 \description{
-List-like accessors for \code{mgnets} objects using \code{$}, \verb{$<-}, \code{[[}, and \verb{[[<-}.
+List-like accessors for \code{mgnets} objects using \code{$}, \verb{$<-}, \code{[}, \verb{[<-}, \code{[[}, and \verb{[[<-}.
 
 These methods allow convenient extraction and replacement of individual
 \code{mgnet} objects stored in the collection.

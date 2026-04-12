@@ -253,7 +253,7 @@ setReplaceMethod(
 #' Access or assign `mgnet` elements in an `mgnets` object
 #'
 #' @description
-#' List-like accessors for `mgnets` objects using `$`, `$<-`, `[[`, and `[[<-`.
+#' List-like accessors for `mgnets` objects using `$`, `$<-`, `[`, `[<-`, `[[`, and `[[<-`.
 #'
 #' These methods allow convenient extraction and replacement of individual
 #' `mgnet` objects stored in the collection.
@@ -323,6 +323,37 @@ methods::setReplaceMethod(
       cli::cli_abort("Assigned value must be an {.cls mgnet} object.")
     }
     x@mgnets[[i]] <- value
+    methods::validObject(x)
+    x
+  }
+)
+
+
+#' @rdname mgnets-access
+#' @export
+setMethod("[", "mgnets", function(x, i, j, ..., drop = TRUE) {
+  out <- x@mgnets[i]
+  
+  if (length(out) == 0L) {
+    return(mgnets(list()))
+  }
+  
+  mgnets(out)
+})
+
+#' @rdname mgnets-access
+#' @export
+methods::setReplaceMethod(
+  "[",
+  signature(x = "mgnets", i = "ANY", j = "ANY", value = "list"),
+  function(x, i, j, value) {
+    if (!all(vapply(value, function(z) inherits(z, "mgnet"), logical(1)))) {
+      cli::cli_abort(
+        "Assigned value must be a list of {.cls mgnet} objects."
+      )
+    }
+    
+    x@mgnets[i] <- value
     methods::validObject(x)
     x
   }
