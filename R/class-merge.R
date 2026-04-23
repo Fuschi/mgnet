@@ -18,40 +18,52 @@ NULL
 #' not provided for a given slot, that slot is left empty in the merged result.
 #'
 #' @param ... `mgnet` objects, `mgnets` objects, or lists of such objects.
-#' @param abun,rela,norm Functions used to merge abundance-like slots.
-#' @param meta,taxa Functions used to merge metadata tables.
-#' @param netw,comm Functions used to merge network and community slots.
+#' @param abun_fun,rela_fun,norm_fun Functions used to merge abundance-like slots.
+#' @param meta_fun,taxa_fun Functions used to merge metadata tables.
+#' @param netw_fun,comm_fun Functions used to merge network and community slots.
 #'
 #' @return
 #' An object of class `mgnet` if the inputs are `mgnet` objects, or an object
 #' of class `mgnets` if the inputs are `mgnets` objects.
 #'
-#' @details
-#' Merge functions must return structures compatible with the corresponding
-#' target slot.
-#'
-#' For example:
-#' \itemize{
-#'   \item abundance-like slots should return matrices or objects coercible to matrices;
-#'   \item metadata slots should return data.frames/tibbles with appropriate row names or ID columns;
-#'   \item `netw` should return an `igraph` object;
-#'   \item `comm` should return a valid community object.
-#' }
-#'
 #' @name merge_mgnet
 #' @export
 merge_mgnet <- function(...,
-                        abun = NULL,
-                        rela = NULL,
-                        norm = NULL,
-                        meta = NULL,
-                        taxa = NULL,
-                        netw = NULL,
-                        comm = NULL) {
+                        abun_fun = NULL,
+                        rela_fun = NULL,
+                        norm_fun = NULL,
+                        meta_fun = NULL,
+                        taxa_fun = NULL,
+                        netw_fun = NULL,
+                        comm_fun = NULL) {
+  
+  check_fun <- function(x, name) {
+    if (!is.null(x) && !is.function(x)) {
+      cli::cli_abort("{.arg {name}} must be a function.")
+    }
+  }
+  
+  check_fun(abun_fun, "abun_fun")
+  check_fun(rela_fun, "rela_fun")
+  check_fun(norm_fun, "norm_fun")
+  check_fun(meta_fun, "meta_fun")
+  check_fun(taxa_fun, "taxa_fun")
+  check_fun(netw_fun, "netw_fun")
+  check_fun(comm_fun, "comm_fun")
   
   objs <- list(...)
   
-  # Flatten one level if the user passed lists
+  bad_named <- names(objs)
+  bad_named <- bad_named[!is.null(bad_named) & nzchar(bad_named)]
+  
+  if (length(bad_named) > 0L) {
+    cli::cli_abort(c(
+      "x" = "Unexpected named arguments were supplied in `{...}`.",
+      "i" = "Merge functions must be passed using the `*_fun` arguments.",
+      "v" = "Unexpected names: {.val {unique(bad_named)}}."
+    ))
+  }
+  
   objs <- unlist(objs, recursive = FALSE)
   
   if (length(objs) == 0L) {
@@ -74,11 +86,6 @@ merge_mgnet <- function(...,
     return(objs[[1L]])
   }
   
-  all_equal <- function(items) {
-    if (length(items) <= 1L) return(TRUE)
-    all(vapply(2:length(items), function(i) identical(items[[1]], items[[i]]), logical(1)))
-  }
-  
   #--------------------------------------------------------------------------#
   # Merge mgnet objects
   #--------------------------------------------------------------------------#
@@ -90,46 +97,44 @@ merge_mgnet <- function(...,
     meta_merged <- data.frame()
     taxa_merged <- data.frame()
     netw_merged <- igraph::make_empty_graph(0, directed = FALSE)
-    comm_merged <- igraph::cluster_fast_greedy(
-      igraph::make_empty_graph(0, directed = FALSE)
-    )
+    comm_merged <- NULL
     
-    if (!is.null(abun)) {
+    if (!is.null(abun_fun)) {
       abun_merged <- purrr::map(objs, \(x) abun(x, .fmt = "df")) %>%
-        purrr::reduce(abun) %>%
+        purrr::reduce(abun_fun) %>%
         as.matrix()
     }
     
-    if (!is.null(rela)) {
+    if (!is.null(rela_fun)) {
       rela_merged <- purrr::map(objs, \(x) rela(x, .fmt = "df")) %>%
-        purrr::reduce(rela) %>%
+        purrr::reduce(rela_fun) %>%
         as.matrix()
     }
     
-    if (!is.null(norm)) {
+    if (!is.null(norm_fun)) {
       norm_merged <- purrr::map(objs, \(x) norm(x, .fmt = "df")) %>%
-        purrr::reduce(norm) %>%
+        purrr::reduce(norm_fun) %>%
         as.matrix()
     }
     
-    if (!is.null(meta)) {
+    if (!is.null(meta_fun)) {
       meta_merged <- purrr::map(objs, \(x) meta(x, .fmt = "df")) %>%
-        purrr::reduce(meta)
+        purrr::reduce(meta_fun)
     }
     
-    if (!is.null(taxa)) {
+    if (!is.null(taxa_fun)) {
       taxa_merged <- purrr::map(objs, \(x) taxa(x, .fmt = "df")) %>%
-        purrr::reduce(taxa)
+        purrr::reduce(taxa_fun)
     }
     
-    if (!is.null(netw)) {
+    if (!is.null(netw_fun)) {
       netw_merged <- purrr::map(objs, \(x) netw(x, selected = FALSE)) %>%
-        purrr::reduce(netw)
+        purrr::reduce(netw_fun)
     }
     
-    if (!is.null(comm)) {
-      comm_merged <- purrr::map(objs, comm) %>%
-        purrr::reduce(comm)
+    if (!is.null(comm_fun)) {
+      comm_merged <- purrr::map(objs, \(x) comm(x)) %>%
+        purrr::reduce(comm_fun)
     }
     
     return(
@@ -166,13 +171,13 @@ merge_mgnet <- function(...,
       c(
         lapply(objs, `[[`, nm),
         list(
-          abun = abun,
-          rela = rela,
-          norm = norm,
-          meta = meta,
-          taxa = taxa,
-          netw = netw,
-          comm = comm
+          abun_fun = abun_fun,
+          rela_fun = rela_fun,
+          norm_fun = norm_fun,
+          meta_fun = meta_fun,
+          taxa_fun = taxa_fun,
+          netw_fun = netw_fun,
+          comm_fun = comm_fun
         )
       )
     )

@@ -6,23 +6,23 @@
 \usage{
 merge_mgnet(
   ...,
-  abun = NULL,
-  rela = NULL,
-  norm = NULL,
-  meta = NULL,
-  taxa = NULL,
-  netw = NULL,
-  comm = NULL
+  abun_fun = NULL,
+  rela_fun = NULL,
+  norm_fun = NULL,
+  meta_fun = NULL,
+  taxa_fun = NULL,
+  netw_fun = NULL,
+  comm_fun = NULL
 )
 }
 \arguments{
 \item{...}{\code{mgnet} objects, \code{mgnets} objects, or lists of such objects.}
 
-\item{abun, rela, norm}{Functions used to merge abundance-like slots.}
+\item{abun_fun, rela_fun, norm_fun}{Functions used to merge abundance-like slots.}
 
-\item{meta, taxa}{Functions used to merge metadata tables.}
+\item{meta_fun, taxa_fun}{Functions used to merge metadata tables.}
 
-\item{netw, comm}{Functions used to merge network and community slots.}
+\item{netw_fun, comm_fun}{Functions used to merge network and community slots.}
 }
 \value{
 An object of class \code{mgnet} if the inputs are \code{mgnet} objects, or an object
@@ -37,16 +37,4 @@ Mixed input is not allowed.
 
 For each slot, the user may supply a merge function. If a merge function is
 not provided for a given slot, that slot is left empty in the merged result.
-}
-\details{
-Merge functions must return structures compatible with the corresponding
-target slot.
-
-For example:
-\itemize{
-\item abundance-like slots should return matrices or objects coercible to matrices;
-\item metadata slots should return data.frames/tibbles with appropriate row names or ID columns;
-\item \code{netw} should return an \code{igraph} object;
-\item \code{comm} should return a valid community object.
-}
 }
