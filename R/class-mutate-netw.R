@@ -199,14 +199,17 @@ setMethod("mutate_netw", "mgnets", function(object, ..., .ungroup = FALSE, .dese
     #--------------------------------------------------------------------------#
     #                               GROUPED case                               #
     #--------------------------------------------------------------------------#
+    mgnet_names <- names(object)
+
     subgroups <- taxa(object, .collapse = TRUE) %>%
       dplyr::select(tidyselect::all_of(c("mgnet", taxa_groups))) %>%
-      tidyr::unite("_internal_", remove = FALSE) 
+      tidyr::unite("_internal_", remove = FALSE) %>%
+      dplyr::mutate(mgnet = factor(.data$mgnet, levels = mgnet_names))
     
-    subgroups <- split(subgroups, subgroups$mgnet)
-    subgroups <- sapply(subgroups, \(x) dplyr::pull(x, "_internal_"), USE.NAMES = TRUE, simplify = FALSE)
+    subgroups <- split(subgroups, subgroups$mgnet, drop = FALSE)
+    subgroups <- lapply(subgroups, \(x) dplyr::pull(x, "_internal_"))
     
-    for (om in seq_along(object)) {
+    for (om in names(object)) {
       unique_keys <- unique(subgroups[[om]])
       for (i in seq_along(quosures)) {
         result <- vector(length = ntaxa(object[[om]]))
